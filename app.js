@@ -242,9 +242,12 @@ function printUserCard(usuario){
 }
 
 function printPage(data){
-  const win=window.open("","PRINT","height=600,width=800");
+  const win = window.open("","PRINT","height=600,width=800");
   win.document.write("<html><head><title>Movimientos</title></head><body>");
-  win.document.write("<table border='1' style='border-collapse:collapse;width:100%'><tr><th>#L</th><th>Nombre</th><th>DNI</th><th>Entrada</th><th>Salida</th><th>Tipo</th></tr>");
-  data.forEach(mov=>{win.document.write(`<tr><td>${mov.L}</td><td>${mov.nombre}</td><td>${mov.dni}</td><td>${mov.horaEntrada||'-'}</td><td>${mov.horaSalida||'-'}</td><td>${mov.tipo}</td></tr>`);});
-  win.document.write("</table></body></html>"); win.document.close(); win.print();
+  win.document.write("<table border='1' style='border-collapse:collapse;width:100%'>");
+  win.document.write("<tr><th>#L</th><th>Nombre</th><th>DNI</th><th>Entrada</th><th>Salida</th><th>Tipo</th></tr>");
+  data.forEach(m=>{win.document.write(`<tr><td>${m.L}</td><td>${m.nombre}</td><td>${m.dni}</td><td>${m.horaEntrada||'-'}</td><td>${m.horaSalida||'-'}</td><td>${m.tipo}</td></tr>`);});
+  win.document.write("</table></body></html>");
+  win.document.close();
+  win.print();
 }
