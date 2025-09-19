@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-import { getFirestore, collection, addDoc, doc, setDoc, getDocs, deleteDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, setDoc, getDocs, deleteDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBmgexrB3aDlx5XARYqigaPoFsWX5vDz_4",
@@ -13,7 +13,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Navegación
+// Navegación SPA
 const sections = document.querySelectorAll("main section");
 document.querySelectorAll("header .nav button").forEach(btn => {
   btn.addEventListener("click", () => {
@@ -22,7 +22,7 @@ document.querySelectorAll("header .nav button").forEach(btn => {
   });
 });
 
-// Variables para movimientos
+// Movimientos
 let currentPage = 1;
 const pageSize = 25;
 let movementsCache = [];
@@ -30,109 +30,94 @@ let movementsCache = [];
 const movimientosTableBody = document.querySelector("#movimientosTable tbody");
 const paginationDiv = document.getElementById("pagination");
 
-function renderTable(page) {
+function renderTable(page){
   movimientosTableBody.innerHTML = "";
-  const start = (page - 1) * pageSize;
+  const start = (page-1)*pageSize;
   const end = start + pageSize;
-  const pageData = movementsCache.slice(start, end);
-  pageData.forEach(mov => {
+  const pageData = movementsCache.slice(start,end);
+  pageData.forEach(mov=>{
     const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${mov.L}</td>
-      <td>${mov.nombre}</td>
-      <td>${mov.dni}</td>
-      <td>${mov.horaEntrada || "-"}</td>
-      <td>${mov.horaSalida || "-"}</td>
-      <td>${mov.tipo}</td>
-      <td><button class="delete-mov" data-id="${mov.id}">Eliminar</button></td>
-    `;
+    tr.innerHTML = `<td>${mov.L}</td><td>${mov.nombre}</td><td>${mov.dni}</td>
+    <td>${mov.horaEntrada||'-'}</td><td>${mov.horaSalida||'-'}</td><td>${mov.tipo}</td>
+    <td><button class="delete-mov" data-id="${mov.id}">Eliminar</button></td>`;
     movimientosTableBody.appendChild(tr);
   });
   renderPagination(page);
 }
 
-function renderPagination(activePage) {
-  paginationDiv.innerHTML = "";
-  const totalPages = Math.min(Math.ceil(movementsCache.length / pageSize), 10);
-  for (let i = 1; i <= totalPages; i++) {
+function renderPagination(activePage){
+  paginationDiv.innerHTML="";
+  const totalPages = Math.min(Math.ceil(movementsCache.length/pageSize),10);
+  for(let i=1;i<=totalPages;i++){
     const btn = document.createElement("button");
-    btn.textContent = i;
-    if (i === activePage) btn.classList.add("active");
-    btn.addEventListener("click", () => {
-      currentPage = i;
-      renderTable(currentPage);
-    });
+    btn.textContent=i;
+    if(i===activePage) btn.classList.add("active");
+    btn.addEventListener("click",()=>{currentPage=i; renderTable(currentPage)});
     paginationDiv.appendChild(btn);
   }
 }
 
-function printPage(data) {
-  const win = window.open("", "PRINT", "height=600,width=800");
+function printPage(data){
+  const win=window.open("","PRINT","height=600,width=800");
   win.document.write("<html><head><title>Movimientos</title></head><body>");
   win.document.write("<table border='1' style='border-collapse:collapse;width:100%'>");
   win.document.write("<tr><th>#L</th><th>Nombre</th><th>DNI</th><th>Entrada</th><th>Salida</th><th>Tipo</th></tr>");
-  data.forEach(mov => {
-    win.document.write(`<tr><td>${mov.L}</td><td>${mov.nombre}</td><td>${mov.dni}</td><td>${mov.horaEntrada || "-"}</td><td>${mov.horaSalida || "-"}</td><td>${mov.tipo}</td></tr>`);
-  });
+  data.forEach(mov=>{win.document.write(`<tr><td>${mov.L}</td><td>${mov.nombre}</td><td>${mov.dni}</td><td>${mov.horaEntrada||'-'}</td><td>${mov.horaSalida||'-'}</td><td>${mov.tipo}</td></tr>`);});
   win.document.write("</table></body></html>");
   win.document.close();
   win.print();
 }
 
-// Escucha en tiempo real movimientos
-onSnapshot(query(collection(db, "movimientos"), orderBy("timestamp", "desc")), (snapshot) => {
-  movementsCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  if (movementsCache.length >= pageSize) {
-    const latestPage = movementsCache.slice(0, pageSize);
+// Escucha real-time
+onSnapshot(query(collection(db,"movimientos"),orderBy("timestamp","desc")),snapshot=>{
+  movementsCache = snapshot.docs.map(doc=>({id:doc.id,...doc.data()}));
+  if(movementsCache.length>=pageSize){
+    const latestPage=movementsCache.slice(0,pageSize);
     printPage(latestPage);
   }
   renderTable(currentPage);
 });
 
 // Eliminar con PIN
-const pinModal = document.getElementById("pinModal");
-let deleteTargetId = null;
-
-document.body.addEventListener("click", e => {
-  if (e.target.classList.contains("delete-mov")) {
-    deleteTargetId = e.target.dataset.id;
+const pinModal=document.getElementById("pinModal");
+let deleteTargetId=null;
+document.body.addEventListener("click",e=>{
+  if(e.target.classList.contains("delete-mov")){
+    deleteTargetId=e.target.dataset.id;
     pinModal.classList.remove("hidden");
   }
 });
-
-document.getElementById("cancelPin").addEventListener("click", () => {
-  pinModal.classList.add("hidden");
-  deleteTargetId = null;
+document.getElementById("cancelPin").addEventListener("click",()=>{
+  pinModal.classList.add("hidden"); deleteTargetId=null;
 });
-
-document.getElementById("confirmPin").addEventListener("click", async () => {
-  const pinInput = document.getElementById("pinInput").value;
-  const pinDoc = await getDocs(collection(db, "config"));
-  let pin = "1234";
-  pinDoc.forEach(d => { pin = d.data().pin });
-  if (pinInput === pin) {
-    await deleteDoc(doc(db, "movimientos", deleteTargetId));
+document.getElementById("confirmPin").addEventListener("click",async()=>{
+  const pinInput=document.getElementById("pinInput").value;
+  const pinDoc=await getDocs(collection(db,"config"));
+  let pin="1234";
+  pinDoc.forEach(d=>{pin=d.data().pin});
+  if(pinInput===pin){
+    await deleteDoc(doc(db,"movimientos",deleteTargetId));
     alert("Movimiento eliminado");
   } else {
     alert("PIN incorrecto");
   }
   pinModal.classList.add("hidden");
-  deleteTargetId = null;
+  deleteTargetId=null;
 });
 
-// Guardar nuevo PIN
-document.getElementById("savePin").addEventListener("click", async () => {
-  const newPin = document.getElementById("newPin").value;
-  if (/^\d{4}$/.test(newPin)) {
-    await setDoc(doc(db, "config", "pin"), { pin: newPin });
+// Guardar PIN
+document.getElementById("savePin").addEventListener("click",async()=>{
+  const newPin=document.getElementById("newPin").value;
+  if(/^\d{4}$/.test(newPin)){
+    await setDoc(doc(db,"config","pin"),{pin:newPin});
     alert("PIN guardado");
-  } else {
+  }else{
     alert("PIN inválido, debe tener 4 dígitos");
   }
 });
 
 // Reimprimir última página
-document.getElementById("reprintLastPage").addEventListener("click", () => {
-  const latestPage = movementsCache.slice(0, pageSize);
+document.getElementById("reprintLastPage").addEventListener("click",()=>{
+  const latestPage=movementsCache.slice(0,pageSize);
   printPage(latestPage);
 });
