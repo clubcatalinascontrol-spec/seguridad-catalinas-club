@@ -68,7 +68,7 @@ addUserBtn.addEventListener("click", async ()=>{
   setTimeout(()=>{userMessage.textContent="";},3000);
 });
 
-// --- Mostrar usuarios en tiempo real ---
+// --- Mostrar usuarios ---
 onSnapshot(collection(db,"usuarios"), snapshot=>{
   userListContainer.innerHTML="";
   snapshot.docs.forEach(docSnap=>{
@@ -99,8 +99,9 @@ onSnapshot(collection(db,"usuarios"), snapshot=>{
     userListContainer.appendChild(div);
   });
 
+  // Guardar cambios
   document.querySelectorAll(".saveUserBtn").forEach(btn=>{
-    btn.addEventListener("click", async ()=>{
+    btn.onclick = async ()=>{
       const id = btn.dataset.id;
       const parent = btn.closest(".userItem");
       const inputs = parent.querySelectorAll("input, select");
@@ -108,29 +109,28 @@ onSnapshot(collection(db,"usuarios"), snapshot=>{
       inputs.forEach(i=> updated[i.dataset.field] = i.value);
       await setDoc(doc(db,"usuarios",id), updated, {merge:true});
       alert("Usuario actualizado");
-    });
+    };
   });
 
+  // Imprimir tarjeta
   document.querySelectorAll(".printUserBtn").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
+    btn.onclick = ()=>{
       const id = btn.dataset.id;
       const data = snapshot.docs.find(d=>d.id===id).data();
       printUserCard(data);
-    });
+    };
   });
 
+  // Eliminar usuario
   document.querySelectorAll(".deleteUserBtn").forEach(btn=>{
-    btn.addEventListener("click", async ()=>{
+    btn.onclick = async ()=>{
       const id = btn.dataset.id;
       let pin = prompt("Ingrese PIN maestro para eliminar usuario:");
-      const pinDoc = await getDocs(collection(db,"config"));
-      let masterPin = "1234";
-      pinDoc.forEach(d=>{masterPin=d.data().pin});
-      if(pin===masterPin){
+      if(pin==="1234"){ // PIN fijo por ahora
         await deleteDoc(doc(db,"usuarios",id));
         alert("Usuario eliminado");
       } else alert("PIN incorrecto");
-    });
+    };
   });
 });
 
@@ -147,3 +147,7 @@ function printUserCard(data){
   JsBarcode(win.document.querySelector("#barcode")).init();
   JsBarcode(win.document.querySelector("#barcode2")).init();
 }
+
+// --- BOTONES PANEL ---
+document.getElementById("scanBtn").onclick = ()=>alert("ESCANEAR activado (pendiente lectura de código)"); 
+document.getElementById("printPageBtn").onclick = ()=>alert("IMPRIMIR ÚLTIMA PÁGINA activado (pendiente impresión real)");
