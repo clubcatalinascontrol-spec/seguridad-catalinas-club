@@ -112,7 +112,7 @@ document.getElementById("reprintLastPage").addEventListener("click", ()=>{
   printPage(latestPage);
 });
 
-// --- Imprimir página actual (25 movimientos) ---
+// --- Imprimir 25 movimientos visibles ---
 document.getElementById("printPageBtn").addEventListener("click", ()=>{
   const start = (currentPage-1)*pageSize;
   const end = start + pageSize;
@@ -138,6 +138,7 @@ function colorTipo(tipo){
   }
 }
 
+// --- Agregar Usuario ---
 addUserBtn.addEventListener("click", async()=>{
   const L = document.getElementById("userL").value.trim();
   const nombre = document.getElementById("userNombre").value.trim();
@@ -165,8 +166,12 @@ onSnapshot(collection(db,"usuarios"), snapshot=>{
     const data = doc.data();
     const div = document.createElement("div");
     div.className="userItem";
-    div.style.border="1px solid #222"; div.style.padding="5px"; div.style.margin="5px"; 
-    div.style.display="flex"; div.style.alignItems="center"; div.style.justifyContent="space-between";
+    div.style.border="1px solid #222"; 
+    div.style.padding="5px"; 
+    div.style.margin="5px"; 
+    div.style.display="flex"; 
+    div.style.alignItems="center"; 
+    div.style.justifyContent="space-between";
     div.innerHTML=`
       <div>
         <input value="${data.L}" size="3" data-field="L">
@@ -179,4 +184,64 @@ onSnapshot(collection(db,"usuarios"), snapshot=>{
           <option value="obrero" ${data.tipo==="obrero"?"selected":""}>Obrero</option>
           <option value="invitado" ${data.tipo==="invitado"?"selected":""}>Invitado</option>
           <option value="guardia" ${data.tipo==="guardia"?"selected":""}>Guardia</option>
-          <option value="otro" ${data
+          <option value="otro" ${data.tipo==="otro"?"selected":""}>Otro</option>
+        </select>
+      </div>
+      <div>
+        <button class="saveUserBtn" data-id="${doc.id}">Guardar</button>
+        <button class="printUserBtn" data-id="${doc.id}">Imprimir</button>
+      </div>
+    `;
+    userListContainer.appendChild(div);
+  });
+
+  // Guardar cambios de usuario
+  document.querySelectorAll(".saveUserBtn").forEach(btn=>{
+    btn.addEventListener("click", async()=>{
+      const id = btn.dataset.id;
+      const parent = btn.closest(".userItem");
+      const inputs = parent.querySelectorAll("input, select");
+      const updated = {};
+      inputs.forEach(i=> updated[i.dataset.field] = i.value);
+      await setDoc(doc(db,"usuarios",id), updated, {merge:true});
+      alert("Usuario actualizado");
+    });
+  });
+
+  // Imprimir tarjeta usuario
+  document.querySelectorAll(".printUserBtn").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const id = btn.dataset.id;
+      const data = snapshot.docs.find(d=>d.id===id).data();
+      printUserCard(data);
+    });
+  });
+});
+
+// --- Funciones de impresión ---
+function printPage(data){
+  const win = window.open("","PRINT","width=900,height=600");
+  win.document.write("<html><head><title>Movimientos</title></head><body>");
+  win.document.write("<table border='1' style='border-collapse:collapse;width:100%'>");
+  win.document.write("<tr><th>#L</th><th>Nombre</th><th>DNI</th><th>Entrada</th><th>Salida</th><th>Tipo</th></tr>");
+  data.forEach(m=>{
+    win.document.write(`<tr><td>${m.L}</td><td>${m.nombre}</td><td>${m.dni}</td><td>${m.horaEntrada||'-'}</td><td>${m.horaSalida||'-'}</td><td>${m.tipo}</td></tr>`);
+  });
+  win.document.write("</table></body></html>");
+  win.document.close();
+  win.print();
+}
+
+function printUserCard(data){
+  const win = window.open("","PRINT","width=400,height=300");
+  const color = colorTipo(data.tipo);
+  win.document.write(`<div style="border:1cm solid ${color};padding:10px;width:15cm;height:6cm;text-align:center">`);
+  win.document.write(`<p>#${data.L} - ${data.nombre} - ${data.dni} - ${data.tipo}</p>`);
+  win.document.write(`<svg id="barcode" jsbarcode-value="${data.codigoIngreso}" jsbarcode-height="40"></svg><br>`);
+  win.document.write(`<svg id="barcode2" jsbarcode-value="${data.codigoSalida}" jsbarcode-height="40"></svg>`);
+  win.document.write("</div>");
+  win.document.close();
+  JsBarcode(win.document.querySelector("#barcode")).init();
+  JsBarcode(win.document.querySelector("#barcode2")).init();
+  win.print();
+}
