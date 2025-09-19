@@ -75,7 +75,7 @@ let deleteTargetId = null;
 document.body.addEventListener("click", e=>{
   if(e.target.classList.contains("delete-mov")){
     deleteTargetId = e.target.dataset.id;
-    pinModal.classList.add("active"); // solo aquí se muestra
+    pinModal.classList.add("active");
   }
 });
 document.getElementById("cancelPin").addEventListener("click", ()=>{
@@ -110,6 +110,14 @@ document.getElementById("savePin").addEventListener("click", async()=>{
 document.getElementById("reprintLastPage").addEventListener("click", ()=>{
   const latestPage = movementsCache.slice(0,pageSize);
   printPage(latestPage);
+});
+
+// --- Imprimir página actual (25 movimientos) ---
+document.getElementById("printPageBtn").addEventListener("click", ()=>{
+  const start = (currentPage-1)*pageSize;
+  const end = start + pageSize;
+  const pageData = movementsCache.slice(start,end);
+  printPage(pageData);
 });
 
 // --- Usuarios ---
@@ -150,7 +158,7 @@ addUserBtn.addEventListener("click", async()=>{
   setTimeout(()=>{userMessage.textContent="";},3000);
 });
 
-// Listado usuarios en tiempo real
+// --- Listado usuarios en tiempo real ---
 onSnapshot(collection(db,"usuarios"), snapshot=>{
   userListContainer.innerHTML="";
   snapshot.docs.forEach(doc=>{
@@ -171,83 +179,4 @@ onSnapshot(collection(db,"usuarios"), snapshot=>{
           <option value="obrero" ${data.tipo==="obrero"?"selected":""}>Obrero</option>
           <option value="invitado" ${data.tipo==="invitado"?"selected":""}>Invitado</option>
           <option value="guardia" ${data.tipo==="guardia"?"selected":""}>Guardia</option>
-          <option value="otro" ${data.tipo==="otro"?"selected":""}>Otro</option>
-        </select>
-      </div>
-      <div>
-        <button class="saveUserBtn" data-id="${doc.id}">Guardar</button>
-        <button class="printUserBtn" data-id="${doc.id}">Imprimir tarjeta</button>
-      </div>
-    `;
-    userListContainer.appendChild(div);
-
-    div.querySelector(".saveUserBtn").addEventListener("click", async ()=>{
-      const inputs = div.querySelectorAll("input, select");
-      let updateData = {};
-      inputs.forEach(inp=>{updateData[inp.dataset.field] = inp.value;});
-      await setDoc(doc(db,"usuarios",doc.id), updateData);
-      userMessage.textContent="Usuario actualizado con éxito";
-      setTimeout(()=>{userMessage.textContent="";},3000);
-    });
-
-    div.querySelector(".printUserBtn").addEventListener("click", ()=>{
-      printUserCard(data);
-    });
-  });
-});
-
-// --- ESCANEAR ---
-document.getElementById("scanBtn").addEventListener("click", async ()=>{
-  const codigo = prompt("Ingrese código de barras escaneado");
-  if(!codigo) return;
-  const usuariosSnapshot = await getDocs(collection(db,"usuarios"));
-  const usuarioDoc = usuariosSnapshot.docs.find(d=>{
-    const u=d.data();
-    return u.codigoIngreso===codigo || u.codigoSalida===codigo;
-  });
-  if(!usuarioDoc) return alert("Código no reconocido");
-  const usuario = usuarioDoc.data();
-  const now = new Date();
-  let horaEntrada = null, horaSalida = null;
-  if(codigo===usuario.codigoIngreso) horaEntrada=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} (${now.toLocaleDateString()})`;
-  if(codigo===usuario.codigoSalida) horaSalida=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} (${now.toLocaleDateString()})`;
-  await addDoc(collection(db,"movimientos"),{
-    L:usuario.L,nombre:usuario.nombre,dni:usuario.dni,tipo:usuario.tipo,horaEntrada,horaSalida,timestamp:Date.now()
-  });
-});
-
-// --- Funciones de impresión ---
-function printUserCard(usuario){
-  const w = window.open("","PRINT","height=600,width=800");
-  const color = colorTipo(usuario.tipo);
-  w.document.write(`
-  <html><head><title>Tarjeta</title><style>
-    body{margin:0;font-family:Arial,sans-serif;}
-    .tarjeta{width:15cm;height:6cm;border:1cm solid ${color};display:flex;flex-direction:column;justify-content:space-between;padding:5px;}
-    .datos{font-size:16px;}
-    svg{display:block;margin:0 auto;}
-  </style></head><body>
-  <div class="tarjeta">
-    <div class="datos">#${usuario.L} - ${usuario.nombre} - ${usuario.dni} - ${usuario.tipo}</div>
-    <svg id="barcodeIngresoPrint"></svg>
-    <svg id="barcodeSalidaPrint"></svg>
-  </div>
-  <script src="https://cdn.jsdelivr.net/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
-  <script>
-    JsBarcode("#barcodeIngresoPrint","${usuario.codigoIngreso}",{format:"CODE128",width:2,height:40});
-    JsBarcode("#barcodeSalidaPrint","${usuario.codigoSalida}",{format:"CODE128",width:2,height:40});
-    window.print();
-  </script></body></html>`);
-  w.document.close();
-}
-
-function printPage(data){
-  const win = window.open("","PRINT","height=600,width=800");
-  win.document.write("<html><head><title>Movimientos</title></head><body>");
-  win.document.write("<table border='1' style='border-collapse:collapse;width:100%'>");
-  win.document.write("<tr><th>#L</th><th>Nombre</th><th>DNI</th><th>Entrada</th><th>Salida</th><th>Tipo</th></tr>");
-  data.forEach(m=>{win.document.write(`<tr><td>${m.L}</td><td>${m.nombre}</td><td>${m.dni}</td><td>${m.horaEntrada||'-'}</td><td>${m.horaSalida||'-'}</td><td>${m.tipo}</td></tr>`);});
-  win.document.write("</table></body></html>");
-  win.document.close();
-  win.print();
-}
+          <option value="otro" ${data
