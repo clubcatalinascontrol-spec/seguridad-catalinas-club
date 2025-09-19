@@ -5,10 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Catalinas Country - Control de Ingreso</title>
 <link rel="stylesheet" href="styles.css">
-<script src="https://cdn.jsdelivr.net/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 </head>
 <body>
-
 <header>
   <div class="nav">
     <button class="nav-btn active" data-section="panel">PANEL</button>
@@ -20,13 +19,20 @@
 <main>
   <!-- PANEL -->
   <section id="panel" class="active">
-    <h2>LISTADO DE MOVIMIENTOS</h2>
-    <button id="scanBtn">ESCANEAR</button>
-    <button id="printPageBtn">IMPRIMIR ÚLTIMA PÁGINA</button>
+    <div class="actions">
+      <button id="scanBtn">ESCANEAR</button>
+      <button id="printPageBtn">IMPRIMIR ÚLTIMA PÁGINA</button>
+    </div>
     <table id="movimientosTable">
       <thead>
         <tr>
-          <th>#L</th><th>Nombre</th><th>DNI</th><th>Entrada</th><th>Salida</th><th>Tipo</th><th>Eliminar</th>
+          <th>#L</th>
+          <th>Nombre</th>
+          <th>DNI</th>
+          <th>H. Entrada</th>
+          <th>H. Salida</th>
+          <th>Tipo</th>
+          <th>Eliminar</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -36,11 +42,11 @@
 
   <!-- USUARIOS -->
   <section id="usuarios">
-    <h2>GESTIÓN DE USUARIOS</h2>
-    <div id="add-user">
-      <input type="text" id="userL" placeholder="#L (3 dígitos)" maxlength="3">
-      <input type="text" id="userNombre" placeholder="Nombre completo" maxlength="30">
-      <input type="text" id="userDni" placeholder="DNI (8 dígitos)" maxlength="8" pattern="\d*">
+    <h2>Gestión de Usuarios</h2>
+    <div class="add-user">
+      <input type="text" id="userL" placeholder="#L">
+      <input type="text" id="userNombre" placeholder="Nombre Completo" maxlength="20">
+      <input type="text" id="userDni" placeholder="DNI" maxlength="8">
       <select id="userTipo">
         <option value="propietario">Propietario</option>
         <option value="administracion">Administración</option>
@@ -52,27 +58,30 @@
       </select>
       <button id="addUserBtn">Agregar Usuario</button>
     </div>
-    <div id="userMessage" style="color:green; margin-top:5px;"></div>
-    <div id="userListContainer" style="margin-top:20px;">
-      <h3>Usuarios Registrados:</h3>
-      <table id="userTable">
-        <thead>
-          <tr>
-            <th>#L</th><th>Nombre</th><th>DNI</th><th>Tipo</th><th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
+    <div id="userMessage" class="message"></div>
+    <table id="userTable">
+      <thead>
+        <tr>
+          <th>#L</th>
+          <th>Nombre</th>
+          <th>DNI</th>
+          <th>Tipo</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
   </section>
 
   <!-- CONFIG -->
   <section id="config">
-    <h2>CONFIGURACIÓN</h2>
-    <input type="text" id="newPin" placeholder="PIN maestro (4 dígitos)" maxlength="4">
-    <button id="savePin">Guardar PIN</button>
+    <h2>Configuración</h2>
+    <div class="config-section">
+      <label>PIN Maestro:</label>
+      <input type="text" id="newPin" maxlength="4">
+      <button id="savePin">Guardar PIN</button>
+    </div>
   </section>
-
 </main>
 
 <script type="module" src="app.js"></script>
