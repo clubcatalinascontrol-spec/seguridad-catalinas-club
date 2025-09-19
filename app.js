@@ -15,11 +15,19 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// --- Sección USUARIOS ---
-const addUserBtn = document.getElementById("addUserBtn");
-const userListContainer = document.getElementById("userListContainer");
-const userMessage = document.getElementById("userMessage");
+// --- SPA Navigation ---
+const sections = document.querySelectorAll("main section");
+const navButtons = document.querySelectorAll(".nav-btn");
+navButtons.forEach(btn => {
+  btn.addEventListener("click", () => {
+    sections.forEach(sec => sec.classList.remove("active"));
+    document.getElementById(btn.dataset.section).classList.add("active");
+    navButtons.forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+  });
+});
 
+// --- Funciones auxiliares ---
 function generarCodigo(){ return Math.random().toString(36).substring(2,10).toUpperCase(); }
 function colorTipo(tipo){
   switch(tipo){
@@ -33,52 +41,39 @@ function colorTipo(tipo){
   }
 }
 
-// --- Agregar usuario ---
+// --- USUARIOS ---
+const addUserBtn = document.getElementById("addUserBtn");
+const userListContainer = document.getElementById("userListContainer");
+const userMessage = document.getElementById("userMessage");
+
 addUserBtn.addEventListener("click", async ()=>{
   const L = document.getElementById("userL").value.trim();
   const nombre = document.getElementById("userNombre").value.trim();
   const dni = document.getElementById("userDni").value.trim();
   const tipo = document.getElementById("userTipo").value;
 
-  if(!L || !nombre || !dni || !tipo){
-    alert("Complete todos los campos");
-    return;
-  }
-  if(!/^\d+$/.test(L)){
-    alert("#L debe ser solo números");
-    return;
-  }
-  if(!/^\d{1,8}$/.test(dni)){
-    alert("DNI debe tener máximo 8 dígitos");
-    return;
-  }
+  if(!L||!nombre||!dni||!tipo){ alert("Complete todos los campos"); return; }
+  if(!/^\d+$/.test(L)){ alert("#L debe ser solo números"); return; }
+  if(!/^\d{1,8}$/.test(dni)){ alert("DNI debe tener máximo 8 dígitos"); return; }
 
   const codigoIngreso = generarCodigo();
   const codigoSalida = generarCodigo();
-
-  await addDoc(collection(db,"usuarios"), {L, nombre, dni, tipo, codigoIngreso, codigoSalida});
+  await addDoc(collection(db,"usuarios"),{L,nombre,dni,tipo,codigoIngreso,codigoSalida});
 
   document.getElementById("userL").value="";
   document.getElementById("userNombre").value="";
   document.getElementById("userDni").value="";
-  userMessage.textContent = "Usuario agregado con éxito";
-  setTimeout(()=>{userMessage.textContent="";}, 3000);
+  userMessage.textContent="Usuario agregado con éxito";
+  setTimeout(()=>{userMessage.textContent="";},3000);
 });
 
-// --- Listado de usuarios en tiempo real ---
+// --- Mostrar usuarios en tiempo real ---
 onSnapshot(collection(db,"usuarios"), snapshot=>{
   userListContainer.innerHTML="";
   snapshot.docs.forEach(docSnap=>{
     const data = docSnap.data();
     const div = document.createElement("div");
     div.className="userItem";
-    div.style.border="1px solid #222";
-    div.style.padding="5px";
-    div.style.margin="5px";
-    div.style.display="flex";
-    div.style.alignItems="center";
-    div.style.justifyContent="space-between";
-
     div.innerHTML=`
       <div>
         <input value="${data.L}" size="3" data-field="L">
@@ -103,7 +98,7 @@ onSnapshot(collection(db,"usuarios"), snapshot=>{
     userListContainer.appendChild(div);
   });
 
-  // --- Guardar cambios ---
+  // Guardar cambios
   document.querySelectorAll(".saveUserBtn").forEach(btn=>{
     btn.addEventListener("click", async ()=>{
       const id = btn.dataset.id;
@@ -116,7 +111,7 @@ onSnapshot(collection(db,"usuarios"), snapshot=>{
     });
   });
 
-  // --- Imprimir tarjeta ---
+  // Imprimir tarjeta
   document.querySelectorAll(".printUserBtn").forEach(btn=>{
     btn.addEventListener("click", ()=>{
       const id = btn.dataset.id;
@@ -125,14 +120,14 @@ onSnapshot(collection(db,"usuarios"), snapshot=>{
     });
   });
 
-  // --- Eliminar usuario ---
+  // Eliminar usuario con PIN maestro
   document.querySelectorAll(".deleteUserBtn").forEach(btn=>{
     btn.addEventListener("click", async ()=>{
       const id = btn.dataset.id;
       let pin = prompt("Ingrese PIN maestro para eliminar usuario:");
       const pinDoc = await getDocs(collection(db,"config"));
       let masterPin = "1234";
-      pinDoc.forEach(d => { masterPin = d.data().pin; });
+      pinDoc.forEach(d=>{masterPin=d.data().pin});
       if(pin===masterPin){
         await deleteDoc(doc(db,"usuarios",id));
         alert("Usuario eliminado");
@@ -141,7 +136,7 @@ onSnapshot(collection(db,"usuarios"), snapshot=>{
   });
 });
 
-// --- Imprimir tarjeta del usuario ---
+// --- Imprimir tarjeta ---
 function printUserCard(data){
   const win = window.open("","PRINT","width=400,height=300");
   const color = colorTipo(data.tipo);
