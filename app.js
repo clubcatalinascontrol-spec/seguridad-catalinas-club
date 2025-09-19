@@ -13,7 +13,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// SPA Navigation
+// --- SPA Navigation ---
 const sections = document.querySelectorAll("main section");
 const navButtons = document.querySelectorAll(".nav-btn");
 navButtons.forEach(btn=>{
@@ -25,7 +25,7 @@ navButtons.forEach(btn=>{
   });
 });
 
-// Movimientos
+// --- Movimientos ---
 let currentPage = 1;
 const pageSize = 25;
 let movementsCache = [];
@@ -65,7 +65,7 @@ onSnapshot(query(collection(db,"movimientos"),orderBy("timestamp","desc")),snaps
   renderTable(currentPage);
 });
 
-// Eliminar con PIN
+// --- Eliminar con PIN ---
 const pinModal=document.getElementById("pinModal");
 let deleteTargetId=null;
 document.body.addEventListener("click",e=>{
@@ -92,7 +92,7 @@ document.getElementById("confirmPin").addEventListener("click",async()=>{
   deleteTargetId=null;
 });
 
-// Guardar PIN maestro
+// --- Guardar PIN maestro ---
 document.getElementById("savePin").addEventListener("click", async()=>{
   const newPin=document.getElementById("newPin").value;
   if(/^\d{4}$/.test(newPin)){
@@ -103,13 +103,13 @@ document.getElementById("savePin").addEventListener("click", async()=>{
   }
 });
 
-// Reimprimir última página
+// --- Reimprimir última página ---
 document.getElementById("reprintLastPage").addEventListener("click",()=>{
   const latestPage=movementsCache.slice(0,pageSize);
   printPage(latestPage);
 });
 
-// --- Gestión de usuarios con códigos de barras ---
+// --- Usuarios y Tarjetas ---
 const addUserBtn=document.getElementById("addUserBtn");
 const userList=document.getElementById("userList");
 
@@ -126,26 +126,31 @@ function colorTipo(tipo){
   }
 }
 
+// --- Agregar usuario con validación ---
 addUserBtn.addEventListener("click", async()=>{
-  const L=document.getElementById("userL").value;
-  const nombre=document.getElementById("userNombre").value;
-  const dni=document.getElementById("userDni").value;
-  const tipo=document.getElementById("userTipo").value;
+  const L = document.getElementById("userL").value.trim();
+  const nombre = document.getElementById("userNombre").value.trim();
+  const dni = document.getElementById("userDni").value.trim();
+  const tipo = document.getElementById("userTipo").value;
+
   if(!L || !nombre || !dni || !tipo) return alert("Complete todos los campos");
+  if(!/^\d+$/.test(L)) return alert("#L debe ser solo números");
+  if(!/^\d{1,8}$/.test(dni)) return alert("DNI debe tener máximo 8 dígitos");
 
   const codigoIngreso = generarCodigo();
   const codigoSalida = generarCodigo();
 
   await addDoc(collection(db,"usuarios"),{
-    L,nombre,dni,tipo,codigoIngreso,codigoSalida
+    L, nombre, dni, tipo, codigoIngreso, codigoSalida
   });
 
-  document.getElementById("userL").value="";
-  document.getElementById("userNombre").value="";
-  document.getElementById("userDni").value="";
+  // Limpiar campos
+  document.getElementById("userL").value = "";
+  document.getElementById("userNombre").value = "";
+  document.getElementById("userDni").value = "";
 });
 
-// Usuarios en tiempo real con impresión de tarjeta
+// --- Lista de usuarios en tiempo real ---
 onSnapshot(collection(db,"usuarios"), snapshot=>{
   userList.innerHTML="";
   snapshot.docs.forEach(doc=>{
@@ -164,7 +169,6 @@ onSnapshot(collection(db,"usuarios"), snapshot=>{
     JsBarcode(`#barcodeSalida${doc.id}`, data.codigoSalida, {format:"CODE128", width:2, height:40});
   });
 
-  // Botones de impresión
   document.querySelectorAll(".printUserBtn").forEach(btn=>{
     btn.addEventListener("click", async()=>{
       const userDoc = await getDocs(collection(db,"usuarios"));
@@ -174,7 +178,7 @@ onSnapshot(collection(db,"usuarios"), snapshot=>{
   });
 });
 
-// Función para imprimir tarjeta en A4
+// --- Función imprimir tarjeta ---
 function printUserCard(usuario){
   const w = window.open("","PRINT","height=600,width=800");
   const color = colorTipo(usuario.tipo);
@@ -219,7 +223,7 @@ function printUserCard(usuario){
   w.document.close();
 }
 
-// ESCANEAR único
+// --- ESCANEAR único ---
 document.getElementById("scanBtn").addEventListener("click", async()=>{
   const codigo = prompt("Ingrese código de barras escaneado (simulado)");
   if(!codigo) return;
@@ -249,7 +253,7 @@ document.getElementById("scanBtn").addEventListener("click", async()=>{
   });
 });
 
-// Impresión tabla
+// --- Función imprimir página de movimientos ---
 function printPage(data){
   const win=window.open("","PRINT","height=600,width=800");
   win.document.write("<html><head><title>Movimientos</title></head><body>");
