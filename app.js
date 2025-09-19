@@ -78,7 +78,7 @@ onSnapshot(collection(db,"usuarios"), snapshot=>{
     div.innerHTML=`
       <div>
         <input value="${data.L}" size="3" data-field="L">
-        <input value="${data.nombre}" size="20" data-field="nombre">
+        <input value="${data.nombre}" size="25" data-field="nombre">
         <input value="${data.dni}" size="8" data-field="dni">
         <select data-field="tipo">
           <option value="propietario" ${data.tipo==="propietario"?"selected":""}>Propietario</option>
@@ -99,7 +99,7 @@ onSnapshot(collection(db,"usuarios"), snapshot=>{
     userListContainer.appendChild(div);
   });
 
-  // Guardar cambios
+  // Eventos dinámicos
   document.querySelectorAll(".saveUserBtn").forEach(btn=>{
     btn.onclick = async ()=>{
       const id = btn.dataset.id;
@@ -112,21 +112,22 @@ onSnapshot(collection(db,"usuarios"), snapshot=>{
     };
   });
 
-  // Imprimir tarjeta
   document.querySelectorAll(".printUserBtn").forEach(btn=>{
     btn.onclick = ()=>{
-      const id = btn.dataset.id;
-      const data = snapshot.docs.find(d=>d.id===id).data();
-      printUserCard(data);
+      let pin = prompt("Ingrese PIN maestro para imprimir tarjeta:");
+      if(pin==="1234"){
+        const id = btn.dataset.id;
+        const data = snapshot.docs.find(d=>d.id===id).data();
+        printUserCard(data);
+      } else alert("PIN incorrecto");
     };
   });
 
-  // Eliminar usuario
   document.querySelectorAll(".deleteUserBtn").forEach(btn=>{
     btn.onclick = async ()=>{
-      const id = btn.dataset.id;
       let pin = prompt("Ingrese PIN maestro para eliminar usuario:");
-      if(pin==="1234"){ // PIN fijo por ahora
+      if(pin==="1234"){
+        const id = btn.dataset.id;
         await deleteDoc(doc(db,"usuarios",id));
         alert("Usuario eliminado");
       } else alert("PIN incorrecto");
@@ -148,6 +149,6 @@ function printUserCard(data){
   JsBarcode(win.document.querySelector("#barcode2")).init();
 }
 
-// --- BOTONES PANEL ---
-document.getElementById("scanBtn").onclick = ()=>alert("ESCANEAR activado (pendiente lectura de código)"); 
-document.getElementById("printPageBtn").onclick = ()=>alert("IMPRIMIR ÚLTIMA PÁGINA activado (pendiente impresión real)");
+// --- PANEL botones ---
+document.getElementById("scanBtn").onclick = ()=>alert("ESCANEAR activado (pendiente lectura de código)");
+document.getElementById("printPageBtn").onclick = ()=>alert("IMPRIMIR ÚLTIMA PÁGINA activado");
