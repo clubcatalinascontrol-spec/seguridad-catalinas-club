@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import { 
-  getFirestore, collection, addDoc, setDoc, getDocs, deleteDoc, doc, onSnapshot, serverTimestamp
+  getFirestore, collection, addDoc, setDoc, getDocs, deleteDoc, doc, onSnapshot
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
 // --- Firebase ---
@@ -28,7 +28,7 @@ navButtons.forEach(btn => {
   });
 });
 
-// --- Funciones auxiliares ---
+// --- Auxiliares ---
 function generarCodigo(){ return Math.random().toString(36).substring(2,10).toUpperCase(); }
 function colorTipo(tipo){
   switch(tipo){
@@ -41,6 +41,17 @@ function colorTipo(tipo){
     default: return "#808080";
   }
 }
+
+// --- Crear usuarios por defecto ---
+async function crearUsuariosPorDefecto(){
+  const usuariosRef = collection(db,"usuarios");
+  const docs = await getDocs(usuariosRef);
+  if(docs.empty){
+    await addDoc(usuariosRef,{L:"999",nombre:"Prueba A",dni:"11222333",tipo:"otro",codigoIngreso:generarCodigo(),codigoSalida:generarCodigo()});
+    await addDoc(usuariosRef,{L:"998",nombre:"Prueba B",dni:"44555666",tipo:"empleado",codigoIngreso:generarCodigo(),codigoSalida:generarCodigo()});
+  }
+}
+crearUsuariosPorDefecto();
 
 // --- USUARIOS ---
 const addUserBtn = document.getElementById("addUserBtn");
