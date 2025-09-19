@@ -1,92 +1,77 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control de Ingreso y Salida - Catalinas Country</title>
-  <link rel="stylesheet" href="styles.css">
-  <script type="module" src="app.js" defer></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Catalinas Country - Control de Ingreso</title>
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
 </head>
 <body>
-  <header>
-    <div class="nav">
-      <button data-section="panel" class="nav-btn active">PANEL</button>
-      <button data-section="usuarios" class="nav-btn">USUARIOS</button>
-      <button data-section="config" class="nav-btn">CONFIG</button>
-    </div>
-  </header>
-
-  <main>
-    <!-- PANEL -->
-    <section id="panel" class="active">
-      <h2>PANEL DE MOVIMIENTOS</h2>
-      <div id="scanner-controls">
-        <button id="scanBtn">ESCANEAR</button>
-      </div>
-      <div class="table-container">
-        <table id="movimientosTable">
-          <thead>
-            <tr>
-              <th>#L</th>
-              <th>Nombre</th>
-              <th>DNI</th>
-              <th>Hora Entrada</th>
-              <th>Hora Salida</th>
-              <th>Tipo</th>
-              <th>Acción</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-      <div class="pagination" id="pagination"></div>
-    </section>
-
-    <!-- USUARIOS -->
-    <section id="usuarios">
-      <h2>GESTIÓN DE USUARIOS</h2>
-      <div id="add-user">
-        <input type="text" id="userL" placeholder="#L (3 dígitos)" maxlength="3">
-        <input type="text" id="userNombre" placeholder="Nombre completo" maxlength="15">
-        <input type="number" id="userDni" placeholder="DNI" maxlength="8">
-        <select id="userTipo">
-          <option value="propietario">Propietario</option>
-          <option value="administracion">Administración</option>
-          <option value="empleado">Empleado</option>
-          <option value="obrero">Obrero</option>
-          <option value="invitado">Invitado</option>
-          <option value="guardia">Guardia</option>
-          <option value="otro">Otro</option>
-        </select>
-        <button id="addUserBtn">Agregar Usuario</button>
-      </div>
-      <ul id="userList"></ul>
-    </section>
-
-    <!-- CONFIG -->
-    <section id="config">
-      <h2>CONFIGURACIÓN</h2>
-      <div class="config-item">
-        <label>Contraseña maestra (4 dígitos):</label>
-        <input type="password" id="newPin" maxlength="4">
-        <button id="savePin">Guardar PIN</button>
-      </div>
-      <div class="config-item">
-        <button id="reprintLastPage">Imprimir última página</button>
-      </div>
-    </section>
-  </main>
-
-  <!-- Modal PIN -->
-  <div id="pinModal" class="modal hidden">
-    <div class="modal-content">
-      <p>Ingrese PIN maestro (4 dígitos) para eliminar:</p>
-      <input type="password" id="pinInput" maxlength="4">
-      <button id="confirmPin">Confirmar</button>
-      <button id="cancelPin">Cancelar</button>
-    </div>
+<header>
+  <div class="nav">
+    <button class="nav-btn active" data-section="panel">PANEL</button>
+    <button class="nav-btn" data-section="usuarios">USUARIOS</button>
+    <button class="nav-btn" data-section="config">CONFIG</button>
   </div>
+</header>
 
-  <script src="https://cdn.jsdelivr.net/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
+<main>
+  <!-- PANEL -->
+  <section id="panel" class="active">
+    <h2>LISTADO DE MOVIMIENTOS</h2>
+    <button id="scanBtn">ESCANEAR</button>
+    <table id="movimientosTable">
+      <thead>
+        <tr>
+          <th>#L</th><th>Nombre</th><th>DNI</th><th>Entrada</th><th>Salida</th><th>Tipo</th><th>Eliminar</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div id="pagination"></div>
+  </section>
+
+  <!-- USUARIOS -->
+  <section id="usuarios">
+    <h2>GESTIÓN DE USUARIOS</h2>
+    <div id="add-user">
+      <input type="text" id="userL" placeholder="#L (3 dígitos)" maxlength="3">
+      <input type="text" id="userNombre" placeholder="Nombre completo" maxlength="15">
+      <input type="text" id="userDni" placeholder="DNI (8 dígitos)" maxlength="8" pattern="\d*">
+      <select id="userTipo">
+        <option value="propietario">Propietario</option>
+        <option value="administracion">Administración</option>
+        <option value="empleado">Empleado</option>
+        <option value="obrero">Obrero</option>
+        <option value="invitado">Invitado</option>
+        <option value="guardia">Guardia</option>
+        <option value="otro">Otro</option>
+      </select>
+      <button id="addUserBtn">Agregar Usuario</button>
+    </div>
+    <div id="userMessage" style="color:green; margin-top:5px;"></div>
+    <div id="userListContainer" style="margin-top:20px;"></div>
+  </section>
+
+  <!-- CONFIG -->
+  <section id="config">
+    <h2>CONFIGURACIÓN</h2>
+    <input type="text" id="newPin" placeholder="PIN maestro (4 dígitos)" maxlength="4">
+    <button id="savePin">Guardar PIN</button>
+    <button id="reprintLastPage">Reimprimir última página</button>
+  </section>
+</main>
+
+<!-- PIN Modal -->
+<div id="pinModal" class="hidden">
+  <div class="pin-content">
+    <input type="password" id="pinInput" placeholder="Ingrese PIN maestro">
+    <button id="confirmPin">Confirmar</button>
+    <button id="cancelPin">Cancelar</button>
+  </div>
+</div>
+
+<script type="module" src="app.js"></script>
 </body>
 </html>
