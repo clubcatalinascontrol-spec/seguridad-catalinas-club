@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control Catalinas Country</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>Control de Ingreso y Salida</h1>
+  </header>
+
+  <main>
+    <!-- Formulario -->
+    <section class="form-section">
+      <h2>Registrar Movimiento</h2>
+      <form id="registroForm">
+        <input type="text" id="nombre" placeholder="Nombre y Apellido" required>
+        <input type="text" id="dni" placeholder="DNI" required>
+        <input type="text" id="vehiculo" placeholder="Vehículo (opcional)">
+        <textarea id="observaciones" placeholder="Observaciones"></textarea>
+        
+        <div class="buttons">
+          <button type="button" id="btnIngresar">Ingresar</button>
+          <button type="button" id="btnSalir">Salir</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Panel de registros -->
+    <section class="panel-section">
+      <h2>Movimientos en tiempo real</h2>
+      <div id="registros"></div>
+    </section>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

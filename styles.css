@@ -1,0 +1,108 @@
+/* Estilo general */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #111;
+  color: #f4cf19;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Header */
+header {
+  background: #000;
+  width: 100%;
+  padding: 1rem;
+  text-align: center;
+  border-bottom: 2px solid #f4cf19;
+}
+
+h1, h2 {
+  margin: 0.5rem 0;
+}
+
+/* Formulario */
+.form-section {
+  background: #1a1a1a;
+  padding: 1.5rem;
+  margin: 1rem;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 0 15px rgba(244, 207, 25, 0.3);
+}
+
+input, textarea {
+  width: 100%;
+  padding: 0.8rem;
+  margin: 0.5rem 0;
+  border: 1px solid #f4cf19;
+  border-radius: 8px;
+  background: #000;
+  color: #f4cf19;
+}
+
+textarea {
+  resize: none;
+  height: 70px;
+}
+
+/* Botones */
+.buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+button {
+  flex: 1;
+  padding: 0.8rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+#btnIngresar {
+  background: #f4cf19;
+  color: #000;
+}
+
+#btnSalir {
+  background: transparent;
+  border: 2px solid #f4cf19;
+  color: #f4cf19;
+}
+
+button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 10px rgba(244, 207, 25, 0.5);
+}
+
+/* Panel */
+.panel-section {
+  width: 90%;
+  max-width: 700px;
+  margin-bottom: 2rem;
+}
+
+#registros {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.registro {
+  background: #1a1a1a;
+  padding: 1rem;
+  border-radius: 10px;
+  border-left: 5px solid #f4cf19;
+  box-shadow: 0 0 10px rgba(244, 207, 25, 0.2);
+}
+
+.registro p {
+  margin: 0.2rem 0;
+  font-size: 0.9rem;
+}
