@@ -120,7 +120,7 @@ document.getElementById("addUserBtn").onclick=async ()=>{
 function imprimirTarjeta(user){
   const w = window.open("","_blank","width=400,height=300");
   const color = colorTipo(user.tipo);
-  w.document.write(`<div style="width:15cm;height:6cm;border:0.5cm solid ${color};text-align:center;">
+  w.document.write(`<div style="width:15cm;height:6cm;border:1cm solid ${color};text-align:center;">
     <p>#${user.L} - ${user.nombre} - ${user.dni} - ${user.tipo}</p>
     <svg id="codeIngreso"></svg>
     <svg id="codeSalida"></svg>
