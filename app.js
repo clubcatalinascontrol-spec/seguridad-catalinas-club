@@ -41,10 +41,9 @@ if(!localStorage.getItem("pinMaestro")) localStorage.setItem("pinMaestro","1234"
 // --- USUARIOS ---
 const userTableBody = document.querySelector("#userTable tbody");
 const userMessage = document.getElementById("userMessage");
-
 const usuariosRef = collection(db,"usuarios");
 
-// Cargar usuarios por defecto si no existen
+// Cargar usuarios por defecto
 async function cargarUsuariosPorDefecto(){
   const snapshot = await getDocs(usuariosRef);
   if(snapshot.empty){
@@ -54,7 +53,7 @@ async function cargarUsuariosPorDefecto(){
 }
 cargarUsuariosPorDefecto();
 
-// Función para renderizar tabla de usuarios
+// Render tabla usuarios
 function renderUsuarios(snapshot){
     userTableBody.innerHTML="";
     snapshot.docs.forEach(docSnap=>{
@@ -82,21 +81,16 @@ function renderUsuarios(snapshot){
         `;
         userTableBody.appendChild(tr);
 
-        // Eliminar usuario con PIN
         tr.querySelector(".deleteUserBtn").onclick = async ()=>{
             const pin = prompt("Ingrese PIN maestro:");
             if(pin!==localStorage.getItem("pinMaestro")){ alert("PIN incorrecto"); return; }
             await deleteDoc(doc(db,"usuarios",docSnap.id));
         };
-
-        // Imprimir tarjeta con PIN
         tr.querySelector(".printUserBtn").onclick = async ()=>{
             const pin = prompt("Ingrese PIN maestro:");
             if(pin!==localStorage.getItem("pinMaestro")){ alert("PIN incorrecto"); return; }
             imprimirTarjeta(data);
         };
-
-        // Editar usuario
         tr.querySelectorAll("input,select").forEach(input=>{
             input.addEventListener("change", async ()=>{
                 const field = input.dataset.field;
@@ -106,8 +100,6 @@ function renderUsuarios(snapshot){
         });
     });
 }
-
-// Listener en tiempo real para usuarios
 onSnapshot(usuariosRef, snapshot => renderUsuarios(snapshot));
 
 // Agregar usuario
@@ -142,7 +134,6 @@ const movimientosRef = collection(db,"movimientos");
 let currentPage = 1;
 const MOV_LIMIT = 25;
 
-// Cargar movimientos en tiempo real con paginación
 onSnapshot(movimientosRef, snapshot=>{
   const movimientos = snapshot.docs.map(docSnap=>({id:docSnap.id,...docSnap.data()})).reverse();
   mostrarMovimientos(movimientos,currentPage);
@@ -183,7 +174,6 @@ function mostrarMovimientos(movs,page){
     paginationDiv.appendChild(btn);
   }
 
-  // Auto imprimir si hay 25
   if(pag.length===MOV_LIMIT){ imprimirTabla(pag); }
 }
 
@@ -233,26 +223,15 @@ function colorTipo(tipo){
     default: return "gray";
   }
 }
-
-// --- IMPRESIÓN TABLA ---
-function imprimirTabla(movs){
-  const w = window.open("","_blank","width=1200,height=800");
-  let html=`<table border="1" style="border-collapse:collapse;"><tr><th>#L</th><th>Nombre</th><th>DNI</th><th>Entrada</th><th>Salida</th><th>Tipo</th></tr>`;
-  movs.forEach(m=>{
+function imprimirTabla(data){
+  const w = window.open("","_blank","width=800,height=600");
+  let html=`<table border="1" style="width:100%;border-collapse:collapse;">
+    <thead><tr><th>#L</th><th>Nombre</th><th>DNI</th><th>Entrada</th><th>Salida</th><th>Tipo</th></tr></thead><tbody>`;
+  data.forEach(m=>{
     html+=`<tr><td>${m.L}</td><td>${m.nombre}</td><td>${m.dni}</td><td>${m.entrada||""}</td><td>${m.salida||""}</td><td>${m.tipo}</td></tr>`;
   });
-  html+="</table>";
+  html+="</tbody></table>";
   w.document.write(html);
   w.print();
   w.close();
 }
-
-// Botón imprimir última página
-document.getElementById("printPageBtn").onclick=()=>{
-  onSnapshot(movimientosRef, snapshot=>{
-    const movimientos = snapshot.docs.map(d=>({id:d.id,...d.data()})).reverse();
-    const start = (currentPage-1)*MOV_LIMIT;
-    const pag = movimientos.slice(start,start+MOV_LIMIT);
-    imprimirTabla(pag);
-  });
-};
