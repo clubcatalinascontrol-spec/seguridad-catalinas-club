@@ -9,8 +9,7 @@ body {
 }
 
 header {
-  background: #f9f9f9;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  background: #111;
   padding: 10px 0;
 }
 
@@ -21,8 +20,9 @@ header .nav {
 }
 
 header .nav button {
-  background: #fff;
-  border: 1px solid #ccc;
+  background: #222;
+  color: #f4cf19; /* amarillo opaco */
+  border: 1px solid #f4cf19;
   padding: 8px 15px;
   cursor: pointer;
   border-radius: 4px;
@@ -31,7 +31,8 @@ header .nav button {
 
 header .nav button.active,
 header .nav button:hover {
-  background: #f0f0f0;
+  background: #f4cf19;
+  color: #111;
 }
 
 main {
@@ -51,10 +52,15 @@ section.active {
 h2 {
   margin-bottom: 15px;
   font-weight: normal;
+  color: #111;
+  border-bottom: 2px solid #f4cf19;
+  display: inline-block;
+  padding-bottom: 5px;
 }
 
 .table-container {
   overflow-x: auto;
+  margin-top: 10px;
 }
 
 table {
@@ -65,13 +71,13 @@ table {
 }
 
 table th, table td {
-  border: 1px solid #ccc;
+  border: 1px solid #222;
   padding: 6px 10px;
   text-align: center;
 }
 
 table th {
-  background: #f0f0f0;
+  background: #eee;
 }
 
 .pagination {
@@ -80,7 +86,7 @@ table th {
 
 .pagination button {
   background: #fff;
-  border: 1px solid #ccc;
+  border: 1px solid #222;
   padding: 5px 10px;
   margin-right: 5px;
   cursor: pointer;
@@ -90,14 +96,15 @@ table th {
 
 .pagination button.active,
 .pagination button:hover {
-  background: #f0f0f0;
+  background: #222;
+  color: #f4cf19;
 }
 
 input, select, button {
   margin: 5px 5px 10px 0;
   padding: 6px 10px;
   border-radius: 3px;
-  border: 1px solid #ccc;
+  border: 1px solid #222;
 }
 
 button {
@@ -106,7 +113,8 @@ button {
 }
 
 button:hover {
-  background: #f0f0f0;
+  background: #222;
+  color: #f4cf19;
 }
 
 .modal {
@@ -129,6 +137,7 @@ button:hover {
   border-radius: 5px;
   width: 300px;
   text-align: center;
+  border: 2px solid #f4cf19;
 }
 
 .config-item {
