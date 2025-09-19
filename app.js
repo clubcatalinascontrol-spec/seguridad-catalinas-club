@@ -72,18 +72,15 @@ onSnapshot(query(collection(db,"movimientos"), orderBy("timestamp","desc")), sna
 // --- PIN Maestro ---
 const pinModal = document.getElementById("pinModal");
 let deleteTargetId = null;
-
 document.body.addEventListener("click", e=>{
   if(e.target.classList.contains("delete-mov")){
     deleteTargetId = e.target.dataset.id;
     pinModal.classList.add("active");
   }
 });
-
 document.getElementById("cancelPin").addEventListener("click", ()=>{
   pinModal.classList.remove("active"); deleteTargetId=null; document.getElementById("pinInput").value="";
 });
-
 document.getElementById("confirmPin").addEventListener("click", async ()=>{
   const pinInput = document.getElementById("pinInput").value;
   const pinDoc = await getDocs(collection(db,"config"));
