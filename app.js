@@ -43,7 +43,7 @@ const userTableBody = document.querySelector("#userTable tbody");
 const userMessage = document.getElementById("userMessage");
 const usuariosRef = collection(db,"usuarios");
 
-// Cargar usuarios por defecto
+// Cargar usuarios por defecto si la colección está vacía
 async function cargarUsuariosPorDefecto(){
   const snapshot = await getDocs(usuariosRef);
   if(snapshot.empty){
@@ -51,7 +51,7 @@ async function cargarUsuariosPorDefecto(){
     await addDoc(usuariosRef,{L:"998",nombre:"Prueba B",dni:"44555666",tipo:"empleado",codigoIngreso:generarCodigo(),codigoSalida:generarCodigo()});
   }
 }
-cargarUsuariosPorDefecto();
+await cargarUsuariosPorDefecto();
 
 // Render tabla usuarios
 function renderUsuarios(snapshot){
@@ -207,8 +207,8 @@ function imprimirTarjeta(user){
     <svg id="codeIngreso"></svg>
     <svg id="codeSalida"></svg>
   </div>`);
-  JsBarcode(w.document.getElementById("codeIngreso"),user.codigoIngreso,{format:"CODE128"});
-  JsBarcode(w.document.getElementById("codeSalida"),user.codigoSalida,{format:"CODE128"});
+  JsBarcode(w.document.getElementById("codeIngreso"), user.codigoIngreso, {format:"CODE128"});
+  JsBarcode(w.document.getElementById("codeSalida"), user.codigoSalida, {format:"CODE128"});
   w.print();
   w.close();
 }
@@ -223,6 +223,8 @@ function colorTipo(tipo){
     default: return "gray";
   }
 }
+
+// --- IMPRIMIR TABLA MOVIMIENTOS ---
 function imprimirTabla(data){
   const w = window.open("","_blank","width=800,height=600");
   let html=`<table border="1" style="width:100%;border-collapse:collapse;">
@@ -235,3 +237,11 @@ function imprimirTabla(data){
   w.print();
   w.close();
 }
+
+// --- Botón imprimir última página ---
+document.getElementById("printPageBtn").onclick = async()=>{
+  const snapshot = await getDocs(movimientosRef);
+  const movimientos = snapshot.docs.map(docSnap=>({id:docSnap.id,...docSnap.data()})).reverse();
+  const lastPage = movimientos.slice(0,MOV_LIMIT);
+  imprimirTabla(lastPage);
+};
