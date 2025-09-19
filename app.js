@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import { 
-  getFirestore, collection, addDoc, setDoc, getDocs, deleteDoc, doc, onSnapshot
+  getFirestore, collection, addDoc, getDocs, deleteDoc, doc, onSnapshot 
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
 // --- Firebase ---
@@ -30,17 +30,6 @@ navButtons.forEach(btn => {
 
 // --- Auxiliares ---
 function generarCodigo(){ return Math.random().toString(36).substring(2,10).toUpperCase(); }
-function colorTipo(tipo){
-  switch(tipo){
-    case "propietario": return "#8A2BE2";
-    case "administracion": return "#FFA500";
-    case "empleado": return "#008000";
-    case "obrero": return "#FFD700";
-    case "invitado": return "#00FFFF";
-    case "guardia": return "#FF0000";
-    default: return "#808080";
-  }
-}
 
 // --- Usuarios ---
 const userTableBody = document.querySelector("#userTable tbody");
@@ -75,12 +64,16 @@ async function initUsuarios(){
           </select>
         </td>
         <td>
-          <button class="userTableBtn saveUserBtn" data-id="${docSnap.id}">Guardar</button>
-          <button class="userTableBtn printUserBtn" data-id="${docSnap.id}">Imprimir</button>
           <button class="userTableBtn deleteUserBtn" data-id="${docSnap.id}">Eliminar</button>
         </td>
       `;
       userTableBody.appendChild(tr);
+
+      tr.querySelector(".deleteUserBtn").onclick = async ()=>{
+        const pin = prompt("Ingrese PIN maestro:");
+        if(pin!==localStorage.getItem("pinMaestro")){ alert("PIN incorrecto"); return; }
+        await deleteDoc(doc(db,"usuarios",docSnap.id));
+      };
     });
   });
 }
