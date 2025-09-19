@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import { 
-  getFirestore, collection, addDoc, getDocs, deleteDoc, doc, onSnapshot, updateDoc, query, orderBy, limit
+  getFirestore, collection, addDoc, getDocs, deleteDoc, doc, onSnapshot, updateDoc
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
 // --- Firebase ---
@@ -42,87 +42,93 @@ if(!localStorage.getItem("pinMaestro")) localStorage.setItem("pinMaestro","1234"
 const userTableBody = document.querySelector("#userTable tbody");
 const userMessage = document.getElementById("userMessage");
 
-async function initUsuarios(){
-  const usuariosRef = collection(db,"usuarios");
-  const docs = await getDocs(usuariosRef);
-  if(docs.empty){
+const usuariosRef = collection(db,"usuarios");
+
+// Cargar usuarios por defecto si no existen
+async function cargarUsuariosPorDefecto(){
+  const snapshot = await getDocs(usuariosRef);
+  if(snapshot.empty){
     await addDoc(usuariosRef,{L:"999",nombre:"Prueba A",dni:"11222333",tipo:"otro",codigoIngreso:generarCodigo(),codigoSalida:generarCodigo()});
     await addDoc(usuariosRef,{L:"998",nombre:"Prueba B",dni:"44555666",tipo:"empleado",codigoIngreso:generarCodigo(),codigoSalida:generarCodigo()});
   }
+}
+cargarUsuariosPorDefecto();
 
-  onSnapshot(usuariosRef, snapshot=>{
+// Función para renderizar tabla de usuarios
+function renderUsuarios(snapshot){
     userTableBody.innerHTML="";
     snapshot.docs.forEach(docSnap=>{
-      const data = docSnap.data();
-      const tr = document.createElement("tr");
-      tr.innerHTML=`
-        <td>${data.L}</td>
-        <td><input type="text" value="${data.nombre}" size="25" data-field="nombre"></td>
-        <td><input type="text" value="${data.dni}" size="8" data-field="dni"></td>
-        <td>
-          <select data-field="tipo">
-            <option value="propietario" ${data.tipo==="propietario"?"selected":""}>Propietario</option>
-            <option value="administracion" ${data.tipo==="administracion"?"selected":""}>Administración</option>
-            <option value="empleado" ${data.tipo==="empleado"?"selected":""}>Empleado</option>
-            <option value="obrero" ${data.tipo==="obrero"?"selected":""}>Obrero</option>
-            <option value="invitado" ${data.tipo==="invitado"?"selected":""}>Invitado</option>
-            <option value="guardia" ${data.tipo==="guardia"?"selected":""}>Guardia</option>
-            <option value="otro" ${data.tipo==="otro"?"selected":""}>Otro</option>
-          </select>
-        </td>
-        <td>
-          <button class="userTableBtn deleteUserBtn" data-id="${docSnap.id}">Eliminar</button>
-          <button class="userTableBtn printUserBtn" data-id="${docSnap.id}">Imprimir Tarjeta</button>
-        </td>
-      `;
-      userTableBody.appendChild(tr);
+        const data = docSnap.data();
+        const tr = document.createElement("tr");
+        tr.innerHTML=`
+          <td>${data.L}</td>
+          <td><input type="text" value="${data.nombre}" size="30" data-field="nombre"></td>
+          <td><input type="text" value="${data.dni}" size="8" data-field="dni"></td>
+          <td>
+            <select data-field="tipo">
+              <option value="propietario" ${data.tipo==="propietario"?"selected":""}>Propietario</option>
+              <option value="administracion" ${data.tipo==="administracion"?"selected":""}>Administración</option>
+              <option value="empleado" ${data.tipo==="empleado"?"selected":""}>Empleado</option>
+              <option value="obrero" ${data.tipo==="obrero"?"selected":""}>Obrero</option>
+              <option value="invitado" ${data.tipo==="invitado"?"selected":""}>Invitado</option>
+              <option value="guardia" ${data.tipo==="guardia"?"selected":""}>Guardia</option>
+              <option value="otro" ${data.tipo==="otro"?"selected":""}>Otro</option>
+            </select>
+          </td>
+          <td>
+            <button class="userTableBtn deleteUserBtn" data-id="${docSnap.id}">Eliminar</button>
+            <button class="userTableBtn printUserBtn" data-id="${docSnap.id}">Imprimir Tarjeta</button>
+          </td>
+        `;
+        userTableBody.appendChild(tr);
 
-      // Eliminar usuario con PIN
-      tr.querySelector(".deleteUserBtn").onclick = async ()=>{
-        const pin = prompt("Ingrese PIN maestro:");
-        if(pin!==localStorage.getItem("pinMaestro")){ alert("PIN incorrecto"); return; }
-        await deleteDoc(doc(db,"usuarios",docSnap.id));
-      };
+        // Eliminar usuario con PIN
+        tr.querySelector(".deleteUserBtn").onclick = async ()=>{
+            const pin = prompt("Ingrese PIN maestro:");
+            if(pin!==localStorage.getItem("pinMaestro")){ alert("PIN incorrecto"); return; }
+            await deleteDoc(doc(db,"usuarios",docSnap.id));
+        };
 
-      // Imprimir tarjeta con PIN
-      tr.querySelector(".printUserBtn").onclick = async ()=>{
-        const pin = prompt("Ingrese PIN maestro:");
-        if(pin!==localStorage.getItem("pinMaestro")){ alert("PIN incorrecto"); return; }
-        imprimirTarjeta(data);
-      };
+        // Imprimir tarjeta con PIN
+        tr.querySelector(".printUserBtn").onclick = async ()=>{
+            const pin = prompt("Ingrese PIN maestro:");
+            if(pin!==localStorage.getItem("pinMaestro")){ alert("PIN incorrecto"); return; }
+            imprimirTarjeta(data);
+        };
 
-      // Editar usuario
-      tr.querySelectorAll("input,select").forEach(input=>{
-        input.addEventListener("change", async ()=>{
-          const field = input.dataset.field;
-          const value = input.value;
-          await updateDoc(doc(db,"usuarios",docSnap.id),{[field]:value});
+        // Editar usuario
+        tr.querySelectorAll("input,select").forEach(input=>{
+            input.addEventListener("change", async ()=>{
+                const field = input.dataset.field;
+                const value = input.value;
+                await updateDoc(doc(db,"usuarios",docSnap.id),{[field]:value});
+            });
         });
-      });
     });
-  });
 }
-initUsuarios();
 
-// --- Agregar Usuario ---
+// Listener en tiempo real para usuarios
+onSnapshot(usuariosRef, snapshot => renderUsuarios(snapshot));
+
+// Agregar usuario
 document.getElementById("addUserBtn").onclick = async()=>{
-  const L = document.getElementById("userL").value.trim();
-  const nombre = document.getElementById("userNombre").value.trim();
-  const dni = document.getElementById("userDni").value.trim();
-  const tipo = document.getElementById("userTipo").value;
-  if(!L || !nombre || !dni){ alert("Completa todos los campos"); return; }
-  if(dni.length>8){ alert("DNI máximo 8 dígitos"); return; }
-  await addDoc(collection(db,"usuarios"),{
-    L,nombre,dni,tipo,codigoIngreso:generarCodigo(),codigoSalida:generarCodigo()
-  });
-  userMessage.textContent="Usuario agregado con éxito";
-  setTimeout(()=>userMessage.textContent="",3000);
-  document.getElementById("userL").value="";
-  document.getElementById("userNombre").value="";
-  document.getElementById("userDni").value="";
+    const L = document.getElementById("userL").value.trim();
+    const nombre = document.getElementById("userNombre").value.trim();
+    const dni = document.getElementById("userDni").value.trim();
+    const tipo = document.getElementById("userTipo").value;
+    if(!L || !nombre || !dni){ alert("Completa todos los campos"); return; }
+    if(dni.length>8){ alert("DNI máximo 8 dígitos"); return; }
+    await addDoc(usuariosRef,{
+        L,nombre,dni,tipo,codigoIngreso:generarCodigo(),codigoSalida:generarCodigo()
+    });
+    document.getElementById("userL").value="";
+    document.getElementById("userNombre").value="";
+    document.getElementById("userDni").value="";
+    userMessage.textContent="Usuario agregado con éxito";
+    setTimeout(()=>userMessage.textContent="",3000);
 };
 
-// --- Guardar PIN ---
+// Guardar PIN maestro
 document.getElementById("savePin").onclick = ()=>{
   const newPin = document.getElementById("newPin").value.trim();
   if(!/^\d{4}$/.test(newPin)){ alert("PIN debe tener 4 dígitos"); return; }
@@ -181,12 +187,11 @@ function mostrarMovimientos(movs,page){
   if(pag.length===MOV_LIMIT){ imprimirTabla(pag); }
 }
 
-// --- ESCANEO SIMULADO ---
+// --- ESCANEO ---
 document.getElementById("scanBtn").onclick = async()=>{
   const codigo = prompt("Escanee código de barra:");
   if(!codigo) return;
 
-  const usuariosRef = collection(db,"usuarios");
   const snapshot = await getDocs(usuariosRef);
   const userDoc = snapshot.docs.find(d=>d.data().codigoIngreso===codigo || d.data().codigoSalida===codigo);
   if(!userDoc){ alert("Usuario no encontrado"); return; }
@@ -229,7 +234,7 @@ function colorTipo(tipo){
   }
 }
 
-// --- IMPRIMIR TABLA ---
+// --- IMPRESIÓN TABLA ---
 function imprimirTabla(movs){
   const w = window.open("","_blank","width=1200,height=800");
   let html=`<table border="1" style="border-collapse:collapse;"><tr><th>#L</th><th>Nombre</th><th>DNI</th><th>Entrada</th><th>Salida</th><th>Tipo</th></tr>`;
