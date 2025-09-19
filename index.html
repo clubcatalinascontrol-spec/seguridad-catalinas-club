@@ -1,40 +1,93 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control Catalinas Country</title>
-  <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Control de Ingreso y Salida - Catalinas Country</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script type="module" src="app.js" defer></script>
 </head>
 <body>
   <header>
-    <h1>Control de Ingreso y Salida</h1>
+    <div class="nav">
+      <button data-section="panel">PANEL</button>
+      <button data-section="usuarios">USUARIOS</button>
+      <button data-section="config">CONFIG</button>
+    </div>
   </header>
 
   <main>
-    <!-- Formulario -->
-    <section class="form-section">
-      <h2>Registrar Movimiento</h2>
-      <form id="registroForm">
-        <input type="text" id="nombre" placeholder="Nombre y Apellido" required>
-        <input type="text" id="dni" placeholder="DNI" required>
-        <input type="text" id="vehiculo" placeholder="Vehículo (opcional)">
-        <textarea id="observaciones" placeholder="Observaciones"></textarea>
-        
-        <div class="buttons">
-          <button type="button" id="btnIngresar">Ingresar</button>
-          <button type="button" id="btnSalir">Salir</button>
-        </div>
-      </form>
+    <!-- Panel principal -->
+    <section id="panel" class="active">
+      <h2>Listado de movimientos</h2>
+      <div id="scanner-controls">
+        <button id="scanIngreso">Modo Scanner Ingreso</button>
+        <button id="scanSalida">Modo Scanner Salida</button>
+      </div>
+      <div class="table-container">
+        <table id="movimientosTable">
+          <thead>
+            <tr>
+              <th>#L</th>
+              <th>Nombre</th>
+              <th>DNI</th>
+              <th>Hora Entrada</th>
+              <th>Hora Salida</th>
+              <th>Tipo</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="pagination"></div>
     </section>
 
-    <!-- Panel de registros -->
-    <section class="panel-section">
-      <h2>Movimientos en tiempo real</h2>
-      <div id="registros"></div>
+    <!-- Usuarios -->
+    <section id="usuarios">
+      <h2>Gestión de Usuarios</h2>
+      <div id="add-user">
+        <input type="text" id="userL" placeholder="#L (3 dígitos)" maxlength="3" />
+        <input type="text" id="userNombre" placeholder="Nombre completo" maxlength="15" />
+        <input type="number" id="userDni" placeholder="DNI" maxlength="8" />
+        <select id="userTipo">
+          <option value="propietario">Propietario</option>
+          <option value="administracion">Administración</option>
+          <option value="empleado">Empleado</option>
+          <option value="obrero">Obrero</option>
+          <option value="invitado">Invitado</option>
+          <option value="guardia">Guardia</option>
+          <option value="otro">Otro</option>
+        </select>
+        <button id="addUserBtn">Agregar Usuario</button>
+      </div>
+      <ul id="userList"></ul>
+    </section>
+
+    <!-- Configuración -->
+    <section id="config">
+      <h2>Configuración</h2>
+      <div>
+        <label>Nueva contraseña maestra (4 dígitos):</label>
+        <input type="password" id="newPin" maxlength="4" />
+        <button id="savePin">Guardar PIN</button>
+      </div>
+      <div>
+        <button id="reprintLastPage">Imprimir la última página</button>
+      </div>
     </section>
   </main>
 
-  <script type="module" src="app.js"></script>
+  <!-- Modal de PIN para eliminar movimiento -->
+  <div id="pinModal" class="modal hidden">
+    <div class="modal-content">
+      <p>Ingrese PIN maestro (4 dígitos) para eliminar:</p>
+      <input type="password" id="pinInput" maxlength="4" />
+      <button id="confirmPin">Confirmar</button>
+      <button id="cancelPin">Cancelar</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
 </body>
 </html>
