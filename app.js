@@ -42,7 +42,7 @@ function colorTipo(tipo){
   }
 }
 
-// --- Inicializar usuarios por defecto y listener ---
+// --- Usuarios ---
 const userTableBody = document.querySelector("#userTable tbody");
 const userMessage = document.getElementById("userMessage");
 
@@ -54,7 +54,6 @@ async function initUsuarios(){
     await addDoc(usuariosRef,{L:"998",nombre:"Prueba B",dni:"44555666",tipo:"empleado",codigoIngreso:generarCodigo(),codigoSalida:generarCodigo()});
   }
 
-  // Listener en tiempo real
   onSnapshot(usuariosRef, snapshot=>{
     userTableBody.innerHTML="";
     snapshot.docs.forEach(docSnap=>{
@@ -112,6 +111,3 @@ document.getElementById("savePin").onclick = ()=>{
   localStorage.setItem("pinMaestro",newPin);
   alert("PIN maestro guardado");
 };
-
-// --- Funciones de imprimir tabla, escanear, eliminar, etc., se integrarían aquí ---
-// Para no alargar, mantengo solo usuarios funcionales y navegación
