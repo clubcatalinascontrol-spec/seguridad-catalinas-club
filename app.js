@@ -136,45 +136,88 @@ addUserBtn.addEventListener("click", async()=>{
   const codigoIngreso = generarCodigo();
   const codigoSalida = generarCodigo();
 
-  const userRef = await addDoc(collection(db,"usuarios"),{
+  await addDoc(collection(db,"usuarios"),{
     L,nombre,dni,tipo,codigoIngreso,codigoSalida
   });
-
-  const li=document.createElement("li");
-  li.innerHTML=`
-    <div class="tarjeta" style="border:3px solid ${colorTipo(tipo)}; padding:10px; margin:5px; display:inline-block; width:15cm; height:6cm;">
-      <div style="text-align:left;">#${L} - ${nombre} - ${dni} - ${tipo}</div>
-      <svg id="barcodeIngreso${userRef.id}"></svg>
-      <svg id="barcodeSalida${userRef.id}"></svg>
-    </div>
-  `;
-  userList.appendChild(li);
-  JsBarcode(`#barcodeIngreso${userRef.id}`, codigoIngreso, {format:"CODE128", width:2, height:40});
-  JsBarcode(`#barcodeSalida${userRef.id}`, codigoSalida, {format:"CODE128", width:2, height:40});
 
   document.getElementById("userL").value="";
   document.getElementById("userNombre").value="";
   document.getElementById("userDni").value="";
 });
 
-// Usuarios en tiempo real
+// Usuarios en tiempo real con impresión de tarjeta
 onSnapshot(collection(db,"usuarios"), snapshot=>{
   userList.innerHTML="";
   snapshot.docs.forEach(doc=>{
     const data=doc.data();
     const li=document.createElement("li");
     li.innerHTML=`
-      <div class="tarjeta" style="border:3px solid ${colorTipo(data.tipo)}; padding:10px; margin:5px; display:inline-block; width:15cm; height:6cm;">
+      <div class="tarjeta" style="border:3px solid ${colorTipo(data.tipo)}; padding:10px; margin:5px; display:inline-block; width:15cm; height:6cm; position:relative;">
         <div style="text-align:left;">#${data.L} - ${data.nombre} - ${data.dni} - ${data.tipo}</div>
         <svg id="barcodeIngreso${doc.id}"></svg>
         <svg id="barcodeSalida${doc.id}"></svg>
+        <button class="printUserBtn" data-id="${doc.id}" style="position:absolute; top:5px; right:5px;">Imprimir tarjeta</button>
       </div>
     `;
     userList.appendChild(li);
     JsBarcode(`#barcodeIngreso${doc.id}`, data.codigoIngreso, {format:"CODE128", width:2, height:40});
     JsBarcode(`#barcodeSalida${doc.id}`, data.codigoSalida, {format:"CODE128", width:2, height:40});
   });
+
+  // Botones de impresión
+  document.querySelectorAll(".printUserBtn").forEach(btn=>{
+    btn.addEventListener("click", async()=>{
+      const userDoc = await getDocs(collection(db,"usuarios"));
+      const usuario = userDoc.docs.find(d=>d.id===btn.dataset.id).data();
+      printUserCard(usuario);
+    });
+  });
 });
+
+// Función para imprimir tarjeta en A4
+function printUserCard(usuario){
+  const w = window.open("","PRINT","height=600,width=800");
+  const color = colorTipo(usuario.tipo);
+  w.document.write(`
+    <html>
+      <head>
+        <title>Tarjeta de Usuario</title>
+        <style>
+          body{margin:0; padding:0;}
+          .tarjeta{
+            width:15cm;
+            height:6cm;
+            border:1cm solid ${color};
+            display:flex;
+            flex-direction:column;
+            justify-content:space-between;
+            font-family: Arial, sans-serif;
+            padding:5px;
+            box-sizing:border-box;
+          }
+          .datos{font-size:16px;}
+          svg{display:block; margin:0 auto;}
+        </style>
+      </head>
+      <body>
+        <div class="tarjeta">
+          <div class="datos">
+            #${usuario.L} - ${usuario.nombre} - ${usuario.dni} - ${usuario.tipo}
+          </div>
+          <svg id="barcodeIngresoPrint"></svg>
+          <svg id="barcodeSalidaPrint"></svg>
+        </div>
+        <script src="https://cdn.jsdelivr.net/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
+        <script>
+          JsBarcode("#barcodeIngresoPrint","${usuario.codigoIngreso}",{format:"CODE128",width:2,height:40});
+          JsBarcode("#barcodeSalidaPrint","${usuario.codigoSalida}",{format:"CODE128",width:2,height:40});
+          window.print();
+        </script>
+      </body>
+    </html>
+  `);
+  w.document.close();
+}
 
 // ESCANEAR único
 document.getElementById("scanBtn").addEventListener("click", async()=>{
