@@ -20,8 +20,9 @@ const sections = document.querySelectorAll("main section");
 const navButtons = document.querySelectorAll(".nav-btn");
 navButtons.forEach(btn => {
   btn.addEventListener("click", () => {
+    const target = btn.dataset.section;
     sections.forEach(sec => sec.classList.remove("active"));
-    document.getElementById(btn.dataset.section).classList.add("active");
+    document.getElementById(target).classList.add("active");
     navButtons.forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
   });
@@ -98,7 +99,6 @@ onSnapshot(collection(db,"usuarios"), snapshot=>{
     userListContainer.appendChild(div);
   });
 
-  // Guardar cambios
   document.querySelectorAll(".saveUserBtn").forEach(btn=>{
     btn.addEventListener("click", async ()=>{
       const id = btn.dataset.id;
@@ -111,7 +111,6 @@ onSnapshot(collection(db,"usuarios"), snapshot=>{
     });
   });
 
-  // Imprimir tarjeta
   document.querySelectorAll(".printUserBtn").forEach(btn=>{
     btn.addEventListener("click", ()=>{
       const id = btn.dataset.id;
@@ -120,7 +119,6 @@ onSnapshot(collection(db,"usuarios"), snapshot=>{
     });
   });
 
-  // Eliminar usuario con PIN maestro
   document.querySelectorAll(".deleteUserBtn").forEach(btn=>{
     btn.addEventListener("click", async ()=>{
       const id = btn.dataset.id;
