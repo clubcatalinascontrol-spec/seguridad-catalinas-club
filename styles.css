@@ -21,7 +21,7 @@ header .nav {
 
 header .nav button {
   background: #222;
-  color: #f4cf19; /* amarillo opaco */
+  color: #f4cf19;
   border: 1px solid #f4cf19;
   padding: 8px 15px;
   cursor: pointer;
@@ -142,4 +142,14 @@ button:hover {
 
 .config-item {
   margin-bottom: 15px;
+}
+
+ul#userList {
+  list-style: none;
+  margin-top: 10px;
+}
+
+.tarjeta svg {
+  margin-top: 5px;
+  display: block;
 }
