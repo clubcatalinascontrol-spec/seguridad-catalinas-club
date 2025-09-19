@@ -69,3 +69,13 @@ table th, table td {
   padding:3px 8px;
   cursor:pointer;
 }
+#pagination button {
+  margin:2px;
+  padding:5px 8px;
+  cursor:pointer;
+  border-radius:3px;
+  border:none;
+  background:#ffeb3b;
+  color:#111;
+}
+#pagination button.active { background:#e6d800; }
