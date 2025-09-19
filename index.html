@@ -1,68 +1,103 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Catalinas Country - Control de Ingreso/Salida</title>
-<link rel="stylesheet" href="styles.css">
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-</head>
-<body>
-<div id="nav">
-  <button data-section="panel">PANEL</button>
-  <button data-section="usuarios">USUARIOS</button>
-  <button data-section="config">CONFIG</button>
-</div>
+/* Estilo general */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background-color: #111;
+  color: #fff;
+}
 
-<div id="panel" class="section">
-  <h2>PANEL - Movimientos</h2>
-  <button id="scanBtn">ESCANEAR</button>
-  <button id="printPageBtn">IMPRIMIR ÚLTIMA PÁGINA</button>
-  <table id="movimientosTable">
-    <thead>
-      <tr><th>#L</th><th>Nombre</th><th>DNI</th><th>Entrada</th><th>Salida</th><th>Tipo</th><th>Acción</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
+/* Navegación superior */
+#nav {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+  gap: 10px;
+}
+#nav button {
+  background-color: #222;
+  color: #ffcc00;
+  border: 2px solid #ffcc00;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s, color 0.3s;
+}
+#nav button:hover {
+  background-color: #ffcc00;
+  color: #111;
+}
 
-<div id="usuarios" class="section" style="display:none;">
-  <h2>USUARIOS - Gestión de Usuarios</h2>
-  <div id="addUserForm">
-    <input type="text" id="userL" placeholder="#L (3 dígitos)" maxlength="3">
-    <input type="text" id="userNombre" placeholder="Nombre Completo" maxlength="35">
-    <input type="text" id="userDni" placeholder="DNI (8 dígitos)" maxlength="8">
-    <select id="userTipo">
-      <option value="">Tipo</option>
-      <option value="propietario">propietario</option>
-      <option value="administracion">administración</option>
-      <option value="empleado">empleado</option>
-      <option value="obrero">obrero</option>
-      <option value="invitado">invitado</option>
-      <option value="guardia">guardia</option>
-      <option value="otro">otro</option>
-    </select>
-    <button id="addUserBtn">Agregar Usuario</button>
-    <span id="userMessage"></span>
-  </div>
-  <h3>Usuarios Registrados:</h3>
-  <table id="usersTable">
-    <thead>
-      <tr><th>#L</th><th>Nombre</th><th>DNI</th><th>Tipo</th><th>Acciones</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
+/* Secciones */
+.section {
+  max-width: 950px;
+  margin: 20px auto;
+  padding: 20px;
+  background-color: #1a1a1a;
+  border-radius: 12px;
+  text-align: center;
+  display: none; /* Todas ocultas por defecto, se muestra la activa via JS */
+}
 
-<div id="config" class="section" style="display:none;">
-  <h2>CONFIG - PIN Maestro</h2>
-  <input type="password" id="currentPin" placeholder="PIN maestro actual" maxlength="4">
-  <input type="password" id="newPin" placeholder="Nuevo PIN maestro" maxlength="4">
-  <button id="savePin">Guardar PIN maestro</button>
-</div>
+/* Tablas */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+  background-color: #111;
+}
+th, td {
+  border: 1px solid #fff;
+  padding: 8px;
+  text-align: center;
+  font-size: 14px;
+}
 
-<script src="app.js"></script>
-</body>
-</html>
+/* Inputs y selects */
+input, select {
+  padding: 6px;
+  margin: 5px;
+  border-radius: 6px;
+  border: 1px solid #ffcc00;
+  background-color: #222;
+  color: #fff;
+}
+input::placeholder {
+  color: #aaa;
+}
+
+/* Botones dentro de secciones */
+button {
+  cursor: pointer;
+  background-color: #222;
+  color: #ffcc00;
+  border: 2px solid #ffcc00;
+  padding: 6px 12px;
+  margin: 3px;
+  border-radius: 6px;
+  font-weight: bold;
+  transition: background 0.3s, color 0.3s;
+}
+button:hover {
+  background-color: #ffcc00;
+  color: #111;
+}
+
+/* Mensajes */
+#userMessage {
+  color: lightgreen;
+  font-weight: bold;
+  margin-left: 10px;
+  display: inline-block;
+}
+
+/* Tarjetas imprimibles */
+.print-card {
+  width: 15cm;
+  height: 6cm;
+  border: 1cm solid gray; /* cambiar según tipo */
+  text-align: center;
+  padding: 10px;
+  margin: 0 auto;
+}
