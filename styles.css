@@ -50,7 +50,7 @@ table th, table td {
   text-align:center;
 }
 
-#scanBtn, #addUserBtn, #savePin, #reprintLastPage, #printPageBtn {
+#scanBtn, #addUserBtn, #savePin, #printPageBtn {
   margin:10px 0;
   padding:10px 15px;
   background:#ffeb3b;
@@ -60,7 +60,7 @@ table th, table td {
   cursor:pointer;
   transition: all 0.2s;
 }
-#scanBtn:hover, #addUserBtn:hover, #savePin:hover, #reprintLastPage:hover, #printPageBtn:hover {
+#scanBtn:hover, #addUserBtn:hover, #savePin:hover, #printPageBtn:hover {
   background:#e6d800;
 }
 
