@@ -75,11 +75,13 @@ let deleteTargetId = null;
 document.body.addEventListener("click", e=>{
   if(e.target.classList.contains("delete-mov")){
     deleteTargetId = e.target.dataset.id;
-    pinModal.classList.add("active");
+    pinModal.classList.add("active"); // solo aquí se muestra
   }
 });
 document.getElementById("cancelPin").addEventListener("click", ()=>{
-  pinModal.classList.remove("active"); deleteTargetId=null; document.getElementById("pinInput").value="";
+  pinModal.classList.remove("active");
+  deleteTargetId=null;
+  document.getElementById("pinInput").value="";
 });
 document.getElementById("confirmPin").addEventListener("click", async ()=>{
   const pinInput = document.getElementById("pinInput").value;
@@ -90,10 +92,12 @@ document.getElementById("confirmPin").addEventListener("click", async ()=>{
     await deleteDoc(doc(db,"movimientos",deleteTargetId));
     alert("Movimiento eliminado");
   }else alert("PIN incorrecto");
-  pinModal.classList.remove("active"); deleteTargetId=null; document.getElementById("pinInput").value="";
+  pinModal.classList.remove("active");
+  deleteTargetId=null;
+  document.getElementById("pinInput").value="";
 });
 
-// Guardar PIN
+// --- Guardar PIN ---
 document.getElementById("savePin").addEventListener("click", async()=>{
   const newPin = document.getElementById("newPin").value;
   if(/^\d{4}$/.test(newPin)){
@@ -102,7 +106,7 @@ document.getElementById("savePin").addEventListener("click", async()=>{
   }else alert("PIN inválido, debe tener 4 dígitos");
 });
 
-// Reimprimir última página
+// --- Reimprimir última página ---
 document.getElementById("reprintLastPage").addEventListener("click", ()=>{
   const latestPage = movementsCache.slice(0,pageSize);
   printPage(latestPage);
@@ -139,7 +143,6 @@ addUserBtn.addEventListener("click", async()=>{
   const codigoSalida = generarCodigo();
 
   await addDoc(collection(db,"usuarios"),{L,nombre,dni,tipo,codigoIngreso,codigoSalida});
-
   document.getElementById("userL").value=""; 
   document.getElementById("userNombre").value=""; 
   document.getElementById("userDni").value="";
@@ -178,7 +181,6 @@ onSnapshot(collection(db,"usuarios"), snapshot=>{
     `;
     userListContainer.appendChild(div);
 
-    // Guardar cambios
     div.querySelector(".saveUserBtn").addEventListener("click", async ()=>{
       const inputs = div.querySelectorAll("input, select");
       let updateData = {};
@@ -188,7 +190,6 @@ onSnapshot(collection(db,"usuarios"), snapshot=>{
       setTimeout(()=>{userMessage.textContent="";},3000);
     });
 
-    // Imprimir tarjeta
     div.querySelector(".printUserBtn").addEventListener("click", ()=>{
       printUserCard(data);
     });
@@ -210,7 +211,6 @@ document.getElementById("scanBtn").addEventListener("click", async ()=>{
   let horaEntrada = null, horaSalida = null;
   if(codigo===usuario.codigoIngreso) horaEntrada=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} (${now.toLocaleDateString()})`;
   if(codigo===usuario.codigoSalida) horaSalida=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} (${now.toLocaleDateString()})`;
-
   await addDoc(collection(db,"movimientos"),{
     L:usuario.L,nombre:usuario.nombre,dni:usuario.dni,tipo:usuario.tipo,horaEntrada,horaSalida,timestamp:Date.now()
   });
