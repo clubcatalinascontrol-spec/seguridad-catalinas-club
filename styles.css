@@ -1,99 +1,23 @@
-body {
+body{
   margin:0;
-  padding:0;
   font-family: Arial, sans-serif;
-  background:#f5f5f5;
-  color:#111;
-  text-align:center;
-}
-
-header {
-  background:#111;
-  padding:10px 0;
-}
-.nav button {
-  margin:0 5px;
-  padding:10px 20px;
-  background:#222;
-  color:#ffeb3b;
-  border:none;
-  cursor:pointer;
-  border-radius:5px;
-  transition: all 0.2s;
-}
-.nav button.active, .nav button:hover {
-  background:#ffeb3b;
+  background:#f8f8f8;
   color:#111;
 }
-
-main {
-  max-width:1200px;
-  margin:20px auto;
-  padding:10px;
+header{background:#111;padding:10px;}
+.nav{display:flex;justify-content:center;gap:20px;}
+.nav-btn{
+  background:#222;color:#ffc107;border:none;padding:10px 20px;
+  cursor:pointer;border-radius:5px;font-weight:bold;
 }
-section {
-  display:none;
-}
-section.active {
-  display:block;
-}
-
-table {
-  width:100%;
-  border-collapse:collapse;
-  margin-top:10px;
-  background:#fff;
-}
-table th, table td {
-  border:1px solid #ccc;
-  padding:5px;
-  text-align:center;
-}
-
-#scanBtn, #addUserBtn, #savePin, #printPageBtn {
-  margin:10px 0;
-  padding:10px 15px;
-  background:#ffeb3b;
-  color:#111;
-  border:none;
-  border-radius:5px;
-  cursor:pointer;
-  transition: all 0.2s;
-}
-#scanBtn:hover, #addUserBtn:hover, #savePin:hover, #printPageBtn:hover {
-  background:#e6d800;
-}
-
-.userTableBtn {
-  margin:0 2px;
-  padding:3px 8px;
-  cursor:pointer;
-}
-#pagination button {
-  margin:2px;
-  padding:5px 8px;
-  cursor:pointer;
-  border-radius:3px;
-  border:none;
-  background:#ffeb3b;
-  color:#111;
-}
-#pagination button.active { background:#e6d800; }
-
-/* Tarjetas A4 para impresión */
-.print-card {
-  width:15cm;
-  height:6cm;
-  border:1cm solid #111;
-  margin:10px auto;
-  padding:5px;
-  box-sizing:border-box;
-}
-.print-card h4 {
-  margin:2px 0;
-}
-.print-card svg {
-  display:block;
-  margin:0 auto;
-  max-height:2.5cm;
-}
+.nav-btn.active{background:#ffc107;color:#111;}
+main{padding:20px;display:flex;flex-direction:column;align-items:center;}
+section{display:none;width:90%;max-width:1000px;}
+section.active{display:block;}
+table{width:100%;border-collapse:collapse;margin-top:20px;}
+table,th,td{border:1px solid #000;}
+th,td{padding:8px;text-align:center;}
+.actions, .add-user, .config-section{display:flex;gap:10px;justify-content:center;margin-bottom:10px;flex-wrap:wrap;}
+button{cursor:pointer;}
+.message{color:green;text-align:center;margin-top:5px;}
+.print-card{width:15cm;height:6cm;border:1cm solid black;padding:5px;text-align:center;}
