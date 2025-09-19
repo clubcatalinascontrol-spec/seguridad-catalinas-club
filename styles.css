@@ -64,20 +64,8 @@ table th, table td {
   background:#e6d800;
 }
 
-.userItem input, .userItem select {
-  margin-right:5px;
-}
-.userItem button {
-  margin-left:5px;
-  padding:5px 10px;
+.userTableBtn {
+  margin:0 2px;
+  padding:3px 8px;
   cursor:pointer;
-}
-
-.userItem {
-  border:1px solid #222;
-  padding:5px;
-  margin:5px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
 }
