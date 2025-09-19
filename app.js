@@ -28,13 +28,6 @@ navButtons.forEach(btn => {
   });
 });
 
-// --- Auxiliares ---
-function generarCodigo(){ return Math.random().toString(36).substring(2,10).toUpperCase(); }
-function horaActual(){ 
-  const d=new Date();
-  return `${d.getHours().toString().padStart(2,"0")}:${d.getMinutes().toString().padStart(2,"0")} (${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()})`;
-}
-
 // --- PIN maestro ---
 if(!localStorage.getItem("pinMaestro")) localStorage.setItem("pinMaestro","1234");
 
@@ -42,6 +35,8 @@ if(!localStorage.getItem("pinMaestro")) localStorage.setItem("pinMaestro","1234"
 const userTableBody = document.querySelector("#userTable tbody");
 const userMessage = document.getElementById("userMessage");
 const usuariosRef = collection(db,"usuarios");
+
+function generarCodigo(){ return Math.random().toString(36).substring(2,10).toUpperCase(); }
 
 // Cargar usuarios por defecto si colección vacía
 async function cargarUsuariosPorDefecto(){
@@ -53,62 +48,66 @@ async function cargarUsuariosPorDefecto(){
 }
 await cargarUsuariosPorDefecto();
 
-// Render tabla usuarios en tiempo real
+// Render tabla usuarios
 function renderUsuarios(snapshot){
-    userTableBody.innerHTML="";
-    snapshot.docs.forEach(docSnap=>{
-        const data = docSnap.data();
-        const tr = document.createElement("tr");
-        tr.innerHTML=`
-          <td>${data.L}</td>
-          <td><input type="text" value="${data.nombre}" size="30" data-field="nombre"></td>
-          <td><input type="text" value="${data.dni}" size="8" data-field="dni"></td>
-          <td>
-            <select data-field="tipo">
-              <option value="propietario" ${data.tipo==="propietario"?"selected":""}>Propietario</option>
-              <option value="administracion" ${data.tipo==="administracion"?"selected":""}>Administración</option>
-              <option value="empleado" ${data.tipo==="empleado"?"selected":""}>Empleado</option>
-              <option value="obrero" ${data.tipo==="obrero"?"selected":""}>Obrero</option>
-              <option value="invitado" ${data.tipo==="invitado"?"selected":""}>Invitado</option>
-              <option value="guardia" ${data.tipo==="guardia"?"selected":""}>Guardia</option>
-              <option value="otro" ${data.tipo==="otro"?"selected":""}>Otro</option>
-            </select>
-          </td>
-          <td>
-            <button class="userTableBtn deleteUserBtn" data-id="${docSnap.id}">Eliminar</button>
-            <button class="userTableBtn printUserBtn" data-id="${docSnap.id}">Imprimir Tarjeta</button>
-          </td>
-        `;
-        userTableBody.appendChild(tr);
+  userTableBody.innerHTML="";
+  snapshot.docs.forEach(docSnap=>{
+    const data = docSnap.data();
+    const tr = document.createElement("tr");
+    tr.innerHTML=`
+      <td>${data.L}</td>
+      <td><input type="text" value="${data.nombre}" size="25" data-field="nombre"></td>
+      <td><input type="text" value="${data.dni}" size="8" data-field="dni"></td>
+      <td>
+        <select data-field="tipo">
+          <option value="propietario" ${data.tipo==="propietario"?"selected":""}>Propietario</option>
+          <option value="administracion" ${data.tipo==="administracion"?"selected":""}>Administración</option>
+          <option value="empleado" ${data.tipo==="empleado"?"selected":""}>Empleado</option>
+          <option value="obrero" ${data.tipo==="obrero"?"selected":""}>Obrero</option>
+          <option value="invitado" ${data.tipo==="invitado"?"selected":""}>Invitado</option>
+          <option value="guardia" ${data.tipo==="guardia"?"selected":""}>Guardia</option>
+          <option value="otro" ${data.tipo==="otro"?"selected":""}>Otro</option>
+        </select>
+      </td>
+      <td>
+        <button class="userTableBtn deleteUserBtn" data-id="${docSnap.id}">Eliminar</button>
+        <button class="userTableBtn printUserBtn" data-id="${docSnap.id}">Imprimir Tarjeta</button>
+      </td>
+    `;
+    userTableBody.appendChild(tr);
 
-        tr.querySelector(".deleteUserBtn").onclick = async ()=>{
-            const pin = prompt("Ingrese PIN maestro:");
-            if(pin!==localStorage.getItem("pinMaestro")){ alert("PIN incorrecto"); return; }
-            await deleteDoc(doc(db,"usuarios",docSnap.id));
-        };
-        tr.querySelector(".printUserBtn").onclick = async ()=>{
-            const pin = prompt("Ingrese PIN maestro:");
-            if(pin!==localStorage.getItem("pinMaestro")){ alert("PIN incorrecto"); return; }
-            imprimirTarjeta(data);
-        };
-        tr.querySelectorAll("input,select").forEach(input=>{
-            input.addEventListener("change", async ()=>{
-                const field = input.dataset.field;
-                const value = input.value;
-                await updateDoc(doc(db,"usuarios",docSnap.id),{[field]:value});
-            });
-        });
+    tr.querySelector(".deleteUserBtn").onclick = async ()=>{
+      const pin = prompt("Ingrese PIN maestro:");
+      if(pin!==localStorage.getItem("pinMaestro")){ alert("PIN incorrecto"); return; }
+      await deleteDoc(doc(db,"usuarios",docSnap.id));
+    };
+
+    tr.querySelector(".printUserBtn").onclick = async ()=>{
+      const pin = prompt("Ingrese PIN maestro:");
+      if(pin!==localStorage.getItem("pinMaestro")){ alert("PIN incorrecto"); return; }
+      imprimirTarjeta(data);
+    };
+
+    tr.querySelectorAll("input,select").forEach(input=>{
+      input.addEventListener("change", async ()=>{
+        const field = input.dataset.field;
+        const value = input.value;
+        await updateDoc(doc(db,"usuarios",docSnap.id),{[field]:value});
+      });
     });
+  });
 }
-onSnapshot(usuariosRef, snapshot => renderUsuarios(snapshot));
+
+// Escuchar cambios en Firestore
+onSnapshot(usuariosRef,snapshot=>renderUsuarios(snapshot));
 
 // Agregar usuario
-document.getElementById("addUserBtn").onclick = async ()=>{
+document.getElementById("addUserBtn").onclick=async ()=>{
   const L = document.getElementById("userL").value.trim();
   const nombre = document.getElementById("userNombre").value.trim();
   const dni = document.getElementById("userDni").value.trim();
   const tipo = document.getElementById("userTipo").value;
-  if(!L || !nombre || !dni || !tipo){ alert("Complete todos los campos"); return; }
+  if(!L || !nombre || !dni || !tipo){ userMessage.textContent="Complete todos los campos"; return; }
   await addDoc(usuariosRef,{L,nombre,dni,tipo,codigoIngreso:generarCodigo(),codigoSalida:generarCodigo()});
   userMessage.textContent="Usuario agregado con éxito";
   setTimeout(()=>userMessage.textContent="",3000);
@@ -142,16 +141,20 @@ function colorTipo(tipo){
   }
 }
 
-// --- MOVIMIENTOS ---
+// --- PANEL Movimientos ---
 const movimientosRef = collection(db,"movimientos");
 const movimientosTableBody = document.querySelector("#movimientosTable tbody");
 const MOV_LIMIT = 25;
 
-// Render tabla movimientos
+function horaActual(){ 
+  const d=new Date(); 
+  return d.getHours().toString().padStart(2,'0')+":"+d.getMinutes().toString().padStart(2,'0')+" ("+d.toLocaleDateString()+")";
+}
+
 function renderMovimientos(snapshot){
   movimientosTableBody.innerHTML="";
   const docs = snapshot.docs.reverse();
-  docs.forEach((docSnap,index)=>{
+  docs.forEach(docSnap=>{
     const data = docSnap.data();
     const tr = document.createElement("tr");
     tr.innerHTML=`
@@ -174,7 +177,7 @@ function renderMovimientos(snapshot){
 onSnapshot(movimientosRef,snapshot=>renderMovimientos(snapshot));
 
 // ESCANEAR
-document.getElementById("scanBtn").onclick = async ()=>{
+document.getElementById("scanBtn").onclick=async ()=>{
   const codigo = prompt("Escanee código de barras:");
   const snapshot = await getDocs(usuariosRef);
   let usuario = null;
