@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import { 
-  getFirestore, collection, addDoc, setDoc, getDocs, deleteDoc, doc, onSnapshot 
+  getFirestore, collection, addDoc, setDoc, getDocs, deleteDoc, doc, onSnapshot, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
 // --- Firebase ---
@@ -152,3 +152,11 @@ function printUserCard(data){
 // --- PANEL botones ---
 document.getElementById("scanBtn").onclick = ()=>alert("ESCANEAR activado (pendiente lectura de código)");
 document.getElementById("printPageBtn").onclick = ()=>alert("IMPRIMIR ÚLTIMA PÁGINA activado");
+
+// --- CONFIG ---
+document.getElementById("savePin").onclick = ()=>{
+  const newPin = document.getElementById("newPin").value.trim();
+  if(!/^\d{4}$/.test(newPin)){ alert("PIN debe tener 4 dígitos"); return; }
+  localStorage.setItem("pinMaestro",newPin);
+  alert("PIN maestro guardado");
+};
