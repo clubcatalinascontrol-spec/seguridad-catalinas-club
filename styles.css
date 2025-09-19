@@ -22,4 +22,3 @@ button{cursor:pointer;padding:5px 10px;border-radius:4px;border:none;background:
 button:hover{background:#e0b30b;}
 input, select{padding:5px;border-radius:4px;border:1px solid #ccc;}
 .message{color:green;text-align:center;margin-top:5px;}
-.print-card{width:15cm;height:6cm;border:1cm solid black;padding:5px;text-align:center;}
