@@ -53,9 +53,9 @@ async function crearUsuariosPorDefecto(){
 }
 crearUsuariosPorDefecto();
 
-// --- USUARIOS ---
+// --- AGREGAR USUARIO ---
 const addUserBtn = document.getElementById("addUserBtn");
-const userListContainer = document.getElementById("userListContainer");
+const userTableBody = document.querySelector("#userTable tbody");
 const userMessage = document.getElementById("userMessage");
 
 addUserBtn.addEventListener("click", async ()=>{
@@ -79,18 +79,17 @@ addUserBtn.addEventListener("click", async ()=>{
   setTimeout(()=>{userMessage.textContent="";},3000);
 });
 
-// --- Mostrar usuarios ---
+// --- MOSTRAR USUARIOS EN TIEMPO REAL ---
 onSnapshot(collection(db,"usuarios"), snapshot=>{
-  userListContainer.innerHTML="";
+  userTableBody.innerHTML="";
   snapshot.docs.forEach(docSnap=>{
     const data = docSnap.data();
-    const div = document.createElement("div");
-    div.className="userItem";
-    div.innerHTML=`
-      <div>
-        <input value="${data.L}" size="3" data-field="L">
-        <input value="${data.nombre}" size="25" data-field="nombre">
-        <input value="${data.dni}" size="8" data-field="dni">
+    const tr = document.createElement("tr");
+    tr.innerHTML=`
+      <td>${data.L}</td>
+      <td><input type="text" value="${data.nombre}" size="25" data-field="nombre"></td>
+      <td><input type="text" value="${data.dni}" size="8" data-field="dni"></td>
+      <td>
         <select data-field="tipo">
           <option value="propietario" ${data.tipo==="propietario"?"selected":""}>Propietario</option>
           <option value="administracion" ${data.tipo==="administracion"?"selected":""}>Administración</option>
@@ -100,25 +99,25 @@ onSnapshot(collection(db,"usuarios"), snapshot=>{
           <option value="guardia" ${data.tipo==="guardia"?"selected":""}>Guardia</option>
           <option value="otro" ${data.tipo==="otro"?"selected":""}>Otro</option>
         </select>
-      </div>
-      <div>
-        <button class="saveUserBtn" data-id="${docSnap.id}">Guardar</button>
-        <button class="printUserBtn" data-id="${docSnap.id}">Imprimir</button>
-        <button class="deleteUserBtn" data-id="${docSnap.id}">Eliminar</button>
-      </div>
+      </td>
+      <td>
+        <button class="userTableBtn saveUserBtn" data-id="${docSnap.id}">Guardar</button>
+        <button class="userTableBtn printUserBtn" data-id="${docSnap.id}">Imprimir</button>
+        <button class="userTableBtn deleteUserBtn" data-id="${docSnap.id}">Eliminar</button>
+      </td>
     `;
-    userListContainer.appendChild(div);
+    userTableBody.appendChild(tr);
   });
 
   // Eventos dinámicos
   document.querySelectorAll(".saveUserBtn").forEach(btn=>{
     btn.onclick = async ()=>{
       const id = btn.dataset.id;
-      const parent = btn.closest(".userItem");
-      const inputs = parent.querySelectorAll("input, select");
-      const updated = {};
-      inputs.forEach(i=> updated[i.dataset.field] = i.value);
-      await setDoc(doc(db,"usuarios",id), updated, {merge:true});
+      const tr = btn.closest("tr");
+      const nombre = tr.querySelector('input[data-field="nombre"]').value;
+      const dni = tr.querySelector('input[data-field="dni"]').value;
+      const tipo = tr.querySelector('select[data-field="tipo"]').value;
+      await setDoc(doc(db,"usuarios",id), {nombre,dni,tipo}, {merge:true});
       alert("Usuario actualizado");
     };
   });
