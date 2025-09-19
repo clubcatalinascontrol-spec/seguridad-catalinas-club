@@ -10,9 +10,9 @@
 <body>
   <header>
     <div class="nav">
-      <button data-section="panel">PANEL</button>
-      <button data-section="usuarios">USUARIOS</button>
-      <button data-section="config">CONFIG</button>
+      <button data-section="panel" class="nav-btn active">PANEL</button>
+      <button data-section="usuarios" class="nav-btn">USUARIOS</button>
+      <button data-section="config" class="nav-btn">CONFIG</button>
     </div>
   </header>
 
@@ -67,12 +67,12 @@
     <!-- CONFIG -->
     <section id="config">
       <h2>Configuración</h2>
-      <div>
+      <div class="config-item">
         <label>Contraseña maestra (4 dígitos):</label>
         <input type="password" id="newPin" maxlength="4">
         <button id="savePin">Guardar PIN</button>
       </div>
-      <div>
+      <div class="config-item">
         <button id="reprintLastPage">Imprimir última página</button>
       </div>
     </section>
