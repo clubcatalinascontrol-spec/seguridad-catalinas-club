@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-import { getFirestore, collection, addDoc, setDoc, getDocs, deleteDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, setDoc, getDocs, deleteDoc, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBmgexrB3aDlx5XARYqigaPoFsWX5vDz_4",
@@ -29,10 +29,10 @@ navButtons.forEach(btn=>{
 let currentPage = 1;
 const pageSize = 25;
 let movementsCache = [];
-
 const movimientosTableBody = document.querySelector("#movimientosTable tbody");
 const paginationDiv = document.getElementById("pagination");
 
+// Render tabla
 function renderTable(page){
   movimientosTableBody.innerHTML = "";
   const start = (page-1)*pageSize;
@@ -60,28 +60,13 @@ function renderPagination(activePage){
   }
 }
 
-function printPage(data){
-  const win=window.open("","PRINT","height=600,width=800");
-  win.document.write("<html><head><title>Movimientos</title></head><body>");
-  win.document.write("<table border='1' style='border-collapse:collapse;width:100%'>");
-  win.document.write("<tr><th>#L</th><th>Nombre</th><th>DNI</th><th>Entrada</th><th>Salida</th><th>Tipo</th></tr>");
-  data.forEach(mov=>{win.document.write(`<tr><td>${mov.L}</td><td>${mov.nombre}</td><td>${mov.dni}</td><td>${mov.horaEntrada||'-'}</td><td>${mov.horaSalida||'-'}</td><td>${mov.tipo}</td></tr>`);});
-  win.document.write("</table></body></html>");
-  win.document.close();
-  win.print();
-}
-
-// Escucha real-time
+// Escucha movimientos en tiempo real
 onSnapshot(query(collection(db,"movimientos"),orderBy("timestamp","desc")),snapshot=>{
   movementsCache = snapshot.docs.map(doc=>({id:doc.id,...doc.data()}));
-  if(movementsCache.length>=pageSize){
-    const latestPage=movementsCache.slice(0,pageSize);
-    printPage(latestPage);
-  }
   renderTable(currentPage);
 });
 
-// Eliminar con PIN
+// Eliminar movimiento con PIN
 const pinModal=document.getElementById("pinModal");
 let deleteTargetId=null;
 document.body.addEventListener("click",e=>{
@@ -108,8 +93,8 @@ document.getElementById("confirmPin").addEventListener("click",async()=>{
   deleteTargetId=null;
 });
 
-// Guardar PIN
-document.getElementById("savePin").addEventListener("click",async()=>{
+// Guardar PIN maestro
+document.getElementById("savePin").addEventListener("click", async()=>{
   const newPin=document.getElementById("newPin").value;
   if(/^\d{4}$/.test(newPin)){
     await setDoc(doc(db,"config","pin"),{pin:newPin});
@@ -124,3 +109,66 @@ document.getElementById("reprintLastPage").addEventListener("click",()=>{
   const latestPage=movementsCache.slice(0,pageSize);
   printPage(latestPage);
 });
+
+// Gestión de usuarios
+const addUserBtn=document.getElementById("addUserBtn");
+const userList=document.getElementById("userList");
+addUserBtn.addEventListener("click", async()=>{
+  const L=document.getElementById("userL").value;
+  const nombre=document.getElementById("userNombre").value;
+  const dni=document.getElementById("userDni").value;
+  const tipo=document.getElementById("userTipo").value;
+  if(!L || !nombre || !dni || !tipo) return alert("Complete todos los campos");
+  await addDoc(collection(db,"usuarios"),{L,nombre,dni,tipo});
+  document.getElementById("userL").value="";
+  document.getElementById("userNombre").value="";
+  document.getElementById("userDni").value="";
+});
+
+// Escucha usuarios en tiempo real
+onSnapshot(collection(db,"usuarios"), snapshot=>{
+  userList.innerHTML="";
+  snapshot.docs.forEach(doc=>{
+    const data=doc.data();
+    const li=document.createElement("li");
+    li.textContent=`#${data.L} - ${data.nombre} - ${data.dni} - ${data.tipo}`;
+    userList.appendChild(li);
+  });
+});
+
+// Botón ESCANEAR
+document.getElementById("scanBtn").addEventListener("click", async()=>{
+  const codigo=prompt("Ingrese código de barras escaneado (simulado)");
+  if(!codigo) return;
+  // Detectar si es entrada o salida por primer o segundo código
+  const usuariosSnapshot=await getDocs(collection(db,"usuarios"));
+  const usuarioDoc = usuariosSnapshot.docs.find(d=>d.data().codigoIngreso===codigo || d.data().codigoSalida===codigo);
+  if(!usuarioDoc) return alert("Código no reconocido");
+  const usuario = usuarioDoc.data();
+  const now = new Date();
+  let horaEntrada=null;
+  let horaSalida=null;
+  if(codigo===usuario.codigoIngreso) horaEntrada=`${now.getHours()}:${now.getMinutes()} (${now.toLocaleDateString()})`;
+  if(codigo===usuario.codigoSalida) horaSalida=`${now.getHours()}:${now.getMinutes()} (${now.toLocaleDateString()})`;
+  await addDoc(collection(db,"movimientos"),{
+    L:usuario.L,
+    nombre:usuario.nombre,
+    dni:usuario.dni,
+    tipo:usuario.tipo,
+    horaEntrada,
+    horaSalida,
+    timestamp:Date.now()
+  });
+});
+
+// Función impresión
+function printPage(data){
+  const win=window.open("","PRINT","height=600,width=800");
+  win.document.write("<html><head><title>Movimientos</title></head><body>");
+  win.document.write("<table border='1' style='border-collapse:collapse;width:100%'>");
+  win.document.write("<tr><th>#L</th><th>Nombre</th><th>DNI</th><th>Entrada</th><th>Salida</th><th>Tipo</th></tr>");
+  data.forEach(mov=>{win.document.write(`<tr><td>${mov.L}</td><td>${mov.nombre}</td><td>${mov.dni}</td><td>${mov.horaEntrada||'-'}</td><td>${mov.horaSalida||'-'}</td><td>${mov.tipo}</td></tr>`);});
+  win.document.write("</table></body></html>");
+  win.document.close();
+  win.print();
+}
