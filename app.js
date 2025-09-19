@@ -15,10 +15,13 @@ const db = getFirestore(app);
 
 // Navegación SPA
 const sections = document.querySelectorAll("main section");
-document.querySelectorAll("header .nav button").forEach(btn => {
-  btn.addEventListener("click", () => {
-    sections.forEach(sec => sec.classList.remove("active"));
+const navButtons = document.querySelectorAll(".nav-btn");
+navButtons.forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    sections.forEach(sec=>sec.classList.remove("active"));
     document.getElementById(btn.dataset.section).classList.add("active");
+    navButtons.forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
   });
 });
 
@@ -49,7 +52,7 @@ function renderPagination(activePage){
   paginationDiv.innerHTML="";
   const totalPages = Math.min(Math.ceil(movementsCache.length/pageSize),10);
   for(let i=1;i<=totalPages;i++){
-    const btn = document.createElement("button");
+    const btn=document.createElement("button");
     btn.textContent=i;
     if(i===activePage) btn.classList.add("active");
     btn.addEventListener("click",()=>{currentPage=i; renderTable(currentPage)});
