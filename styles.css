@@ -79,3 +79,21 @@ table th, table td {
   color:#111;
 }
 #pagination button.active { background:#e6d800; }
+
+/* Tarjetas A4 para impresión */
+.print-card {
+  width:15cm;
+  height:6cm;
+  border:1cm solid #111;
+  margin:10px auto;
+  padding:5px;
+  box-sizing:border-box;
+}
+.print-card h4 {
+  margin:2px 0;
+}
+.print-card svg {
+  display:block;
+  margin:0 auto;
+  max-height:2.5cm;
+}
