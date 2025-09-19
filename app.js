@@ -43,7 +43,7 @@ const userTableBody = document.querySelector("#userTable tbody");
 const userMessage = document.getElementById("userMessage");
 const usuariosRef = collection(db,"usuarios");
 
-// Cargar usuarios por defecto si la colección está vacía
+// Cargar usuarios por defecto si colección vacía
 async function cargarUsuariosPorDefecto(){
   const snapshot = await getDocs(usuariosRef);
   if(snapshot.empty){
@@ -53,7 +53,7 @@ async function cargarUsuariosPorDefecto(){
 }
 await cargarUsuariosPorDefecto();
 
-// Render tabla usuarios
+// Render tabla usuarios en tiempo real
 function renderUsuarios(snapshot){
     userTableBody.innerHTML="";
     snapshot.docs.forEach(docSnap=>{
@@ -103,114 +103,32 @@ function renderUsuarios(snapshot){
 onSnapshot(usuariosRef, snapshot => renderUsuarios(snapshot));
 
 // Agregar usuario
-document.getElementById("addUserBtn").onclick = async()=>{
-    const L = document.getElementById("userL").value.trim();
-    const nombre = document.getElementById("userNombre").value.trim();
-    const dni = document.getElementById("userDni").value.trim();
-    const tipo = document.getElementById("userTipo").value;
-    if(!L || !nombre || !dni){ alert("Completa todos los campos"); return; }
-    if(dni.length>8){ alert("DNI máximo 8 dígitos"); return; }
-    await addDoc(usuariosRef,{
-        L,nombre,dni,tipo,codigoIngreso:generarCodigo(),codigoSalida:generarCodigo()
-    });
-    document.getElementById("userL").value="";
-    document.getElementById("userNombre").value="";
-    document.getElementById("userDni").value="";
-    userMessage.textContent="Usuario agregado con éxito";
-    setTimeout(()=>userMessage.textContent="",3000);
+document.getElementById("addUserBtn").onclick = async ()=>{
+  const L = document.getElementById("userL").value.trim();
+  const nombre = document.getElementById("userNombre").value.trim();
+  const dni = document.getElementById("userDni").value.trim();
+  const tipo = document.getElementById("userTipo").value;
+  if(!L || !nombre || !dni || !tipo){ alert("Complete todos los campos"); return; }
+  await addDoc(usuariosRef,{L,nombre,dni,tipo,codigoIngreso:generarCodigo(),codigoSalida:generarCodigo()});
+  userMessage.textContent="Usuario agregado con éxito";
+  setTimeout(()=>userMessage.textContent="",3000);
+  document.getElementById("userL").value="";
+  document.getElementById("userNombre").value="";
+  document.getElementById("userDni").value="";
 };
 
-// Guardar PIN maestro
-document.getElementById("savePin").onclick = ()=>{
-  const newPin = document.getElementById("newPin").value.trim();
-  if(!/^\d{4}$/.test(newPin)){ alert("PIN debe tener 4 dígitos"); return; }
-  localStorage.setItem("pinMaestro",newPin);
-  alert("PIN maestro guardado");
-};
-
-// --- MOVIMIENTOS ---
-const movimientosTableBody = document.querySelector("#movimientosTable tbody");
-const movimientosRef = collection(db,"movimientos");
-let currentPage = 1;
-const MOV_LIMIT = 25;
-
-onSnapshot(movimientosRef, snapshot=>{
-  const movimientos = snapshot.docs.map(docSnap=>({id:docSnap.id,...docSnap.data()})).reverse();
-  mostrarMovimientos(movimientos,currentPage);
-});
-
-function mostrarMovimientos(movs,page){
-  movimientosTableBody.innerHTML="";
-  const start = (page-1)*MOV_LIMIT;
-  const pag = movs.slice(start,start+MOV_LIMIT);
-  pag.forEach(m=>{
-    const tr = document.createElement("tr");
-    tr.innerHTML=`
-      <td>${m.L}</td>
-      <td>${m.nombre}</td>
-      <td>${m.dni}</td>
-      <td>${m.entrada||""}</td>
-      <td>${m.salida||""}</td>
-      <td>${m.tipo}</td>
-      <td><button data-id="${m.id}">Eliminar</button></td>
-    `;
-    movimientosTableBody.appendChild(tr);
-    tr.querySelector("button").onclick=async()=>{
-      const pin = prompt("Ingrese PIN maestro:");
-      if(pin!==localStorage.getItem("pinMaestro")){ alert("PIN incorrecto"); return; }
-      await deleteDoc(doc(db,"movimientos",m.id));
-    };
-  });
-
-  // Paginación
-  const totalPages = Math.min(10,Math.ceil(movs.length/MOV_LIMIT));
-  const paginationDiv = document.getElementById("pagination");
-  paginationDiv.innerHTML="";
-  for(let i=1;i<=totalPages;i++){
-    const btn = document.createElement("button");
-    btn.textContent=i;
-    if(i===page) btn.classList.add("active");
-    btn.onclick=()=>{currentPage=i; mostrarMovimientos(movs,currentPage);}
-    paginationDiv.appendChild(btn);
-  }
-
-  if(pag.length===MOV_LIMIT){ imprimirTabla(pag); }
-}
-
-// --- ESCANEO ---
-document.getElementById("scanBtn").onclick = async()=>{
-  const codigo = prompt("Escanee código de barra:");
-  if(!codigo) return;
-
-  const snapshot = await getDocs(usuariosRef);
-  const userDoc = snapshot.docs.find(d=>d.data().codigoIngreso===codigo || d.data().codigoSalida===codigo);
-  if(!userDoc){ alert("Usuario no encontrado"); return; }
-
-  const userData = userDoc.data();
-  const isIngreso = userData.codigoIngreso===codigo;
-  await addDoc(movimientosRef,{
-    L:userData.L,
-    nombre:userData.nombre,
-    dni:userData.dni,
-    tipo:userData.tipo,
-    entrada:isIngreso?horaActual():"",
-    salida:!isIngreso?horaActual():""
-  });
-  alert("Movimiento registrado correctamente");
-};
-
-// --- IMPRESIÓN ---
+// --- IMPRESIÓN TARJETA ---
 function imprimirTarjeta(user){
-  const w = window.open("","_blank","width=800,height=400");
-  w.document.write(`<div class="print-card" style="border-color:${colorTipo(user.tipo)}">
-    <h4>#L: ${user.L} - ${user.nombre} - ${user.dni} - ${user.tipo}</h4>
+  const w = window.open("","_blank","width=400,height=300");
+  const color = colorTipo(user.tipo);
+  w.document.write(`<div style="width:15cm;height:6cm;border:0.5cm solid ${color};text-align:center;">
+    <p>#${user.L} - ${user.nombre} - ${user.dni} - ${user.tipo}</p>
     <svg id="codeIngreso"></svg>
     <svg id="codeSalida"></svg>
   </div>`);
   JsBarcode(w.document.getElementById("codeIngreso"), user.codigoIngreso, {format:"CODE128"});
   JsBarcode(w.document.getElementById("codeSalida"), user.codigoSalida, {format:"CODE128"});
-  w.print();
-  w.close();
+  w.print(); w.close();
 }
 function colorTipo(tipo){
   switch(tipo){
@@ -224,24 +142,70 @@ function colorTipo(tipo){
   }
 }
 
-// --- IMPRIMIR TABLA MOVIMIENTOS ---
-function imprimirTabla(data){
+// --- MOVIMIENTOS ---
+const movimientosRef = collection(db,"movimientos");
+const movimientosTableBody = document.querySelector("#movimientosTable tbody");
+const MOV_LIMIT = 25;
+
+// Render tabla movimientos
+function renderMovimientos(snapshot){
+  movimientosTableBody.innerHTML="";
+  const docs = snapshot.docs.reverse();
+  docs.forEach((docSnap,index)=>{
+    const data = docSnap.data();
+    const tr = document.createElement("tr");
+    tr.innerHTML=`
+      <td>${data.L}</td>
+      <td>${data.nombre}</td>
+      <td>${data.dni}</td>
+      <td>${data.entrada||""}</td>
+      <td>${data.salida||""}</td>
+      <td>${data.tipo}</td>
+      <td><button class="deleteMovBtn">Eliminar</button></td>
+    `;
+    movimientosTableBody.appendChild(tr);
+    tr.querySelector(".deleteMovBtn").onclick=async()=>{
+      const pin = prompt("Ingrese PIN maestro:");
+      if(pin!==localStorage.getItem("pinMaestro")){ alert("PIN incorrecto"); return; }
+      await deleteDoc(doc(db,"movimientos",docSnap.id));
+    };
+  });
+}
+onSnapshot(movimientosRef,snapshot=>renderMovimientos(snapshot));
+
+// ESCANEAR
+document.getElementById("scanBtn").onclick = async ()=>{
+  const codigo = prompt("Escanee código de barras:");
+  const snapshot = await getDocs(usuariosRef);
+  let usuario = null;
+  snapshot.docs.forEach(docSnap=>{
+    const u = docSnap.data();
+    if(u.codigoIngreso===codigo || u.codigoSalida===codigo) usuario={...u,id:docSnap.id};
+  });
+  if(!usuario){ alert("Código no reconocido"); return; }
+  const now = horaActual();
+  let mov = {L:usuario.L,nombre:usuario.nombre,dni:usuario.dni,tipo:usuario.tipo};
+  if(codigo===usuario.codigoIngreso) mov.entrada=now;
+  if(codigo===usuario.codigoSalida) mov.salida=now;
+  await addDoc(movimientosRef,mov);
+};
+
+// IMPRIMIR ÚLTIMA PÁGINA
+document.getElementById("printPageBtn").onclick = async()=>{
+  const snapshot = await getDocs(movimientosRef);
+  const data = snapshot.docs.map(d=>d.data()).reverse().slice(0,MOV_LIMIT);
   const w = window.open("","_blank","width=800,height=600");
   let html=`<table border="1" style="width:100%;border-collapse:collapse;">
     <thead><tr><th>#L</th><th>Nombre</th><th>DNI</th><th>Entrada</th><th>Salida</th><th>Tipo</th></tr></thead><tbody>`;
-  data.forEach(m=>{
-    html+=`<tr><td>${m.L}</td><td>${m.nombre}</td><td>${m.dni}</td><td>${m.entrada||""}</td><td>${m.salida||""}</td><td>${m.tipo}</td></tr>`;
-  });
+  data.forEach(m=>{ html+=`<tr><td>${m.L}</td><td>${m.nombre}</td><td>${m.dni}</td><td>${m.entrada||""}</td><td>${m.salida||""}</td><td>${m.tipo}</td></tr>`; });
   html+="</tbody></table>";
-  w.document.write(html);
-  w.print();
-  w.close();
-}
+  w.document.write(html); w.print(); w.close();
+};
 
-// --- Botón imprimir última página ---
-document.getElementById("printPageBtn").onclick = async()=>{
-  const snapshot = await getDocs(movimientosRef);
-  const movimientos = snapshot.docs.map(docSnap=>({id:docSnap.id,...docSnap.data()})).reverse();
-  const lastPage = movimientos.slice(0,MOV_LIMIT);
-  imprimirTabla(lastPage);
+// CONFIG guardar PIN
+document.getElementById("savePin").onclick=()=>{
+  const val=document.getElementById("newPin").value.trim();
+  if(val.length!==4 || isNaN(val)){ alert("PIN inválido"); return; }
+  localStorage.setItem("pinMaestro",val);
+  alert("PIN actualizado");
 };
