@@ -1,155 +1,20 @@
-/* RESET */
-* { margin:0; padding:0; box-sizing:border-box; }
-
-body {
-  font-family: Arial, sans-serif;
-  background: #fff;
-  color: #222;
-  text-align: center;
+body{
+  margin:0; padding:0; font-family: Arial, sans-serif; background:#f0f0f0; color:#111;
 }
-
-header {
-  background: #111;
-  padding: 10px 0;
+header{background:#222; padding:10px 0; text-align:center;}
+.nav button{
+  margin:0 5px; padding:10px 20px; background:#333; color:#ffeb3b; border:none; cursor:pointer;
+  border-radius:5px;
 }
-
-header .nav {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-}
-
-header .nav button {
-  background: #222;
-  color: #f4cf19;
-  border: 1px solid #f4cf19;
-  padding: 8px 15px;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: 0.2s;
-}
-
-header .nav button.active,
-header .nav button:hover {
-  background: #f4cf19;
-  color: #111;
-}
-
-main {
-  max-width: 1000px;
-  margin: 20px auto;
-  padding: 0 10px;
-}
-
-section {
-  display: none;
-}
-
-section.active {
-  display: block;
-}
-
-h2 {
-  margin-bottom: 15px;
-  font-weight: normal;
-  color: #111;
-  border-bottom: 2px solid #f4cf19;
-  display: inline-block;
-  padding-bottom: 5px;
-}
-
-.table-container {
-  overflow-x: auto;
-  margin-top: 10px;
-}
-
-table {
-  border-collapse: collapse;
-  width: 100%;
-  font-size: 14px;
-  background: #fff;
-}
-
-table th, table td {
-  border: 1px solid #222;
-  padding: 6px 10px;
-  text-align: center;
-}
-
-table th {
-  background: #eee;
-}
-
-.pagination {
-  margin-top: 10px;
-}
-
-.pagination button {
-  background: #fff;
-  border: 1px solid #222;
-  padding: 5px 10px;
-  margin-right: 5px;
-  cursor: pointer;
-  border-radius: 3px;
-  transition: 0.2s;
-}
-
-.pagination button.active,
-.pagination button:hover {
-  background: #222;
-  color: #f4cf19;
-}
-
-input, select, button {
-  margin: 5px 5px 10px 0;
-  padding: 6px 10px;
-  border-radius: 3px;
-  border: 1px solid #222;
-}
-
-button {
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-button:hover {
-  background: #222;
-  color: #f4cf19;
-}
-
-.modal {
-  position: fixed;
-  top:0; left:0;
-  width:100%; height:100%;
-  background: rgba(0,0,0,0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal.hidden {
-  display: none;
-}
-
-.modal-content {
-  background: #fff;
-  padding: 20px;
-  border-radius: 5px;
-  width: 300px;
-  text-align: center;
-  border: 2px solid #f4cf19;
-}
-
-.config-item {
-  margin-bottom: 15px;
-}
-
-ul#userList {
-  list-style: none;
-  margin-top: 10px;
-}
-
-.tarjeta svg {
-  margin-top: 5px;
-  display: block;
-}
+.nav button.active, .nav button:hover{background:#ffeb3b; color:#222;}
+main{max-width:1200px; margin:20px auto; padding:10px;}
+section{display:none; text-align:center;}
+section.active{display:block;}
+table{width:100%; border-collapse:collapse; margin-top:10px; background:#fff;}
+table th, table td{border:1px solid #ccc; padding:5px; text-align:center;}
+#scanBtn, #addUserBtn, #savePin, #reprintLastPage{margin:10px 0; padding:10px 15px; background:#ffeb3b; color:#222; border:none; border-radius:5px; cursor:pointer;}
+#scanBtn:hover, #addUserBtn:hover, #savePin:hover, #reprintLastPage:hover{background:#e6d800;}
+#pinModal{position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:flex; justify-content:center; align-items:center;}
+.pin-content{background:#fff; padding:20px; border-radius:10px; text-align:center;}
+.userItem input, .userItem select{margin-right:5px;}
+.userItem button{margin-left:5px; padding:5px 10px; cursor:pointer;}
