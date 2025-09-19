@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Control de Ingreso y Salida - Catalinas Country</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css">
   <script type="module" src="app.js" defer></script>
 </head>
 <body>
@@ -17,9 +17,9 @@
   </header>
 
   <main>
-    <!-- Panel principal -->
+    <!-- PANEL -->
     <section id="panel" class="active">
-      <h2>Listado de movimientos</h2>
+      <h2>Listado de Movimientos</h2>
       <div id="scanner-controls">
         <button id="scanIngreso">Modo Scanner Ingreso</button>
         <button id="scanSalida">Modo Scanner Salida</button>
@@ -43,13 +43,13 @@
       <div class="pagination" id="pagination"></div>
     </section>
 
-    <!-- Usuarios -->
+    <!-- USUARIOS -->
     <section id="usuarios">
       <h2>Gestión de Usuarios</h2>
       <div id="add-user">
-        <input type="text" id="userL" placeholder="#L (3 dígitos)" maxlength="3" />
-        <input type="text" id="userNombre" placeholder="Nombre completo" maxlength="15" />
-        <input type="number" id="userDni" placeholder="DNI" maxlength="8" />
+        <input type="text" id="userL" placeholder="#L (3 dígitos)" maxlength="3">
+        <input type="text" id="userNombre" placeholder="Nombre completo" maxlength="15">
+        <input type="number" id="userDni" placeholder="DNI" maxlength="8">
         <select id="userTipo">
           <option value="propietario">Propietario</option>
           <option value="administracion">Administración</option>
@@ -64,25 +64,25 @@
       <ul id="userList"></ul>
     </section>
 
-    <!-- Configuración -->
+    <!-- CONFIG -->
     <section id="config">
       <h2>Configuración</h2>
       <div>
-        <label>Nueva contraseña maestra (4 dígitos):</label>
-        <input type="password" id="newPin" maxlength="4" />
+        <label>Contraseña maestra (4 dígitos):</label>
+        <input type="password" id="newPin" maxlength="4">
         <button id="savePin">Guardar PIN</button>
       </div>
       <div>
-        <button id="reprintLastPage">Imprimir la última página</button>
+        <button id="reprintLastPage">Imprimir última página</button>
       </div>
     </section>
   </main>
 
-  <!-- Modal de PIN para eliminar movimiento -->
+  <!-- Modal PIN -->
   <div id="pinModal" class="modal hidden">
     <div class="modal-content">
       <p>Ingrese PIN maestro (4 dígitos) para eliminar:</p>
-      <input type="password" id="pinInput" maxlength="4" />
+      <input type="password" id="pinInput" maxlength="4">
       <button id="confirmPin">Confirmar</button>
       <button id="cancelPin">Cancelar</button>
     </div>
