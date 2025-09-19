@@ -9,7 +9,6 @@ const firebaseConfig = {
   messagingSenderId: "980866194296",
   appId: "1:980866194296:web:3fefc2a107d0ec6052468d"
 };
-
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
@@ -35,13 +34,13 @@ const paginationDiv = document.getElementById("pagination");
 function renderTable(page){
   movimientosTableBody.innerHTML = "";
   const start = (page-1)*pageSize;
-  const end = start + pageSize;
+  const end = start+pageSize;
   const pageData = movementsCache.slice(start,end);
   pageData.forEach(mov=>{
     const tr = document.createElement("tr");
     tr.innerHTML = `<td>${mov.L}</td><td>${mov.nombre}</td><td>${mov.dni}</td>
-    <td>${mov.horaEntrada||'-'}</td><td>${mov.horaSalida||'-'}</td><td>${mov.tipo}</td>
-    <td><button class="delete-mov" data-id="${mov.id}">Eliminar</button></td>`;
+      <td>${mov.horaEntrada||'-'}</td><td>${mov.horaSalida||'-'}</td><td>${mov.tipo}</td>
+      <td><button class="delete-mov" data-id="${mov.id}">Eliminar</button></td>`;
     movimientosTableBody.appendChild(tr);
   });
   renderPagination(page);
@@ -65,7 +64,7 @@ onSnapshot(query(collection(db,"movimientos"),orderBy("timestamp","desc")),snaps
   renderTable(currentPage);
 });
 
-// --- Eliminar con PIN ---
+// --- PIN Maestro ---
 const pinModal=document.getElementById("pinModal");
 let deleteTargetId=null;
 document.body.addEventListener("click",e=>{
@@ -74,9 +73,7 @@ document.body.addEventListener("click",e=>{
     pinModal.classList.remove("hidden");
   }
 });
-document.getElementById("cancelPin").addEventListener("click",()=>{
-  pinModal.classList.add("hidden"); deleteTargetId=null;
-});
+document.getElementById("cancelPin").addEventListener("click",()=>{pinModal.classList.add("hidden"); deleteTargetId=null;});
 document.getElementById("confirmPin").addEventListener("click",async()=>{
   const pinInput=document.getElementById("pinInput").value;
   const pinDoc=await getDocs(collection(db,"config"));
@@ -85,35 +82,31 @@ document.getElementById("confirmPin").addEventListener("click",async()=>{
   if(pinInput===pin){
     await deleteDoc(doc(db,"movimientos",deleteTargetId));
     alert("Movimiento eliminado");
-  } else {
-    alert("PIN incorrecto");
-  }
-  pinModal.classList.add("hidden");
-  deleteTargetId=null;
+  } else alert("PIN incorrecto");
+  pinModal.classList.add("hidden"); deleteTargetId=null;
 });
 
-// --- Guardar PIN maestro ---
+// Guardar PIN
 document.getElementById("savePin").addEventListener("click", async()=>{
   const newPin=document.getElementById("newPin").value;
   if(/^\d{4}$/.test(newPin)){
     await setDoc(doc(db,"config","pin"),{pin:newPin});
     alert("PIN guardado");
-  }else{
-    alert("PIN inválido, debe tener 4 dígitos");
-  }
+  }else alert("PIN inválido, debe tener 4 dígitos");
 });
 
-// --- Reimprimir última página ---
+// Reimprimir última página
 document.getElementById("reprintLastPage").addEventListener("click",()=>{
   const latestPage=movementsCache.slice(0,pageSize);
   printPage(latestPage);
 });
 
-// --- Usuarios y Tarjetas ---
+// --- Usuarios ---
 const addUserBtn=document.getElementById("addUserBtn");
-const userList=document.getElementById("userList");
+const userListContainer=document.getElementById("userListContainer");
+const userMessage=document.getElementById("userMessage");
 
-function generarCodigo() { return Math.random().toString(36).substring(2,10).toUpperCase(); }
+function generarCodigo(){ return Math.random().toString(36).substring(2,10).toUpperCase(); }
 function colorTipo(tipo){
   switch(tipo){
     case "propietario": return "#8A2BE2";
@@ -126,141 +119,117 @@ function colorTipo(tipo){
   }
 }
 
-// --- Agregar usuario con validación ---
 addUserBtn.addEventListener("click", async()=>{
-  const L = document.getElementById("userL").value.trim();
-  const nombre = document.getElementById("userNombre").value.trim();
-  const dni = document.getElementById("userDni").value.trim();
-  const tipo = document.getElementById("userTipo").value;
-
-  if(!L || !nombre || !dni || !tipo) return alert("Complete todos los campos");
+  const L=document.getElementById("userL").value.trim();
+  const nombre=document.getElementById("userNombre").value.trim();
+  const dni=document.getElementById("userDni").value.trim();
+  const tipo=document.getElementById("userTipo").value;
+  if(!L||!nombre||!dni||!tipo) return alert("Complete todos los campos");
   if(!/^\d+$/.test(L)) return alert("#L debe ser solo números");
   if(!/^\d{1,8}$/.test(dni)) return alert("DNI debe tener máximo 8 dígitos");
 
-  const codigoIngreso = generarCodigo();
-  const codigoSalida = generarCodigo();
+  const codigoIngreso=generarCodigo();
+  const codigoSalida=generarCodigo();
 
-  await addDoc(collection(db,"usuarios"),{
-    L, nombre, dni, tipo, codigoIngreso, codigoSalida
-  });
+  await addDoc(collection(db,"usuarios"),{L,nombre,dni,tipo,codigoIngreso,codigoSalida});
 
-  // Limpiar campos
-  document.getElementById("userL").value = "";
-  document.getElementById("userNombre").value = "";
-  document.getElementById("userDni").value = "";
+  document.getElementById("userL").value=""; document.getElementById("userNombre").value=""; document.getElementById("userDni").value="";
+  userMessage.textContent="Usuario agregado con éxito";
+  setTimeout(()=>{userMessage.textContent="";},3000);
 });
 
-// --- Lista de usuarios en tiempo real ---
+// Listado de usuarios en tiempo real
 onSnapshot(collection(db,"usuarios"), snapshot=>{
-  userList.innerHTML="";
+  userListContainer.innerHTML="";
   snapshot.docs.forEach(doc=>{
     const data=doc.data();
-    const li=document.createElement("li");
-    li.innerHTML=`
-      <div class="tarjeta" style="border:3px solid ${colorTipo(data.tipo)}; padding:10px; margin:5px; display:inline-block; width:15cm; height:6cm; position:relative;">
-        <div style="text-align:left;">#${data.L} - ${data.nombre} - ${data.dni} - ${data.tipo}</div>
-        <svg id="barcodeIngreso${doc.id}"></svg>
-        <svg id="barcodeSalida${doc.id}"></svg>
-        <button class="printUserBtn" data-id="${doc.id}" style="position:absolute; top:5px; right:5px;">Imprimir tarjeta</button>
+    const div=document.createElement("div");
+    div.className="userItem";
+    div.style.border="1px solid #222"; div.style.padding="5px"; div.style.margin="5px"; div.style.display="flex"; div.style.alignItems="center"; div.style.justifyContent="space-between";
+    div.innerHTML=`
+      <div>
+        <input value="${data.L}" size="3" data-field="L">
+        <input value="${data.nombre}" size="15" data-field="nombre">
+        <input value="${data.dni}" size="8" data-field="dni">
+        <select data-field="tipo">
+          <option value="propietario" ${data.tipo==="propietario"?"selected":""}>Propietario</option>
+          <option value="administracion" ${data.tipo==="administracion"?"selected":""}>Administración</option>
+          <option value="empleado" ${data.tipo==="empleado"?"selected":""}>Empleado</option>
+          <option value="obrero" ${data.tipo==="obrero"?"selected":""}>Obrero</option>
+          <option value="invitado" ${data.tipo==="invitado"?"selected":""}>Invitado</option>
+          <option value="guardia" ${data.tipo==="guardia"?"selected":""}>Guardia</option>
+          <option value="otro" ${data.tipo==="otro"?"selected":""}>Otro</option>
+        </select>
+      </div>
+      <div>
+        <button class="saveUserBtn" data-id="${doc.id}">Guardar</button>
+        <button class="printUserBtn" data-id="${doc.id}">Imprimir tarjeta</button>
       </div>
     `;
-    userList.appendChild(li);
-    JsBarcode(`#barcodeIngreso${doc.id}`, data.codigoIngreso, {format:"CODE128", width:2, height:40});
-    JsBarcode(`#barcodeSalida${doc.id}`, data.codigoSalida, {format:"CODE128", width:2, height:40});
-  });
+    userListContainer.appendChild(div);
 
-  document.querySelectorAll(".printUserBtn").forEach(btn=>{
-    btn.addEventListener("click", async()=>{
-      const userDoc = await getDocs(collection(db,"usuarios"));
-      const usuario = userDoc.docs.find(d=>d.id===btn.dataset.id).data();
-      printUserCard(usuario);
+    // Guardar cambios
+    div.querySelector(".saveUserBtn").addEventListener("click", async()=>{
+      const inputs = div.querySelectorAll("input, select");
+      let updateData = {};
+      inputs.forEach(inp=>{updateData[inp.dataset.field]=inp.value;});
+      await setDoc(doc(db,"usuarios",doc.id), updateData);
+      userMessage.textContent="Usuario actualizado con éxito";
+      setTimeout(()=>{userMessage.textContent="";},3000);
     });
+
+    // Imprimir tarjeta
+    div.querySelector(".printUserBtn").addEventListener("click", ()=>{printUserCard(data);});
   });
 });
 
-// --- Función imprimir tarjeta ---
-function printUserCard(usuario){
-  const w = window.open("","PRINT","height=600,width=800");
-  const color = colorTipo(usuario.tipo);
-  w.document.write(`
-    <html>
-      <head>
-        <title>Tarjeta de Usuario</title>
-        <style>
-          body{margin:0; padding:0;}
-          .tarjeta{
-            width:15cm;
-            height:6cm;
-            border:1cm solid ${color};
-            display:flex;
-            flex-direction:column;
-            justify-content:space-between;
-            font-family: Arial, sans-serif;
-            padding:5px;
-            box-sizing:border-box;
-          }
-          .datos{font-size:16px;}
-          svg{display:block; margin:0 auto;}
-        </style>
-      </head>
-      <body>
-        <div class="tarjeta">
-          <div class="datos">
-            #${usuario.L} - ${usuario.nombre} - ${usuario.dni} - ${usuario.tipo}
-          </div>
-          <svg id="barcodeIngresoPrint"></svg>
-          <svg id="barcodeSalidaPrint"></svg>
-        </div>
-        <script src="https://cdn.jsdelivr.net/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
-        <script>
-          JsBarcode("#barcodeIngresoPrint","${usuario.codigoIngreso}",{format:"CODE128",width:2,height:40});
-          JsBarcode("#barcodeSalidaPrint","${usuario.codigoSalida}",{format:"CODE128",width:2,height:40});
-          window.print();
-        </script>
-      </body>
-    </html>
-  `);
-  w.document.close();
-}
-
-// --- ESCANEAR único ---
+// --- ESCANEAR ---
 document.getElementById("scanBtn").addEventListener("click", async()=>{
-  const codigo = prompt("Ingrese código de barras escaneado (simulado)");
+  const codigo = prompt("Ingrese código de barras escaneado");
   if(!codigo) return;
-
-  const usuariosSnapshot = await getDocs(collection(db,"usuarios"));
-  const usuarioDoc = usuariosSnapshot.docs.find(d=>{
-    const u = d.data();
-    return u.codigoIngreso===codigo || u.codigoSalida===codigo;
-  });
+  const usuariosSnapshot=await getDocs(collection(db,"usuarios"));
+  const usuarioDoc = usuariosSnapshot.docs.find(d=>{const u=d.data(); return u.codigoIngreso===codigo||u.codigoSalida===codigo;});
   if(!usuarioDoc) return alert("Código no reconocido");
-
   const usuario = usuarioDoc.data();
   const now = new Date();
-  let horaEntrada=null;
-  let horaSalida=null;
+  let horaEntrada=null,horaSalida=null;
   if(codigo===usuario.codigoIngreso) horaEntrada=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} (${now.toLocaleDateString()})`;
   if(codigo===usuario.codigoSalida) horaSalida=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} (${now.toLocaleDateString()})`;
 
   await addDoc(collection(db,"movimientos"),{
-    L:usuario.L,
-    nombre:usuario.nombre,
-    dni:usuario.dni,
-    tipo:usuario.tipo,
-    horaEntrada,
-    horaSalida,
-    timestamp:Date.now()
+    L:usuario.L,nombre:usuario.nombre,dni:usuario.dni,tipo:usuario.tipo,horaEntrada,horaSalida,timestamp:Date.now()
   });
 });
 
-// --- Función imprimir página de movimientos ---
+// --- Imprimir funciones ---
+function printUserCard(usuario){
+  const w = window.open("","PRINT","height=600,width=800");
+  const color=colorTipo(usuario.tipo);
+  w.document.write(`
+  <html><head><title>Tarjeta</title><style>
+    body{margin:0;font-family:Arial,sans-serif;}
+    .tarjeta{width:15cm;height:6cm;border:1cm solid ${color};display:flex;flex-direction:column;justify-content:space-between;padding:5px;}
+    .datos{font-size:16px;}
+    svg{display:block;margin:0 auto;}
+  </style></head><body>
+  <div class="tarjeta">
+    <div class="datos">#${usuario.L} - ${usuario.nombre} - ${usuario.dni} - ${usuario.tipo}</div>
+    <svg id="barcodeIngresoPrint"></svg>
+    <svg id="barcodeSalidaPrint"></svg>
+  </div>
+  <script src="https://cdn.jsdelivr.net/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
+  <script>
+    JsBarcode("#barcodeIngresoPrint","${usuario.codigoIngreso}",{format:"CODE128",width:2,height:40});
+    JsBarcode("#barcodeSalidaPrint","${usuario.codigoSalida}",{format:"CODE128",width:2,height:40});
+    window.print();
+  </script></body></html>`);
+  w.document.close();
+}
+
 function printPage(data){
   const win=window.open("","PRINT","height=600,width=800");
   win.document.write("<html><head><title>Movimientos</title></head><body>");
-  win.document.write("<table border='1' style='border-collapse:collapse;width:100%'>");
-  win.document.write("<tr><th>#L</th><th>Nombre</th><th>DNI</th><th>Entrada</th><th>Salida</th><th>Tipo</th></tr>");
+  win.document.write("<table border='1' style='border-collapse:collapse;width:100%'><tr><th>#L</th><th>Nombre</th><th>DNI</th><th>Entrada</th><th>Salida</th><th>Tipo</th></tr>");
   data.forEach(mov=>{win.document.write(`<tr><td>${mov.L}</td><td>${mov.nombre}</td><td>${mov.dni}</td><td>${mov.horaEntrada||'-'}</td><td>${mov.horaSalida||'-'}</td><td>${mov.tipo}</td></tr>`);});
-  win.document.write("</table></body></html>");
-  win.document.close();
-  win.print();
+  win.document.write("</table></body></html>"); win.document.close(); win.print();
 }
