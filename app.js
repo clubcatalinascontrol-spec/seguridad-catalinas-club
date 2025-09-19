@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import { 
-  getFirestore, collection, addDoc, setDoc, getDocs, deleteDoc, doc, onSnapshot
+  getFirestore, collection, addDoc, setDoc, getDocs, deleteDoc, doc, onSnapshot, query, orderBy, limit
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
 // --- Firebase ---
@@ -53,7 +53,7 @@ async function crearUsuariosPorDefecto(){
 }
 crearUsuariosPorDefecto();
 
-// --- AGREGAR USUARIO ---
+// ------------------- USUARIOS -------------------
 const addUserBtn = document.getElementById("addUserBtn");
 const userTableBody = document.querySelector("#userTable tbody");
 const userMessage = document.getElementById("userMessage");
@@ -79,7 +79,7 @@ addUserBtn.addEventListener("click", async ()=>{
   setTimeout(()=>{userMessage.textContent="";},3000);
 });
 
-// --- MOSTRAR USUARIOS EN TIEMPO REAL ---
+// Mostrar usuarios en tiempo real
 onSnapshot(collection(db,"usuarios"), snapshot=>{
   userTableBody.innerHTML="";
   snapshot.docs.forEach(docSnap=>{
@@ -145,7 +145,7 @@ onSnapshot(collection(db,"usuarios"), snapshot=>{
   });
 });
 
-// --- Imprimir tarjeta ---
+// ------------------- IMPRESIÓN TARJETAS -------------------
 function printUserCard(data){
   const win = window.open("","PRINT","width=400,height=300");
   const color = colorTipo(data.tipo);
@@ -159,11 +159,107 @@ function printUserCard(data){
   JsBarcode(win.document.querySelector("#barcode2")).init();
 }
 
-// --- PANEL botones ---
-document.getElementById("scanBtn").onclick = ()=>alert("ESCANEAR activado (pendiente lectura de código)");
-document.getElementById("printPageBtn").onclick = ()=>alert("IMPRIMIR ÚLTIMA PÁGINA activado");
+// ------------------- PANEL MOVIMIENTOS -------------------
+const movimientosTableBody = document.querySelector("#movimientosTable tbody");
+let movimientosPagina = 1;
+const movimientosPorPagina = 25;
+const movimientosMaxPaginas = 10;
+let movimientosArray = [];
 
-// --- CONFIG ---
+// Simulación escaneo
+document.getElementById("scanBtn").onclick = async ()=>{
+  const codigo = prompt("Ingrese código de barras escaneado:");
+  if(!codigo) return;
+
+  const usuariosSnap = await getDocs(collection(db,"usuarios"));
+  const usuario = usuariosSnap.docs.map(d=>d.data()).find(u=>u.codigoIngreso===codigo || u.codigoSalida===codigo);
+  if(!usuario){ alert("Código no corresponde a ningún usuario"); return; }
+
+  const fecha = new Date();
+  const hora = fecha.getHours().toString().padStart(2,"0")+":"+fecha.getMinutes().toString().padStart(2,"0");
+  const fechaStr = `(${fecha.getDate()}/${fecha.getMonth()+1}/${fecha.getFullYear()})`;
+
+  let entrada="", salida="";
+  if(codigo===usuario.codigoIngreso){ entrada = hora+" "+fechaStr; }
+  if(codigo===usuario.codigoSalida){ salida = hora+" "+fechaStr; }
+
+  const movimiento = {L:usuario.L,nombre:usuario.nombre,dni:usuario.dni,entrada,salida,tipo:usuario.tipo};
+  movimientosArray.unshift(movimiento);
+  if(movimientosArray.length>movimientosPorPagina*movimientosMaxPaginas){ movimientosArray.pop(); }
+
+  actualizarTablaMovimientos();
+};
+
+// Actualiza tabla y paginación
+function actualizarTablaMovimientos(){
+  const start = (movimientosPagina-1)*movimientosPorPagina;
+  const end = start+movimientosPorPagina;
+  const paginaMov = movimientosArray.slice(start,end);
+
+  movimientosTableBody.innerHTML="";
+  paginaMov.forEach((m,i)=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML=`
+      <td>${m.L}</td>
+      <td>${m.nombre}</td>
+      <td>${m.dni}</td>
+      <td>${m.entrada}</td>
+      <td>${m.salida}</td>
+      <td style="color:${colorTipo(m.tipo)}">${m.tipo}</td>
+      <td><button class="userTableBtn" onclick="eliminarMovimiento(${start+i})">Eliminar</button></td>
+    `;
+    movimientosTableBody.appendChild(tr);
+  });
+
+  // Paginación
+  const paginationDiv = document.getElementById("pagination");
+  paginationDiv.innerHTML="";
+  const totalPaginas = Math.ceil(movimientosArray.length/movimientosPorPagina);
+  for(let i=1;i<=totalPaginas;i++){
+    const btn = document.createElement("button");
+    btn.textContent=i;
+    if(i===movimientosPagina) btn.classList.add("active");
+    btn.onclick=()=>{ movimientosPagina=i; actualizarTablaMovimientos(); };
+    paginationDiv.appendChild(btn);
+  }
+
+  // Imprimir automáticamente si se llenó la página
+  if(paginaMov.length===movimientosPorPagina) imprimirPagina();
+}
+
+// Eliminar movimiento
+window.eliminarMovimiento = (index)=>{
+  const pin = prompt("Ingrese PIN maestro para eliminar movimiento:");
+  if(pin==="1234"){
+    movimientosArray.splice(index,1);
+    actualizarTablaMovimientos();
+  } else alert("PIN incorrecto");
+};
+
+// Imprimir página
+function imprimirPagina(){
+  const start = (movimientosPagina-1)*movimientosPorPagina;
+  const end = start+movimientosPorPagina;
+  const paginaMov = movimientosArray.slice(start,end);
+
+  const win = window.open("","PRINT","width=800,height=600");
+  win.document.write("<h2>Movimientos - Página "+movimientosPagina+"</h2>");
+  win.document.write("<table border='1' style='width:100%;border-collapse:collapse;'>");
+  win.document.write("<tr><th>#L</th><th>Nombre</th><th>DNI</th><th>Entrada</th><th>Salida</th><th>Tipo</th></tr>");
+  paginaMov.forEach(m=>{
+    win.document.write(`<tr>
+      <td>${m.L}</td><td>${m.nombre}</td><td>${m.dni}</td><td>${m.entrada}</td><td>${m.salida}</td><td>${m.tipo}</td>
+    </tr>`);
+  });
+  win.document.write("</table>");
+  win.document.close();
+  win.print();
+}
+
+// Botón manual
+document.getElementById("printPageBtn").onclick = imprimirPagina;
+
+// ------------------- CONFIG -------------------
 document.getElementById("savePin").onclick = ()=>{
   const newPin = document.getElementById("newPin").value.trim();
   if(!/^\d{4}$/.test(newPin)){ alert("PIN debe tener 4 dígitos"); return; }
