@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, getDoc } from "firebase/firestore";
+import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, onSnapshot } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBmgexrB3aDlx5XARYqigaPoFsWX5vDz_4",
@@ -13,15 +13,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const MASTER_PASSWORD = "9999"; // Siempre válida
+// Master password permanente
+const MASTER_PASSWORD = "9999";
 
-// DOM Elements
-const sections = {
-  panel: document.getElementById("panel"),
-  usuarios: document.getElementById("usuarios"),
-  config: document.getElementById("config")
-};
-
+// Secciones
+const sections = { panel: document.getElementById("panel"), usuarios: document.getElementById("usuarios"), config: document.getElementById("config") };
 document.getElementById("btnPanel").addEventListener("click", () => showSection("panel"));
 document.getElementById("btnUsuarios").addEventListener("click", () => { showSection("usuarios"); cargarUsuarios(); });
 document.getElementById("btnConfig").addEventListener("click", () => showSection("config"));
@@ -31,7 +27,7 @@ function showSection(name){
   sections[name].classList.add("active");
 }
 
-// Usuario
+// ------------------- USUARIOS -------------------
 const btnAgregarUsuario = document.getElementById("btnAgregarUsuario");
 const mensajeUsuario = document.getElementById("mensajeUsuario");
 const listaUsuariosDiv = document.getElementById("listaUsuarios");
@@ -78,7 +74,7 @@ async function cargarUsuarios(){
   });
 }
 
-// Contraseña
+// ------------------- CONFIG -------------------
 document.getElementById("btnGuardarPass").addEventListener("click", async () => {
   const nuevaPass = document.getElementById("inputNuevaPass").value;
   if(!nuevaPass || nuevaPass.length !== 4){
@@ -97,5 +93,6 @@ document.getElementById("btnGuardarPass").addEventListener("click", async () => 
   }
 });
 
-// Inicialmente mostrar panel
+// ------------------- PANEL -------------------
+// Funcionalidad de escaneo, movimientos en tiempo real e impresión automática se integrará aquí
 showSection("panel");
