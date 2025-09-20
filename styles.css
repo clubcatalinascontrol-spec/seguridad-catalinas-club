@@ -2,9 +2,9 @@
   --bg:#1f2634;
   --panel:#111;
   --accent:#f4cf19;
-  --muted:#666666;
+  --muted:#666;
   --text:#fff;
-  --white:#ffffff;
+  --white:#fff;
   --blur-bg:rgba(0,0,0,0.7);
 }
 
@@ -16,8 +16,6 @@ body{
   font-family:"Inter",Arial,sans-serif;
   background:var(--bg);
   color:var(--text);
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
 }
 
 /* top nav centrado */
@@ -37,7 +35,7 @@ body{
 
 /* layout */
 .container{ max-width:1100px; margin:18px auto; padding:0 16px; }
-.page{ display:none; background:var(--panel); padding:18px; border-radius:12px; box-shadow:0 6px 22px rgba(0,0,0,0.15); }
+.page{ display:none; background:var(--panel); padding:18px; border-radius:12px; }
 .page.active{ display:block; }
 .title-centered{text-align:center; margin-bottom:12px;}
 
@@ -48,18 +46,13 @@ button:hover{ background:var(--accent); color:#111; }
 
 /* forms */
 .form-row{ display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
-input, select{
-  background:#fafafa; color:#111;
-  border:1px solid #ccc; padding:8px 10px; border-radius:8px; min-width:140px;
-}
+input, select{ background:#fafafa; color:#111; border:1px solid #ccc; padding:8px 10px; border-radius:8px; min-width:140px; }
 input::placeholder{ color:#999; }
 
 /* tabla */
 .table-wrap{ overflow:auto; margin-top:10px; }
 .sheet{ width:100%; border-collapse:collapse; background:#fff; color:#000; }
-.sheet th, .sheet td{
-  border:1px solid #000; padding:8px 6px; font-size:14px; text-align:center;
-}
+.sheet th, .sheet td{ border:1px solid #000; padding:8px 6px; font-size:14px; text-align:center; }
 .sheet thead th{ background:#f2f2f2; font-weight:700; }
 
 /* botones dentro de tabla */
@@ -75,9 +68,9 @@ input::placeholder{ color:#999; }
 .okmsg{ color:#0a0; font-weight:700; margin-left:8px; }
 
 /* muted */
-.muted{ color:var(--muted); font-size:13px; }
+.muted{ color:#ccc; font-size:13px; }
 
-/* scanner modal y edit modal (oculto por defecto) */
+/* modales */
 .scanner-overlay{ display:none; position:fixed; inset:0; justify-content:center; align-items:center; background:var(--blur-bg); backdrop-filter:blur(4px); z-index:2000; }
 .scanner-overlay.active{ display:flex; }
 .scanner-box{ background:var(--panel); padding:20px; border-radius:12px; text-align:center; box-shadow:0 10px 40px rgba(0,0,0,0.3); }
