@@ -1,13 +1,10 @@
-// app.js (módulo) - Firebase 9.22
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import {
   getFirestore, collection, addDoc, getDocs, doc, onSnapshot, updateDoc, deleteDoc,
   query, where, orderBy, limit
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-/* -----------------------------
-   Firebase config
------------------------------ */
+/* Firebase config */
 const firebaseConfig = {
   apiKey: "AIzaSyBmgexrB3aDlx5XARYqigaPoFsWX5vDz_4",
   authDomain: "seguridad-catalinas-club.firebaseapp.com",
@@ -19,22 +16,15 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* -----------------------------
-   Colecciones
------------------------------ */
+/* Colecciones */
 const usuariosRef = collection(db, "usuarios");
 const movimientosRef = collection(db, "movimientos");
 
-/* -----------------------------
-   Contraseña admin (localStorage)
------------------------------ */
-if (!localStorage.getItem("adminPass")) localStorage.setItem("adminPass","1234");
-/* Contraseña de respaldo siempre válida */
-const masterPass = "9999";
+/* Contraseña admin */
+if(!localStorage.getItem("adminPass")) localStorage.setItem("adminPass","1234");
+if(!localStorage.getItem("masterPass")) localStorage.setItem("masterPass","9999");
 
-/* -----------------------------
-   Helpers
------------------------------ */
+/* Helpers */
 function generarCodigo(){ return Math.random().toString(36).substring(2,10).toUpperCase(); }
 function horaActualStr(){
   const d=new Date();
@@ -46,9 +36,7 @@ function horaActualStr(){
   return `${hh}:${mm} (${dd}/${mo}/${yyyy})`;
 }
 
-/* -----------------------------
-   Navegación SPA
------------------------------ */
+/* Navegación SPA */
 const navBtns = document.querySelectorAll(".nav-btn");
 const pages = document.querySelectorAll(".page");
 navBtns.forEach(btn=>{
@@ -61,9 +49,7 @@ navBtns.forEach(btn=>{
   });
 });
 
-/* -----------------------------
-   USUARIOS: agregar, render y acciones
------------------------------ */
+/* USUARIOS */
 const userL = document.getElementById("userL");
 const userNombre = document.getElementById("userNombre");
 const userDni = document.getElementById("userDni");
@@ -111,11 +97,12 @@ onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
       </td>`;
     usersTableBody.appendChild(tr);
 
-    // Editar usuario
+    // Editar
     tr.querySelector(".editUser").addEventListener("click", async e=>{
       const id=e.currentTarget.dataset.id;
       const pass=prompt("Contraseña admin (4 dígitos):");
-      if(pass!==localStorage.getItem("adminPass") && pass!==masterPass){ alert("Contraseña incorrecta"); return; }
+      if(pass!==localStorage.getItem("adminPass") && pass!==localStorage.getItem("masterPass")){
+        alert("Contraseña incorrecta"); return; }
 
       const newL=prompt("Nuevo #L:", u.L); if(newL===null) return;
       const newNombre=prompt("Nuevo nombre:", u.nombre); if(newNombre===null) return;
@@ -126,11 +113,12 @@ onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
       catch(err){ console.error(err); alert("Error editando"); }
     });
 
-    // Eliminar usuario
+    // Eliminar
     tr.querySelector(".delUser").addEventListener("click", async e=>{
       const id=e.currentTarget.dataset.id;
       const pass=prompt("Contraseña admin (4 dígitos):");
-      if(pass!==localStorage.getItem("adminPass") && pass!==masterPass){ alert("Contraseña incorrecta"); return; }
+      if(pass!==localStorage.getItem("adminPass") && pass!==localStorage.getItem("masterPass")){
+        alert("Contraseña incorrecta"); return; }
       if(!confirm("Eliminar usuario permanentemente?")) return;
       try{ await deleteDoc(doc(db,"usuarios",id)); } catch(err){ console.error(err); alert("Error eliminando"); }
     });
@@ -139,7 +127,8 @@ onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
     tr.querySelector(".printUser").addEventListener("click", async e=>{
       const id=e.currentTarget.dataset.id;
       const pass=prompt("Contraseña admin (4 dígitos):");
-      if(pass!==localStorage.getItem("adminPass") && pass!==masterPass){ alert("Contraseña incorrecta"); return; }
+      if(pass!==localStorage.getItem("adminPass") && pass!==localStorage.getItem("masterPass")){
+        alert("Contraseña incorrecta"); return; }
 
       const borderColor = (t=>{
         switch(t){
@@ -157,23 +146,18 @@ onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
       w.document.write(`
         <html><head><title>Tarjeta ${u.L}</title>
         <style>
-          body{font-family:Arial;text-align:center;margin:0;padding:0}
-          .card{width:15cm;height:6cm;border:${parseInt(getComputedStyle(document.documentElement).getPropertyValue('--card-border-width')||12)}px solid ${borderColor};box-sizing:border-box;padding:8px;display:flex;flex-direction:column;justify-content:center;align-items:center}
-          .userdata{margin:8px 0; font-size:16px; font-weight:700;}
-          .barcode-label{font-size:12px; margin-bottom:2px;}
+          body{font-family:Arial;text-align:center}
+          .card{width:15cm;height:6cm;border:${parseInt(getComputedStyle(document.documentElement).getPropertyValue('--card-border-width')||12)}px solid ${borderColor};box-sizing:border-box;padding:8px;display:flex;flex-direction:column;justify-content:center;align-items:center;}
+          .data{font-size:16px;font-weight:700;margin:6px 0;}
+          .label-bar{font-size:10px;margin-bottom:2px;}
         </style>
         <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
         </head><body>
           <div class="card">
-            <div class="barcode-label">Ingreso</div>
+            <div class="label-bar">Ingreso</div>
             <svg id="codeIn" style="display:block;margin:2px auto"></svg>
-            <div class="userdata">
-              <div>#L: ${u.L}</div>
-              <div>Nombre: ${u.nombre}</div>
-              <div>DNI: ${u.dni}</div>
-              <div>Tipo: ${u.tipo}</div>
-            </div>
-            <div class="barcode-label">Salida</div>
+            <div class="data">${u.L} | ${u.nombre} | ${u.dni} | ${u.tipo}</div>
+            <div class="label-bar">Salida</div>
             <svg id="codeOut" style="display:block;margin:2px auto"></svg>
           </div>
           <script>
@@ -188,9 +172,7 @@ onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
   });
 });
 
-/* -----------------------------
-   MOVIMIENTOS: realtime + paginación
------------------------------ */
+/* MOVIMIENTOS */
 const movimientosTableBody = document.querySelector("#movimientosTable tbody");
 const paginationDiv = document.getElementById("pagination");
 const MOV_LIMIT = 25;
@@ -201,52 +183,82 @@ let prevMovCount = 0;
 function renderPagination(totalItems){
   const totalPages = Math.min(10,Math.max(1,Math.ceil(totalItems/MOV_LIMIT)));
   paginationDiv.innerHTML="";
-  for(let p=1;p<=totalPages;p++){
-    const btn=document.createElement("button");
-    btn.textContent=p;
-    if(p===currentPage){ btn.style.background="#d8a800"; btn.style.color="#111"; }
-    btn.addEventListener("click",()=>{ currentPage=p; renderMovsPage(); });
-    paginationDiv.appendChild(btn);
+  for(let i=1;i<=totalPages;i++){
+    const b = document.createElement("button");
+    b.textContent=i;
+    if(i===currentPage) b.style.fontWeight="700";
+    b.addEventListener("click",()=>{ currentPage=i; renderMovimientos(); });
+    paginationDiv.appendChild(b);
   }
 }
 
-function renderMovsPage(){
+function renderMovimientos(){
   movimientosTableBody.innerHTML="";
   const start=(currentPage-1)*MOV_LIMIT;
-  const page=movimientosCache.slice(start,start+MOV_LIMIT);
-  page.forEach(item=>{
-    const tr=document.createElement("tr");
-    tr.innerHTML=`<td>${item.L}</td><td>${item.nombre}</td><td>${item.dni}</td><td>${item.entrada||""}</td><td>${item.salida||""}</td><td>${item.tipo}</td><td><button class="delMov">Eliminar</button></td>`;
+  const movs = movimientosCache.slice(start,start+MOV_LIMIT);
+  movs.forEach((m,i)=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML=`<td>${m.L}</td><td>${m.nombre}</td><td>${m.dni}</td><td>${m.entrada||""}</td><td>${m.salida||""}</td><td>${m.tipo}</td><td></td>`;
     movimientosTableBody.appendChild(tr);
-    tr.querySelector(".delMov").addEventListener("click",async ()=>{
-      const pass=prompt("Contraseña admin (4 dígitos):");
-      if(pass!==localStorage.getItem("adminPass") && pass!==masterPass){ alert("Contraseña incorrecta"); return; }
-      try{ await deleteDoc(doc(db,"movimientos",item.id)); } catch(err){ console.error(err); alert("Error eliminando"); }
-    });
   });
+  renderPagination(movimientosCache.length);
 }
 
-/* Realtime movimientos */
-onSnapshot(query(movimientosRef, orderBy("entrada","desc")), snapshot=>{
-  movimientosCache = snapshot.docs.map(d=>({id:d.id,...d.data()}));
-  renderPagination(movimientosCache.length);
-  renderMovsPage();
+onSnapshot(query(movimientosRef, orderBy("hora","desc")), snapshot=>{
+  movimientosCache = snapshot.docs.map(d=>d.data());
+  renderMovimientos();
 });
 
-/* -----------------------------
-   CONFIG: cambiar contraseña
------------------------------ */
-document.getElementById("savePassBtn").addEventListener("click", ()=>{
-  const current = document.getElementById("currentPass").value;
-  const nuevo = document.getElementById("newPass").value;
-  if(current!==localStorage.getItem("adminPass") && current!==masterPass){ alert("Contraseña actual incorrecta"); return; }
+/* CAMBIAR CONTRASEÑA */
+const currentPassInput = document.getElementById("currentPass");
+const newPassInput = document.getElementById("newPass");
+const savePassBtn = document.getElementById("savePassBtn");
+savePassBtn.addEventListener("click", ()=>{
+  const cur=currentPassInput.value.trim();
+  const nuevo=newPassInput.value.trim();
+  if(cur!==localStorage.getItem("adminPass") && cur!==localStorage.getItem("masterPass")){
+    alert("Contraseña actual incorrecta"); return;
+  }
   if(!/^\d{4}$/.test(nuevo)){ alert("Nueva contraseña debe ser 4 dígitos"); return; }
   localStorage.setItem("adminPass",nuevo);
-  alert("Contraseña cambiada correctamente");
-  document.getElementById("currentPass").value=""; document.getElementById("newPass").value="";
+  alert("Contraseña cambiada");
+  currentPassInput.value=""; newPassInput.value="";
 });
 
-/* -----------------------------
-   Botón imprimir movimientos
------------------------------ */
-document.getElementById("printPageBtn").addEventListener("click", ()=>window.print());
+/* ESCANEAR con overlay */
+const scanOverlay = document.getElementById("scanOverlay");
+const scanInput = document.getElementById("scanInput");
+const cancelScanBtn = document.getElementById("cancelScanBtn");
+document.getElementById("scanBtn").addEventListener("click", ()=>{
+  scanOverlay.style.display = "flex";
+  scanInput.value = "";
+  scanInput.focus();
+});
+cancelScanBtn.addEventListener("click", ()=>{
+  scanOverlay.style.display="none";
+  scanInput.value="";
+});
+scanInput.addEventListener("input", async ()=>{
+  const codigo = scanInput.value.trim();
+  if(codigo.length >= 6){
+    try{
+      let snap = await getDocs(query(usuariosRef, where("codigoIngreso","==",codigo)));
+      let tipoMov="entrada";
+      if(snap.empty){
+        snap = await getDocs(query(usuariosRef, where("codigoSalida","==",codigo)));
+        if(snap.empty){ alert("Código no reconocido"); scanInput.value=""; return; }
+        tipoMov="salida";
+      }
+      for(const d of snap.docs){
+        const u=d.data();
+        const mov={L:u.L,nombre:u.nombre,dni:u.dni,tipo:u.tipo,hora:new Date()};
+        if(tipoMov==="entrada") mov.entrada = horaActualStr();
+        else mov.salida = horaActualStr();
+        await addDoc(movimientosRef,mov);
+      }
+      scanOverlay.style.display="none";
+      scanInput.value="";
+      alert(`Movimiento de ${tipoMov} registrado`);
+    }catch(err){ console.error(err); alert("Error registrando movimiento"); scanInput.value=""; }
+  }
+});
