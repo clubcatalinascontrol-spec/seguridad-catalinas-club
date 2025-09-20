@@ -21,10 +21,14 @@
   <main class="container">
     <!-- PANEL -->
     <section id="panel" class="page active">
-      <h2 class="center-text">Control de acceso y egreso de Catalinas Country</h2>
+      <h2 class="centered-title">Control de acceso y egreso de Catalinas Country</h2>
       <div class="controls">
         <button id="scanBtn">ESCANEAR</button>
         <button id="printPageBtn">Imprimir movimientos</button>
+      </div>
+      <div id="scanDiv" class="scan-div hidden">
+        <input id="scanInput" maxlength="8" placeholder="Ingrese código de barras" />
+        <button id="cancelScanBtn">Cancelar</button>
       </div>
       <div class="table-wrap">
         <table id="movimientosTable" class="sheet">
@@ -41,7 +45,7 @@
 
     <!-- USUARIOS -->
     <section id="usuarios" class="page">
-      <h2 class="center-text">Gestión de Usuarios</h2>
+      <h2 class="centered-title">Gestión de Usuarios</h2>
       <div class="form-row">
         <input id="userL" placeholder="#L (num, max 3)" maxlength="3" inputmode="numeric" />
         <input id="userNombre" placeholder="Nombre completo (max 30)" maxlength="30" />
@@ -71,7 +75,7 @@
 
     <!-- CONFIG -->
     <section id="config" class="page">
-      <h2 class="center-text">Cambiar Contraseña</h2>
+      <h2 class="centered-title">Cambiar Contraseña</h2>
       <div class="form-row">
         <input id="currentPass" type="password" placeholder="Contraseña actual (4 dígitos)" maxlength="4" inputmode="numeric" />
         <input id="newPass" type="password" placeholder="Nueva contraseña (4 dígitos)" maxlength="4" inputmode="numeric" />
@@ -80,15 +84,6 @@
       <p class="muted">La contraseña debe estar compuesta únicamente por 4 números. Se usará para editar/eliminar usuarios y movimientos en el panel y para imprimir las tarjetas de cada usuario</p>
     </section>
   </main>
-
-  <!-- Div escaneo -->
-  <div id="scanOverlay" class="scan-overlay" style="display:none;">
-    <div class="scan-box">
-      <h3>Escanear código de barras</h3>
-      <input id="scanInput" type="text" autofocus />
-      <button id="cancelScanBtn">Cancelar</button>
-    </div>
-  </div>
 
   <script type="module" src="app.js"></script>
 </body>
