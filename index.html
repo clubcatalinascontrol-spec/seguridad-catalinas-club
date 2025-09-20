@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Catalinas Country — Control de Ingreso</title>
   <link rel="stylesheet" href="styles.css" />
-  <!-- JsBarcode (para impresión de tarjetas) -->
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 </head>
 <body>
@@ -22,13 +21,11 @@
   <main class="container">
     <!-- PANEL -->
     <section id="panel" class="page active">
-      <h2 class="title-centered">Control de acceso y egreso de Catalinas Country</h2>
+      <h2 class="centered-title">Control de acceso y egreso de Catalinas Country</h2>
       <div class="controls">
         <button id="scanBtn">ESCANEAR</button>
-        <button id="printPageBtn">Imprimir movimientos</button>
-        <span id="scanOk" class="okmsg" style="display:none;font-weight:700;">OK</span>
+        <button id="btnPrint">Imprimir movimientos</button>
       </div>
-
       <div class="table-wrap">
         <table id="movimientosTable" class="sheet">
           <thead>
@@ -39,14 +36,12 @@
           <tbody></tbody>
         </table>
       </div>
-
       <div id="pagination" class="pagination"></div>
     </section>
 
     <!-- USUARIOS -->
     <section id="usuarios" class="page">
-      <h2 class="title-centered">Gestión de Usuarios</h2>
-
+      <h2 class="centered-title">Gestión de Usuarios</h2>
       <div class="form-row">
         <input id="userL" placeholder="#L (num, max 3)" maxlength="3" inputmode="numeric" />
         <input id="userNombre" placeholder="Nombre completo (max 30)" maxlength="30" />
@@ -64,7 +59,6 @@
         <button id="addUserBtn">Agregar Usuario</button>
         <span id="userMessage" class="okmsg"></span>
       </div>
-
       <div class="table-wrap">
         <table id="usersTable" class="sheet">
           <thead>
@@ -77,7 +71,7 @@
 
     <!-- CONFIG -->
     <section id="config" class="page">
-      <h2 class="title-centered">Cambiar Contraseña</h2>
+      <h2 class="centered-title">Cambiar Contraseña</h2>
       <div class="form-row">
         <input id="currentPass" type="password" placeholder="Contraseña actual (4 dígitos)" maxlength="4" inputmode="numeric" />
         <input id="newPass" type="password" placeholder="Nueva contraseña (4 dígitos)" maxlength="4" inputmode="numeric" />
@@ -87,15 +81,12 @@
     </section>
   </main>
 
-  <!-- MODAL ESCANEO (oculto por defecto) -->
-  <div id="scanModal" class="scanner-overlay">
-    <div class="scanner-box" role="dialog" aria-modal="true" aria-labelledby="scan-title">
-      <h3 id="scan-title">Escanear código</h3>
-      <input id="scanInput" maxlength="8" placeholder="Pegue/teclee 8 caracteres" inputmode="text" />
-      <div style="margin-top:10px;display:flex;gap:8px;justify-content:center;align-items:center;">
-        <button id="cancelScanBtn">Cancelar</button>
-      </div>
-      <div id="scanMessage" style="margin-top:10px;font-weight:700;"></div>
+  <!-- DIV FLOTANTE ESCANEAR -->
+  <div id="scannerDiv" class="scanner-overlay hidden">
+    <div class="scanner-box">
+      <input id="scannerInput" maxlength="8" placeholder="Escanee el código" autofocus />
+      <button id="cancelScanBtn">Cancelar</button>
+      <span id="scanMessage" class="okmsg"></span>
     </div>
   </div>
 
