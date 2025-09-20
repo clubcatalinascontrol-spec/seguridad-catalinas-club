@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Catalinas Country — Control de Ingreso</title>
   <link rel="stylesheet" href="styles.css" />
+  <!-- JsBarcode (para impresión de tarjetas) -->
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 </head>
 <body>
@@ -25,7 +26,9 @@
       <div class="controls">
         <button id="scanBtn">ESCANEAR</button>
         <button id="printPageBtn">Imprimir movimientos</button>
+        <span id="scanOk" class="okmsg" style="display:none;font-weight:700;">OK</span>
       </div>
+
       <div class="table-wrap">
         <table id="movimientosTable" class="sheet">
           <thead>
@@ -36,12 +39,14 @@
           <tbody></tbody>
         </table>
       </div>
+
       <div id="pagination" class="pagination"></div>
     </section>
 
     <!-- USUARIOS -->
     <section id="usuarios" class="page">
       <h2 class="title-centered">Gestión de Usuarios</h2>
+
       <div class="form-row">
         <input id="userL" placeholder="#L (num, max 3)" maxlength="3" inputmode="numeric" />
         <input id="userNombre" placeholder="Nombre completo (max 30)" maxlength="30" />
@@ -59,6 +64,7 @@
         <button id="addUserBtn">Agregar Usuario</button>
         <span id="userMessage" class="okmsg"></span>
       </div>
+
       <div class="table-wrap">
         <table id="usersTable" class="sheet">
           <thead>
@@ -81,15 +87,15 @@
     </section>
   </main>
 
-  <!-- MODAL ESCANEO -->
-  <div id="scanModal" class="modal hidden">
-    <div class="modal-content">
-      <h3>Escanear código de barras</h3>
-      <input id="scanInput" maxlength="8" autofocus />
-      <div class="modal-buttons">
+  <!-- MODAL ESCANEO (oculto por defecto) -->
+  <div id="scanModal" class="scanner-overlay">
+    <div class="scanner-box" role="dialog" aria-modal="true" aria-labelledby="scan-title">
+      <h3 id="scan-title">Escanear código</h3>
+      <input id="scanInput" maxlength="8" placeholder="Pegue/teclee 8 caracteres" inputmode="text" />
+      <div style="margin-top:10px;display:flex;gap:8px;justify-content:center;align-items:center;">
         <button id="cancelScanBtn">Cancelar</button>
       </div>
-      <div id="scanMessage"></div>
+      <div id="scanMessage" style="margin-top:10px;font-weight:700;"></div>
     </div>
   </div>
 
