@@ -1,40 +1,87 @@
 :root{
-  --bg:#111;
-  --panel:#222;
-  --accent:#f4cf19;
-  --muted:#b0b0b0;
-  --white:#fff;
+  --bg:#121212;
+  --panel:#1c1c1c;
+  --accent:#f4cf19; /* amarillo */
+  --muted:#9b9b9b;
+  --white:#ffffff;
+  --card-border-width:12px;
 }
 
 /* reset y base */
 *{box-sizing:border-box}
-body{margin:0; font-family:Arial, sans-serif; background:var(--bg); color:var(--white);}
-.hidden{display:none;}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:"Inter",Arial,sans-serif;
+  background:var(--bg);
+  color:var(--white);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
 
-/* top nav */
-.topbar{padding:14px 8px; display:flex; justify-content:center;}
+/* top nav centrado */
+.topbar{padding:18px 8px; display:flex; justify-content:center;}
 .nav-center{display:flex; gap:12px; align-items:center;}
-.nav-btn{background:var(--panel); color:var(--accent); padding:10px 18px; border-radius:8px; border:2px solid transparent; cursor:pointer; font-weight:700;}
+.nav-btn{
+  background:var(--panel);
+  color:var(--accent);
+  padding:10px 18px;
+  border-radius:8px;
+  border:2px solid transparent;
+  font-weight:700;
+  cursor:pointer;
+}
 .nav-btn.active{background:var(--accent); color:#111; border-color:var(--accent);}
-.nav-btn:hover{opacity:0.9;}
+.nav-btn:hover{opacity:0.95;}
 
 /* layout */
 .container{max-width:1100px; margin:18px auto; padding:0 16px;}
-.page{display:none; background:var(--panel); padding:18px; border-radius:12px;}
+.page{display:none; background:var(--panel); padding:18px; border-radius:12px; box-shadow:0 6px 22px rgba(0,0,0,0.6);}
 .page.active{display:block;}
-.center-text{text-align:center; margin-bottom:16px;}
 
 /* controls */
 .controls{display:flex; gap:10px; justify-content:center; margin-bottom:12px;}
 button{background:transparent; color:var(--accent); border:2px solid var(--accent); padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:600;}
 button:hover{background:var(--accent); color:#111;}
 
-/* scanner div overlay */
+/* forms */
+.form-row{display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap:wrap; margin-bottom:12px;}
+input, select{
+  background:#111; color:var(--white);
+  border:1px solid #333; padding:8px 10px; border-radius:8px; min-width:140px;
+}
+input::placeholder{color:#999;}
+
+/* tabla */
+.table-wrap{overflow:auto; margin-top:10px;}
+.sheet{width:100%; border-collapse:collapse; background:#fff; color:#000;}
+.sheet th, .sheet td{border:1px solid #000; padding:8px 6px; font-size:14px; text-align:center;}
+.sheet thead th{background:#f2f2f2; font-weight:700;}
+
+/* pagination */
+.pagination{margin-top:12px; display:flex; gap:6px; justify-content:center; flex-wrap:wrap;}
+
+/* mensajes */
+.okmsg{color:#8fd19e; font-weight:700; margin-left:8px;}
+
+/* muted */
+.muted{color:var(--muted); font-size:13px;}
+
+/* impresión */
+@media print {
+  body{background:#fff; color:#000;}
+  .sheet{page-break-after:always;}
+}
+
+/* Scanner Div */
 .scanner-div{
-  display:flex; justify-content:center; align-items:center;
+  display:none; 
+  justify-content:center; align-items:center;
   position:fixed; top:0; left:0; width:100%; height:100%;
   background:rgba(0,0,0,0.7); z-index:1000;
 }
+.scanner-div.active{ display:flex; }
+
 .scanner-box{
   background:#1c1c1c; padding:24px; border-radius:12px;
   display:flex; flex-direction:column; align-items:center; gap:12px;
@@ -45,21 +92,5 @@ button:hover{background:var(--accent); color:#111;}
 .scanner-box button{padding:6px 10px; border-radius:6px; background:var(--accent); border:none; color:#111; cursor:pointer; font-weight:700;}
 .scanner-box button:hover{opacity:0.9;}
 
-/* blur */
+/* blur al fondo */
 .blur{filter:blur(3px);}
-
-/* forms */
-.form-row{display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap:wrap; margin-bottom:12px;}
-input, select{background:#111; color:var(--white); border:1px solid #333; padding:8px 10px; border-radius:8px; min-width:140px;}
-
-/* tabla */
-.table-wrap{overflow:auto; margin-top:10px;}
-.sheet{width:100%; border-collapse:collapse; background:#fff; color:#000;}
-.sheet th, .sheet td{border:1px solid #000; padding:8px 6px; font-size:14px; text-align:center;}
-.sheet thead th{background:#f2f2f2; font-weight:700;}
-.delMov{padding:4px 8px; background:#f44336; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:12px;}
-.delMov:hover{opacity:0.85;}
-
-/* mensajes */
-.okmsg{color:#8fd19e; font-weight:700; margin-left:8px;}
-.muted{color:var(--muted); font-size:13px;}
