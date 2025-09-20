@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Catalinas Country — Control de Ingreso</title>
+  <title>Control de ingreso Catalinas Country</title>
   <link rel="stylesheet" href="styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 </head>
@@ -18,7 +18,7 @@
     </div>
   </header>
 
-  <main class="container">
+  <main class="container" id="mainContent">
     <!-- PANEL -->
     <section id="panel" class="page active">
       <h2 class="center-text">Control de acceso y egreso de Catalinas Country</h2>
@@ -36,16 +36,15 @@
           <tbody></tbody>
         </table>
       </div>
-      <div id="pagination" class="pagination"></div>
     </section>
 
     <!-- USUARIOS -->
     <section id="usuarios" class="page">
       <h2 class="center-text">Gestión de Usuarios</h2>
       <div class="form-row">
-        <input id="userL" placeholder="#L (num, max 3)" maxlength="3" inputmode="numeric" />
+        <input id="userL" placeholder="#L (num, max 3)" maxlength="3" />
         <input id="userNombre" placeholder="Nombre completo (max 30)" maxlength="30" />
-        <input id="userDni" placeholder="DNI (8 dígitos)" maxlength="8" inputmode="numeric" />
+        <input id="userDni" placeholder="DNI (8 dígitos)" maxlength="8" />
         <select id="userTipo">
           <option value="">Tipo</option>
           <option value="propietario">propietario</option>
@@ -71,21 +70,20 @@
 
     <!-- CONFIG -->
     <section id="config" class="page">
-      <h2 class="center-text">Cambiar Contraseña</h2>
+      <h2>Cambiar Contraseña</h2>
       <div class="form-row">
-        <input id="currentPass" type="password" placeholder="Contraseña actual (4 dígitos)" maxlength="4" inputmode="numeric" />
-        <input id="newPass" type="password" placeholder="Nueva contraseña (4 dígitos)" maxlength="4" inputmode="numeric" />
+        <input id="currentPass" type="password" placeholder="Contraseña actual (4 dígitos)" maxlength="4" />
+        <input id="newPass" type="password" placeholder="Nueva contraseña (4 dígitos)" maxlength="4" />
         <button id="savePassBtn">Cambiar Contraseña</button>
       </div>
       <p class="muted">La contraseña debe estar compuesta únicamente por 4 números. Se usará para editar/eliminar usuarios y movimientos en el panel y para imprimir las tarjetas de cada usuario</p>
     </section>
   </main>
 
-  <!-- Div escaneo -->
-  <div id="scanOverlay" class="scan-overlay" style="display:none;">
-    <div class="scan-box">
-      <h3>Escanear código de barras</h3>
-      <input id="scanInput" type="text" autofocus />
+  <!-- Div de escaneo -->
+  <div id="scannerDiv" class="scanner-div hidden">
+    <div class="scanner-box">
+      <input id="scannerInput" placeholder="Ingrese código de barras" />
       <button id="cancelScanBtn">Cancelar</button>
     </div>
   </div>
