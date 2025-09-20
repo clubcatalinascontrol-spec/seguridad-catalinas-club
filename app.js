@@ -12,7 +12,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-if(!localStorage.getItem("adminPass")) localStorage.setItem("adminPass","123456789");
+if(!localStorage.getItem("adminPass")) localStorage.setItem("adminPass","1234"); // por defecto
 
 const navBtns = document.querySelectorAll(".nav-btn");
 const pages = document.querySelectorAll(".page");
