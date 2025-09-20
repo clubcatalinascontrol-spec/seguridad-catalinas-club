@@ -1,15 +1,22 @@
+<!DOCTYPE html>
 <!doctype html>
 <html lang="es">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Catalinas Country - Control de Ingreso</title>
   <title>Catalinas Country — Control de Ingreso</title>
   <link rel="stylesheet" href="styles.css" />
+  <!-- JsBarcode para generar códigos en impresión -->
   <!-- JsBarcode (necesario para imprimir códigos) -->
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 </head>
 <body>
   <header class="topbar">
+    <div class="nav-center">
+      <button class="nav-btn active" data-section="panel">PANEL</button>
+      <button class="nav-btn" data-section="usuarios">USUARIOS</button>
+      <button class="nav-btn" data-section="config">CONFIG</button>
     <div class="nav">
       <div class="nav-center">
         <button class="nav-btn active" data-section="panel">PANEL</button>
@@ -22,62 +29,36 @@
   <main class="container">
     <!-- PANEL -->
     <section id="panel" class="page active">
+      <h1>PANEL — Movimientos (en tiempo real)</h1>
       <h2>PANEL — Movimientos (en tiempo real)</h2>
       <div class="controls">
         <button id="scanBtn">ESCANEAR</button>
         <button id="printPageBtn">IMPRIMIR ÚLTIMA PÁGINA</button>
-      </div>
-
-      <div class="table-wrap">
-        <table id="movimientosTable" class="sheet">
-          <thead>
-            <tr>
-              <th>#L</th><th>Nombre</th><th>DNI</th><th>H. Entrada</th><th>H. Salida</th><th>Tipo</th><th>Acción</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-
-      <div id="pagination" class="pagination"></div>
-    </section>
+@@ -42,10 +44,11 @@ <h1>PANEL — Movimientos (en tiempo real)</h1>
 
     <!-- USUARIOS -->
     <section id="usuarios" class="page">
+      <h1>USUARIOS — Gestión</h1>
       <h2>USUARIOS — Gestión</h2>
 
       <div class="form-row">
+        <input id="userL" placeholder="#L (max 3)" maxlength="3" />
+        <input id="userNombre" placeholder="Nombre Completo (max 30)" maxlength="30" />
         <input id="userL" placeholder="#L (num, max 3)" maxlength="3" inputmode="numeric" />
         <input id="userNombre" placeholder="Nombre completo (max 30)" maxlength="30" />
         <input id="userDni" placeholder="DNI (8 dígitos)" maxlength="8" inputmode="numeric" />
         <select id="userTipo">
           <option value="">Tipo</option>
-          <option value="propietario">propietario</option>
-          <option value="administracion">administración</option>
-          <option value="empleado">empleado</option>
-          <option value="obrero">obrero</option>
-          <option value="invitado">invitado</option>
-          <option value="guardia">guardia</option>
-          <option value="otro">otro</option>
-        </select>
-        <button id="addUserBtn">Agregar Usuario</button>
-        <span id="userMessage" class="okmsg"></span>
-      </div>
-
-      <div class="table-wrap">
-        <table id="usersTable" class="sheet">
-          <thead>
-            <tr><th>#L</th><th>Nombre</th><th>DNI</th><th>Tipo</th><th>Acciones</th></tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </section>
+@@ -73,16 +76,16 @@ <h1>USUARIOS — Gestión</h1>
 
     <!-- CONFIG -->
     <section id="config" class="page">
+      <h1>CONFIG — PIN Maestro</h1>
       <h2>CONFIG — Contraseña administrador</h2>
       <div class="form-row">
+        <input id="currentPin" type="password" placeholder="PIN actual (4 dígitos)" maxlength="4" inputmode="numeric"/>
+        <input id="newPin" type="password" placeholder="Nuevo PIN (4 dígitos)" maxlength="4" inputmode="numeric"/>
+        <button id="savePin">Guardar PIN</button>
         <input id="currentPass" type="password" placeholder="Contraseña actual (4 dígitos)" maxlength="4" inputmode="numeric" />
         <input id="newPass" type="password" placeholder="Nueva contraseña (4 dígitos)" maxlength="4" inputmode="numeric" />
         <button id="savePassBtn">Cambiar Contraseña</button>
@@ -86,6 +67,7 @@
     </section>
   </main>
 
+  <!-- script modular: app.js -->
   <script type="module" src="app.js"></script>
 </body>
 </html>
