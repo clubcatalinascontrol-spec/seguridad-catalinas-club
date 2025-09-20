@@ -44,9 +44,9 @@
   <section id="usuarios" class="page">
     <h2 class="title-centered">Gestión de Usuarios</h2>
     <div class="form-row">
-      <input id="userL" placeholder="#L (num, max 3)" maxlength="3" inputmode="numeric" />
-      <input id="userNombre" placeholder="Nombre completo (max 25)" maxlength="25" />
-      <input id="userDni" placeholder="DNI (8 dígitos)" maxlength="8" inputmode="numeric" />
+      <input id="userL" placeholder="Ingrese Lote (max 3 dígitos)" maxlength="3" inputmode="numeric" />
+      <input id="userNombre" placeholder="Nombre Completo (25 letras)" maxlength="25" />
+      <input id="userDni" placeholder="DNI (max 8 dígitos)" maxlength="8" inputmode="numeric" />
       <select id="userTipo">
         <option value="">Tipo</option>
         <option value="propietario">propietario</option>
@@ -79,7 +79,7 @@
       <button id="savePassBtn">Cambiar Contraseña</button>
     </div>
     <div class="form-row">
-      <button id="restoreDefaultBtn">Restaurar contraseña por defecto (RESTAURAR)</button>
+      <button id="restoreDefaultBtn">Restaurar Contraseña</button>
       <span id="restoreMsg" class="okmsg"></span>
     </div>
     <p class="muted">La contraseña debe estar compuesta únicamente por 4 números. Se usará para editar/eliminar usuarios y movimientos en el panel y para imprimir las tarjetas de cada usuario</p>
@@ -126,3 +126,4 @@
 <script type="module" src="app.js"></script>
 </body>
 </html>
+
