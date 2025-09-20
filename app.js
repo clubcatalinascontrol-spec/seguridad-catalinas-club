@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, onSnapshot } from "firebase/firestore";
+import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, updateDoc, onSnapshot, query, orderBy, limit } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBmgexrB3aDlx5XARYqigaPoFsWX5vDz_4",
@@ -13,86 +13,167 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Master password permanente
-const MASTER_PASSWORD = "9999";
+let CONTRASEÑA_GLOBAL = "0000"; // password master permanente
+let contraseñaActual = "1234"; // editable
 
 // Secciones
-const sections = { panel: document.getElementById("panel"), usuarios: document.getElementById("usuarios"), config: document.getElementById("config") };
-document.getElementById("btnPanel").addEventListener("click", () => showSection("panel"));
-document.getElementById("btnUsuarios").addEventListener("click", () => { showSection("usuarios"); cargarUsuarios(); });
-document.getElementById("btnConfig").addEventListener("click", () => showSection("config"));
+const sectionPanel = document.getElementById("sectionPanel");
+const sectionUsuarios = document.getElementById("sectionUsuarios");
+const sectionConfig = document.getElementById("sectionConfig");
 
-function showSection(name){
-  Object.values(sections).forEach(sec => sec.classList.remove("active"));
-  sections[name].classList.add("active");
+// Botones navegación
+document.getElementById("btnPanel").onclick = () => showSection(sectionPanel);
+document.getElementById("btnUsuarios").onclick = () => showSection(sectionUsuarios);
+document.getElementById("btnConfig").onclick = () => showSection(sectionConfig);
+
+function showSection(section) {
+  [sectionPanel, sectionUsuarios, sectionConfig].forEach(s => s.style.display = "none");
+  section.style.display = "block";
 }
 
-// ------------------- USUARIOS -------------------
-const btnAgregarUsuario = document.getElementById("btnAgregarUsuario");
-const mensajeUsuario = document.getElementById("mensajeUsuario");
-const listaUsuariosDiv = document.getElementById("listaUsuarios");
+// PANEL: Movimientos en tiempo real
+const tablaMovimientos = document.getElementById("tablaMovimientos").getElementsByTagName("tbody")[0];
+const btnImprimirUltima = document.getElementById("btnImprimirUltima");
 
-btnAgregarUsuario.addEventListener("click", async () => {
-  const inputL = document.getElementById("inputL").value;
-  const inputNombre = document.getElementById("inputNombre").value;
-  const inputDNI = document.getElementById("inputDNI").value;
-  const inputTipo = document.getElementById("inputTipo").value;
+const movCollection = collection(db, "movimientos");
+const movQuery = query(movCollection, orderBy("timestamp","desc"), limit(25));
 
-  if(!inputL || !inputNombre || !inputDNI || !inputTipo){
-    mensajeUsuario.textContent = "Todos los campos son obligatorios";
-    mensajeUsuario.style.color = "red";
-    return;
-  }
-
-  try {
-    await addDoc(collection(db, "usuarios"), {
-      L: Number(inputL),
-      nombre: inputNombre,
-      dni: Number(inputDNI),
-      tipo: inputTipo,
-      codigoEntrada: Math.floor(Math.random()*10000000),
-      codigoSalida: Math.floor(Math.random()*10000000)
-    });
-    mensajeUsuario.textContent = "Usuario agregado con éxito";
-    mensajeUsuario.style.color = "#4CAF50";
-    cargarUsuarios();
-  } catch(err){
-    mensajeUsuario.textContent = "Error al agregar usuario";
-    mensajeUsuario.style.color = "red";
-    console.error(err);
-  }
+onSnapshot(movQuery, snapshot => {
+  tablaMovimientos.innerHTML = "";
+  snapshot.forEach(docSnap => {
+    const data = docSnap.data();
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${data.L}</td><td>${data.nombre}</td><td>${data.dni}</td><td>${data.hEntrada}</td><td>${data.hSalida}</td><td>${data.tipo}</td>
+    <td><button onclick="eliminarMovimiento('${docSnap.id}')">X</button></td>`;
+    tablaMovimientos.appendChild(tr);
+  });
 });
 
-async function cargarUsuarios(){
-  listaUsuariosDiv.innerHTML = "";
-  const querySnapshot = await getDocs(collection(db, "usuarios"));
-  querySnapshot.forEach(docu => {
-    const user = docu.data();
-    const div = document.createElement("div");
-    div.textContent = `#${user.L} - ${user.nombre} - ${user.dni} - Tipo: ${user.tipo}`;
-    listaUsuariosDiv.appendChild(div);
-  });
+window.eliminarMovimiento = async (id) => {
+  const pin = prompt("Ingrese contraseña para eliminar:");
+  if(pin === CONTRASEÑA_GLOBAL || pin === contraseñaActual){
+    await deleteDoc(doc(db,"movimientos",id));
+    alert("Movimiento eliminado.");
+  } else alert("Contraseña incorrecta.");
 }
 
-// ------------------- CONFIG -------------------
-document.getElementById("btnGuardarPass").addEventListener("click", async () => {
-  const nuevaPass = document.getElementById("inputNuevaPass").value;
-  if(!nuevaPass || nuevaPass.length !== 4){
-    document.getElementById("mensajeConfig").textContent = "La contraseña debe tener 4 dígitos";
-    document.getElementById("mensajeConfig").style.color = "red";
+btnImprimirUltima.onclick = () => {
+  window.print();
+}
+
+// USUARIOS
+const inpL = document.getElementById("inpL");
+const inpNombre = document.getElementById("inpNombre");
+const inpDNI = document.getElementById("inpDNI");
+const inpTipo = document.getElementById("inpTipo");
+const btnAgregarUsuario = document.getElementById("btnAgregarUsuario");
+const mensajeUsuario = document.getElementById("mensajeUsuario");
+const listaUsuarios = document.getElementById("listaUsuarios");
+
+const usuariosCollection = collection(db,"usuarios");
+
+btnAgregarUsuario.onclick = async () => {
+  if(!inpL.value || !inpNombre.value || !inpDNI.value || !inpTipo.value) {
+    mensajeUsuario.innerText = "Complete todos los campos.";
+    return;
+  }
+  if(inpDNI.value.length > 8){
+    mensajeUsuario.innerText = "DNI máximo 8 dígitos.";
     return;
   }
   try{
-    await updateDoc(doc(db, "config", "contraseña"), {clave: nuevaPass});
-    document.getElementById("mensajeConfig").textContent = "Contraseña guardada con éxito";
-    document.getElementById("mensajeConfig").style.color = "#4CAF50";
-  }catch(err){
-    console.error(err);
-    document.getElementById("mensajeConfig").textContent = "Error al guardar contraseña";
-    document.getElementById("mensajeConfig").style.color = "red";
+    const nuevoUsuario = {
+      L: inpL.value,
+      nombre: inpNombre.value,
+      dni: inpDNI.value,
+      tipo: inpTipo.value,
+      codigoEntrada: Math.random().toString(36).substr(2,8),
+      codigoSalida: Math.random().toString(36).substr(2,8)
+    }
+    await addDoc(usuariosCollection,nuevoUsuario);
+    mensajeUsuario.innerText = "Usuario agregado con éxito";
+    inpL.value=""; inpNombre.value=""; inpDNI.value=""; inpTipo.value="";
+  } catch(e){
+    mensajeUsuario.innerText = "Error al agregar usuario";
   }
+}
+
+// Listado de usuarios en tiempo real
+onSnapshot(usuariosCollection, snapshot=>{
+  listaUsuarios.innerHTML="";
+  snapshot.forEach(docSnap=>{
+    const u = docSnap.data();
+    const div = document.createElement("div");
+    div.innerHTML = `<strong>#${u.L} ${u.nombre} (${u.dni}) Tipo: ${u.tipo}</strong>
+      <button onclick="imprimirTarjeta('${docSnap.id}')">Imprimir Tarjeta</button>
+      <button onclick="editarUsuario('${docSnap.id}')">Editar</button>
+      <button onclick="eliminarUsuario('${docSnap.id}')">Eliminar</button>`;
+    listaUsuarios.appendChild(div);
+  });
 });
 
-// ------------------- PANEL -------------------
-// Funcionalidad de escaneo, movimientos en tiempo real e impresión automática se integrará aquí
-showSection("panel");
+window.imprimirTarjeta = async (id) => {
+  const docu = await getDocs(usuariosCollection);
+  docu.forEach(docSnap=>{
+    if(docSnap.id===id){
+      const u = docSnap.data();
+      const pin = prompt("Ingrese contraseña para imprimir tarjeta:");
+      if(pin===CONTRASEÑA_GLOBAL || pin===contraseñaActual){
+        const ventana = window.open();
+        ventana.document.write(`<h2>${u.L} - ${u.nombre} - ${u.dni} - ${u.tipo}</h2>
+        <p>Entrada: ${u.codigoEntrada}</p><p>Salida: ${u.codigoSalida}</p>`);
+        ventana.print();
+      } else alert("Contraseña incorrecta.");
+    }
+  });
+}
+
+window.editarUsuario = async (id) => {
+  const pin = prompt("Ingrese contraseña para editar usuario:");
+  if(pin!==CONTRASEÑA_GLOBAL && pin!==contraseñaActual){
+    alert("Contraseña incorrecta."); return;
+  }
+  const docRef = doc(db,"usuarios",id);
+  const nuevoNombre = prompt("Ingrese nuevo nombre:");
+  if(nuevoNombre) await updateDoc(docRef,{nombre:nuevoNombre});
+}
+
+// ELIMINAR USUARIO
+window.eliminarUsuario = async (id) => {
+  const pin = prompt("Ingrese contraseña para eliminar usuario:");
+  if(pin!==CONTRASEÑA_GLOBAL && pin!==contraseñaActual){ alert("Contraseña incorrecta."); return; }
+  await deleteDoc(doc(db,"usuarios",id));
+}
+
+// CONFIG: cambiar contraseña
+document.getElementById("btnCambiarContraseña").onclick = () => {
+  const nueva = document.getElementById("inpNuevaContraseña").value;
+  if(nueva.length!==4){ document.getElementById("mensajeConfig").innerText="Debe ser 4 dígitos"; return; }
+  contraseñaActual = nueva;
+  document.getElementById("mensajeConfig").innerText="Contraseña cambiada con éxito";
+}
+
+// ESCANEAR
+document.getElementById("btnEscanear").onclick = async () => {
+  const codigo = prompt("Ingrese código de escaneo:");
+  const usuariosSnap = await getDocs(usuariosCollection);
+  let encontrado=false;
+  usuariosSnap.forEach(docSnap=>{
+    const u = docSnap.data();
+    if(codigo===u.codigoEntrada || codigo===u.codigoSalida){
+      const now = new Date();
+      const h = now.getHours().toString().padStart(2,"0")+":"+now.getMinutes().toString().padStart(2,"0");
+      const fecha = `(${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()})`;
+      const mov = {
+        L:u.L, nombre:u.nombre, dni:u.dni,
+        hEntrada: codigo===u.codigoEntrada?h: "",
+        hSalida: codigo===u.codigoSalida?h: "",
+        tipo:u.tipo,
+        timestamp: now
+      }
+      addDoc(movCollection,mov);
+      encontrado=true;
+    }
+  });
+  if(!encontrado) alert("Código no encontrado.");
+}
