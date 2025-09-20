@@ -21,10 +21,10 @@
   <main class="container">
     <!-- PANEL -->
     <section id="panel" class="page active">
-      <h2>PANEL — Movimientos (en tiempo real)</h2>
+      <h2 class="center-title">Control de acceso y egreso de Catalinas Country</h2>
       <div class="controls">
         <button id="scanBtn">ESCANEAR</button>
-        <button id="printPageBtn">IMPRIMIR ÚLTIMA PÁGINA</button>
+        <button id="printPageBtn">IMPRIMIR MOVIMIENTOS</button>
       </div>
       <div class="table-wrap">
         <table id="movimientosTable" class="sheet">
@@ -41,7 +41,7 @@
 
     <!-- USUARIOS -->
     <section id="usuarios" class="page">
-      <h2>USUARIOS — Gestión</h2>
+      <h2 class="center-title">Gestión de Usuarios</h2>
       <div class="form-row">
         <input id="userL" placeholder="#L (num, max 3)" maxlength="3" inputmode="numeric" />
         <input id="userNombre" placeholder="Nombre completo (max 30)" maxlength="30" />
@@ -71,13 +71,13 @@
 
     <!-- CONFIG -->
     <section id="config" class="page">
-      <h2>CONFIG — Contraseña administrador</h2>
+      <h2 class="center-title">Cambiar Contraseña</h2>
       <div class="form-row">
         <input id="currentPass" type="password" placeholder="Contraseña actual (4 dígitos)" maxlength="4" inputmode="numeric" />
         <input id="newPass" type="password" placeholder="Nueva contraseña (4 dígitos)" maxlength="4" inputmode="numeric" />
         <button id="savePassBtn">Cambiar Contraseña</button>
       </div>
-      <p class="muted">La contraseña (4 dígitos) es la que usan los administradores para editar/eliminar/ imprimir tarjetas.</p>
+      <p class="muted">La contraseña debe estar compuesta únicamente por 4 números. Se usará para editar/eliminar usuarios y movimientos en el panel y para imprimir las tarjetas de cada usuario</p>
     </section>
   </main>
 
