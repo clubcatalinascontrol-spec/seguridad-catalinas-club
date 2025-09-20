@@ -26,10 +26,6 @@
         <button id="scanBtn">ESCANEAR</button>
         <button id="printPageBtn">Imprimir movimientos</button>
       </div>
-      <div id="scannerDiv" class="scanner-div hidden">
-        <input id="scannerInput" placeholder="Ingrese código de barras" />
-        <button id="cancelScanBtn">Cancelar</button>
-      </div>
       <div class="table-wrap">
         <table id="movimientosTable" class="sheet">
           <thead>
@@ -75,7 +71,7 @@
 
     <!-- CONFIG -->
     <section id="config" class="page">
-      <h2>Cambiar Contraseña</h2>
+      <h2 class="center-text">Cambiar Contraseña</h2>
       <div class="form-row">
         <input id="currentPass" type="password" placeholder="Contraseña actual (4 dígitos)" maxlength="4" inputmode="numeric" />
         <input id="newPass" type="password" placeholder="Nueva contraseña (4 dígitos)" maxlength="4" inputmode="numeric" />
@@ -84,6 +80,15 @@
       <p class="muted">La contraseña debe estar compuesta únicamente por 4 números. Se usará para editar/eliminar usuarios y movimientos en el panel y para imprimir las tarjetas de cada usuario</p>
     </section>
   </main>
+
+  <!-- Div escaneo -->
+  <div id="scanOverlay" class="scan-overlay" style="display:none;">
+    <div class="scan-box">
+      <h3>Escanear código de barras</h3>
+      <input id="scanInput" type="text" autofocus />
+      <button id="cancelScanBtn">Cancelar</button>
+    </div>
+  </div>
 
   <script type="module" src="app.js"></script>
 </body>
