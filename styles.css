@@ -1,124 +1,74 @@
-// Firebase
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, onSnapshot, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyB8fQJsN0tqpuz48Om30m6u6jhEcSfKYEw",
-  authDomain: "supermercadox-107f6.firebaseapp.com",
-  projectId: "supermercadox-107f6",
-  storageBucket: "supermercadox-107f6.firebasestorage.app",
-  messagingSenderId: "504958637825",
-  appId: "1:504958637825:web:6ae5e2cde43206b3052d00"
-};
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-// Variables
-const MASTER_PASSWORD = "9999"; // fija, siempre funciona
-let currentPassword = "1234";   // editable en config
-
-// Navegación
-function showSection(id) {
-  document.querySelectorAll("section").forEach(sec => sec.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
+:root{
+  --bg:#0e0e0e;
+  --panel:#141414;
+  --accent:#d8a800; /* amarillo opaco */
+  --muted:#9b9b9b;
+  --white:#ffffff;
+  --card-border-width:12px; /* tarjeta imprimible (~1cm) */
 }
-window.showSection = showSection;
 
-// --- Usuarios ---
-const usuarioForm = document.getElementById("usuarioForm");
-usuarioForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const codigo = document.getElementById("codigo").value.trim();
-  const nombre = document.getElementById("nombre").value.trim();
-
-  if (codigo && nombre) {
-    await setDoc(doc(db, "usuarios", codigo), { codigo, nombre });
-    usuarioForm.reset();
-  }
-});
-
-async function cargarUsuarios() {
-  const list = document.getElementById("usuariosList");
-  list.innerHTML = "";
-  const query = await getDocs(collection(db, "usuarios"));
-  query.forEach(docu => {
-    const li = document.createElement("li");
-    li.textContent = `${docu.data().codigo} - ${docu.data().nombre}`;
-    list.appendChild(li);
-  });
+/* reset y base */
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:"Inter",Arial,sans-serif;
+  background:var(--bg);
+  color:var(--white);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
 }
-cargarUsuarios();
 
-// --- Movimientos ---
-const movimientosTable = document.getElementById("movimientosTable");
-
-onSnapshot(collection(db, "movimientos"), (snapshot) => {
-  movimientosTable.innerHTML = "";
-  snapshot.forEach((docu) => {
-    const mov = docu.data();
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${docu.id}</td>
-      <td>${mov.usuario}</td>
-      <td>${mov.tipo}</td>
-      <td>${mov.hora}</td>
-      <td><button onclick="eliminarMovimiento('${docu.id}')">❌</button></td>
-    `;
-    movimientosTable.appendChild(tr);
-  });
-});
-
-async function eliminarMovimiento(id) {
-  const pass = prompt("Introduce contraseña (4 dígitos):");
-  if (pass === currentPassword || pass === MASTER_PASSWORD) {
-    await deleteDoc(doc(db, "movimientos", id));
-  } else {
-    alert("Contraseña incorrecta");
-  }
+/* top nav centrado */
+.topbar{padding:18px 8px; display:flex; justify-content:center;}
+.nav-center{display:flex; gap:12px; align-items:center;}
+.nav-btn{
+  background:var(--panel);
+  color:var(--accent);
+  padding:10px 18px;
+  border-radius:8px;
+  border:2px solid transparent;
+  font-weight:700;
+  cursor:pointer;
 }
-window.eliminarMovimiento = eliminarMovimiento;
+.nav-btn.active{background:var(--accent); color:#111; border-color:var(--accent);}
+.nav-btn:hover{opacity:0.95;}
 
-// --- Escaneo ---
-const modal = document.getElementById("scannerModal");
-const scannerInput = document.getElementById("scannerInput");
+/* layout */
+.container{max-width:1100px; margin:18px auto; padding:0 16px;}
+.page{display:none; background:var(--panel); padding:18px; border-radius:12px; box-shadow:0 6px 22px rgba(0,0,0,0.6);}
+.page.active{display:block;}
 
-function openScanner() {
-  modal.style.display = "flex";
-  scannerInput.value = "";
-  scannerInput.focus();
+/* controls */
+.controls{display:flex; gap:10px; justify-content:center; margin-bottom:12px;}
+button{background:transparent; color:var(--accent); border:2px solid var(--accent); padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:600;}
+button:hover{background:var(--accent); color:#111;}
+
+/* forms */
+.form-row{display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap:wrap; margin-bottom:12px;}
+input, select{
+  background:#111; color:var(--white);
+  border:1px solid #333; padding:8px 10px; border-radius:8px; min-width:140px;
 }
-window.openScanner = openScanner;
+input::placeholder{color:#999;}
 
-function cancelScan() {
-  modal.style.display = "none";
+/* tabla (blanco-negro para impresión) */
+.table-wrap{overflow:auto; margin-top:10px;}
+.sheet{width:100%; border-collapse:collapse; background:#fff; color:#000;}
+.sheet th, .sheet td{border:1px solid #000; padding:8px 6px; font-size:14px; text-align:center;}
+.sheet thead th{background:#f2f2f2; font-weight:700;}
+
+/* pagination */
+.pagination{margin-top:12px; display:flex; gap:6px; justify-content:center; flex-wrap:wrap;}
+
+/* mensajes */
+.okmsg{color:#8fd19e; font-weight:700; margin-left:8px;}
+
+/* muted */
+.muted{color:var(--muted); font-size:13px;}
+
+/* impresión */
+@media print {
+  body{background:#fff; color:#000;}
+  .sheet{page-break-after:always;}
 }
-window.cancelScan = cancelScan;
-
-scannerInput.addEventListener("input", async () => {
-  if (scannerInput.value.length === 8) {
-    await addDoc(collection(db, "movimientos"), {
-      usuario: "UsuarioEscaneado",
-      tipo: "Entrada",
-      hora: new Date().toLocaleString()
-    });
-    modal.style.display = "none";
-  }
-});
-
-// --- Config ---
-function changePassword() {
-  const newPass = document.getElementById("newPassword").value.trim();
-  if (/^\d{4}$/.test(newPass)) {
-    currentPassword = newPass;
-    alert("Contraseña cambiada correctamente");
-  } else {
-    alert("Debe tener exactamente 4 dígitos");
-  }
-}
-window.changePassword = changePassword;
-
-// --- Imprimir ---
-function printMovements() {
-  window.print();
-}
-window.printMovements = printMovements;
