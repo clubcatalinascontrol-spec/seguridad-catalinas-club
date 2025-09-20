@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc } from "firebase/firestore";
+import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, getDoc } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBmgexrB3aDlx5XARYqigaPoFsWX5vDz_4",
@@ -13,8 +13,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Master password fija e inmutable
-const MASTER_PASSWORD = "9999";
+const MASTER_PASSWORD = "9999"; // Siempre válida
 
 // DOM Elements
 const sections = {
@@ -23,39 +22,20 @@ const sections = {
   config: document.getElementById("config")
 };
 
-const btnPanel = document.getElementById("btnPanel");
-const btnUsuarios = document.getElementById("btnUsuarios");
-const btnConfig = document.getElementById("btnConfig");
-
-const btnAgregarUsuario = document.getElementById("btnAgregarUsuario");
-const mensajeUsuario = document.getElementById("mensajeUsuario");
-const listaUsuariosDiv = document.getElementById("listaUsuarios");
-
-const btnGuardarPass = document.getElementById("btnGuardarPass");
-const mensajeConfig = document.getElementById("mensajeConfig");
-
-// Navegación
-btnPanel.addEventListener("click", () => showSection("panel"));
-btnUsuarios.addEventListener("click", () => { showSection("usuarios"); cargarUsuarios(); });
-btnConfig.addEventListener("click", () => showSection("config"));
+document.getElementById("btnPanel").addEventListener("click", () => showSection("panel"));
+document.getElementById("btnUsuarios").addEventListener("click", () => { showSection("usuarios"); cargarUsuarios(); });
+document.getElementById("btnConfig").addEventListener("click", () => showSection("config"));
 
 function showSection(name){
   Object.values(sections).forEach(sec => sec.classList.remove("active"));
   sections[name].classList.add("active");
 }
 
-// Validación contraseña (normal + master)
-async function validarContraseña(input){
-  if(input === MASTER_PASSWORD) return true;
-  const docRef = doc(db, "config", "contraseña");
-  const docSnap = await getDoc(docRef);
-  if(docSnap.exists()){
-    return input === docSnap.data().clave;
-  }
-  return false;
-}
+// Usuario
+const btnAgregarUsuario = document.getElementById("btnAgregarUsuario");
+const mensajeUsuario = document.getElementById("mensajeUsuario");
+const listaUsuariosDiv = document.getElementById("listaUsuarios");
 
-// Agregar usuario
 btnAgregarUsuario.addEventListener("click", async () => {
   const inputL = document.getElementById("inputL").value;
   const inputNombre = document.getElementById("inputNombre").value;
@@ -87,7 +67,6 @@ btnAgregarUsuario.addEventListener("click", async () => {
   }
 });
 
-// Cargar usuarios
 async function cargarUsuarios(){
   listaUsuariosDiv.innerHTML = "";
   const querySnapshot = await getDocs(collection(db, "usuarios"));
@@ -99,22 +78,22 @@ async function cargarUsuarios(){
   });
 }
 
-// Guardar contraseña normal
-btnGuardarPass.addEventListener("click", async () => {
+// Contraseña
+document.getElementById("btnGuardarPass").addEventListener("click", async () => {
   const nuevaPass = document.getElementById("inputNuevaPass").value;
   if(!nuevaPass || nuevaPass.length !== 4){
-    mensajeConfig.textContent = "La contraseña debe tener 4 dígitos";
-    mensajeConfig.style.color = "red";
+    document.getElementById("mensajeConfig").textContent = "La contraseña debe tener 4 dígitos";
+    document.getElementById("mensajeConfig").style.color = "red";
     return;
   }
   try{
     await updateDoc(doc(db, "config", "contraseña"), {clave: nuevaPass});
-    mensajeConfig.textContent = "Contraseña guardada con éxito";
-    mensajeConfig.style.color = "#4CAF50";
+    document.getElementById("mensajeConfig").textContent = "Contraseña guardada con éxito";
+    document.getElementById("mensajeConfig").style.color = "#4CAF50";
   }catch(err){
     console.error(err);
-    mensajeConfig.textContent = "Error al guardar contraseña";
-    mensajeConfig.style.color = "red";
+    document.getElementById("mensajeConfig").textContent = "Error al guardar contraseña";
+    document.getElementById("mensajeConfig").style.color = "red";
   }
 });
 
