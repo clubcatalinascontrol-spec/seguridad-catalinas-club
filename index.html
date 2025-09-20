@@ -88,11 +88,12 @@
 
 <!-- MODAL ESCANEO -->
 <div id="scanModal" class="scanner-overlay">
-  <div class="scanner-box" role="dialog" aria-modal="true" aria-labelledby="scan-title">
-    <h3 id="scan-title">Escanear código</h3>
+  <div class="scanner-box">
+    <h3>Escanear código</h3>
     <input id="scanInput" maxlength="8" placeholder="Pegue/teclee 8 caracteres" inputmode="text" />
     <div style="margin-top:10px;display:flex;gap:8px;justify-content:center;align-items:center;">
       <button id="cancelScanBtn">Cancelar</button>
+      <button id="confirmScanBtn">Aceptar</button>
     </div>
     <div id="scanMessage" style="margin-top:10px;font-weight:700;"></div>
   </div>
