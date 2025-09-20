@@ -8,59 +8,63 @@
 <script type="module" src="app.js"></script>
 </head>
 <body>
-  <div class="nav">
-    <button id="btnPanel">PANEL</button>
-    <button id="btnUsuarios">USUARIOS</button>
-    <button id="btnConfig">CONFIG</button>
-  </div>
-
-  <section id="panel">
-    <h2>Listado de Movimientos</h2>
-    <button id="btnEscanear">ESCANEAR</button>
-    <table id="movimientosTable">
-      <thead>
-        <tr>
-          <th>#L</th>
-          <th>Nombre</th>
-          <th>DNI</th>
-          <th>H. Entrada</th>
-          <th>H. Salida</th>
-          <th>Tipo</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    <button id="btnImprimirUltima">IMPRIMIR ÚLTIMA PÁGINA</button>
-  </section>
-
-  <section id="usuarios">
-    <h2>Gestión de Usuarios</h2>
-    <div class="formUsuario">
-      <input type="number" id="inputL" placeholder="#L (3 dígitos)" max="999">
-      <input type="text" id="inputNombre" placeholder="Nombre Completo" maxlength="20">
-      <input type="number" id="inputDNI" placeholder="DNI (8 dígitos)" max="99999999">
-      <select id="inputTipo">
-        <option value="propietario">Propietario</option>
-        <option value="administracion">Administración</option>
-        <option value="empleado">Empleado</option>
-        <option value="obrero">Obrero</option>
-        <option value="invitado">Invitado</option>
-        <option value="guardia">Guardia</option>
-        <option value="otro" selected>Otro</option>
-      </select>
-      <button id="btnAgregarUsuario">Agregar Usuario</button>
-      <span id="mensajeUsuario"></span>
+  <header>
+    <div class="nav">
+      <button id="btnPanel">PANEL</button>
+      <button id="btnUsuarios">USUARIOS</button>
+      <button id="btnConfig">CONFIG</button>
     </div>
-    <div id="listaUsuarios"></div>
-  </section>
+  </header>
 
-  <section id="config">
-    <h2>CONFIG</h2>
-    <div class="formConfig">
-      <input type="number" id="inputNuevaPass" placeholder="Nueva Contraseña 4 dígitos" max="9999">
-      <button id="btnGuardarPass">Guardar Contraseña</button>
-      <span id="mensajeConfig"></span>
-    </div>
-  </section>
+  <main>
+    <section id="panel" class="active">
+      <h2>Listado de Movimientos</h2>
+      <button id="btnEscanear">ESCANEAR</button>
+      <table id="movimientosTable">
+        <thead>
+          <tr>
+            <th>#L</th>
+            <th>Nombre</th>
+            <th>DNI</th>
+            <th>H. Entrada</th>
+            <th>H. Salida</th>
+            <th>Tipo</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <button id="btnImprimirUltima">IMPRIMIR ÚLTIMA PÁGINA</button>
+    </section>
+
+    <section id="usuarios">
+      <h2>Gestión de Usuarios</h2>
+      <div class="formUsuario">
+        <input type="number" id="inputL" placeholder="#L (3 dígitos)" max="999">
+        <input type="text" id="inputNombre" placeholder="Nombre Completo" maxlength="20">
+        <input type="number" id="inputDNI" placeholder="DNI (8 dígitos)" max="99999999">
+        <select id="inputTipo">
+          <option value="propietario">Propietario</option>
+          <option value="administracion">Administración</option>
+          <option value="empleado">Empleado</option>
+          <option value="obrero">Obrero</option>
+          <option value="invitado">Invitado</option>
+          <option value="guardia">Guardia</option>
+          <option value="otro" selected>Otro</option>
+        </select>
+        <button id="btnAgregarUsuario">Agregar Usuario</button>
+        <span id="mensajeUsuario"></span>
+      </div>
+      <div id="listaUsuarios"></div>
+    </section>
+
+    <section id="config">
+      <h2>CONFIG</h2>
+      <div class="formConfig">
+        <input type="number" id="inputNuevaPass" placeholder="Nueva Contraseña 4 dígitos" max="9999">
+        <button id="btnGuardarPass">Guardar Contraseña</button>
+        <span id="mensajeConfig"></span>
+      </div>
+    </section>
+  </main>
 </body>
 </html>
