@@ -1,65 +1,73 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Catalinas Country - Control de Ingreso/Salida</title>
-<link rel="stylesheet" href="styles.css">
-<script type="module" src="app.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-</head>
-<body>
-<div id="nav">
-  <button data-section="panel">PANEL</button>
-  <button data-section="usuarios">USUARIOS</button>
-  <button data-section="config">CONFIG</button>
-</div>
+/* Minimal, centrado, negro + amarillo opaco; tablas limpias (look "excel" en impresión) */
 
-<div id="panel" class="section">
-  <h2>PANEL - Movimientos</h2>
-  <button id="scanBtn">ESCANEAR</button>
-  <button id="printPageBtn">IMPRIMIR ÚLTIMA PÁGINA</button>
-  <table id="movimientosTable">
-    <thead>
-      <tr><th>#L</th><th>Nombre</th><th>DNI</th><th>Entrada</th><th>Salida</th><th>Tipo</th><th>Acción</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
+:root{
+  --bg:#0e0e0e;
+  --panel:#151515;
+  --accent:#d8a800; /* amarillo opaco */
+  --muted:#666;
+  --white:#ffffff;
+}
 
-<div id="usuarios" class="section">
-  <h2>USUARIOS - Gestión</h2>
-  <div id="addUserForm">
-    <input type="text" id="userL" placeholder="#L (3 dígitos)" maxlength="3">
-    <input type="text" id="userNombre" placeholder="Nombre Completo" maxlength="35">
-    <input type="text" id="userDni" placeholder="DNI (8 dígitos)" maxlength="8">
-    <select id="userTipo">
-      <option value="">Tipo</option>
-      <option value="propietario">propietario</option>
-      <option value="administracion">administración</option>
-      <option value="empleado">empleado</option>
-      <option value="obrero">obrero</option>
-      <option value="invitado">invitado</option>
-      <option value="guardia">guardia</option>
-      <option value="otro">otro</option>
-    </select>
-    <button id="addUserBtn">Agregar Usuario</button>
-    <span id="userMessage"></span>
-  </div>
-  <h3>Usuarios Registrados:</h3>
-  <table id="usersTable">
-    <thead>
-      <tr><th>#L</th><th>Nombre</th><th>DNI</th><th>Tipo</th><th>Acciones</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--white);
+  font-family:Inter, "Segoe UI", Arial, sans-serif;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
 
-<div id="config" class="section">
-  <h2>CONFIG - PIN Maestro</h2>
-  <input type="password" id="currentPin" placeholder="PIN maestro actual" maxlength="4">
-  <input type="password" id="newPin" placeholder="Nuevo PIN maestro" maxlength="4">
-  <button id="savePin">Guardar PIN maestro</button>
-</div>
-</body>
-</html>
+/* Top nav */
+.topbar { padding:18px 10px; background:transparent; display:flex; justify-content:center; }
+.nav-center { display:flex; gap:12px; align-items:center; }
+.nav-btn{
+  background:var(--panel);
+  color:var(--accent);
+  padding:10px 18px;
+  border-radius:8px;
+  border:2px solid transparent;
+  font-weight:700;
+  cursor:pointer;
+}
+.nav-btn.active{ background:var(--accent); color:#111; border-color:var(--accent); }
+.nav-btn:hover{ opacity:0.95; }
+
+/* layout */
+.container{ max-width:1100px; margin:18px auto; padding:0 16px; }
+.page{ display:none; background:var(--panel); padding:18px; border-radius:12px; box-shadow: 0 4px 18px rgba(0,0,0,0.6); }
+.page.active{ display:block; }
+
+/* controls */
+.controls{ display:flex; gap:10px; justify-content:center; margin-bottom:12px; }
+button{ background:transparent; color:var(--accent); border:2px solid var(--accent); padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:600; }
+button:hover{ background:var(--accent); color:#111; }
+
+/* form row */
+.form-row{ display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
+input, select{
+  background:#111; color:var(--white);
+  border:1px solid #333; padding:8px 10px; border-radius:8px; min-width:140px;
+}
+input::placeholder{ color:#999; }
+
+/* tables */
+.table-wrap{ overflow:auto; margin-top:10px; }
+.sheet{ width:100%; border-collapse:collapse; background:#fff; color:#000; }
+.sheet th, .sheet td{
+  border:1px solid #000; padding:8px 6px; font-size:14px; text-align:center;
+}
+.sheet thead th{ background:#f0f0f0; font-weight:700; }
+
+/* pagination */
+.pagination{ margin-top:12px; display:flex; gap:6px; justify-content:center; flex-wrap:wrap; }
+
+/* small messages */
+.okmsg{ color:#8fd19e; font-weight:700; margin-left:8px; }
+
+/* printing card style (only used inside new window) */
+@media print {
+  body{ background:#fff; color:#000; }
+  .sheet{ page-break-after:always; }
+}
