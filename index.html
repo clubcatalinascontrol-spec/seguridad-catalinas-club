@@ -1,103 +1,59 @@
-import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, onSnapshot } from "firebase/firestore";
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Catalinas Control</title>
+<link rel="stylesheet" href="styles.css">
+<script type="module" src="app.js" defer></script>
+</head>
+<body>
+  <div class="header">
+    <button id="btnPanel">PANEL</button>
+    <button id="btnUsuarios">USUARIOS</button>
+    <button id="btnConfig">CONFIG</button>
+    <button id="btnEscanear">ESCANEAR</button>
+  </div>
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBmgexrB3aDlx5XARYqigaPoFsWX5vDz_4",
-  authDomain: "seguridad-catalinas-club.firebaseapp.com",
-  projectId: "seguridad-catalinas-club",
-  storageBucket: "seguridad-catalinas-club.firebasestorage.app",
-  messagingSenderId: "980866194296",
-  appId: "1:980866194296:web:3fefc2a107d0ec6052468d"
-};
+  <div id="sectionPanel" class="section">
+    <h2>Movimientos en Tiempo Real</h2>
+    <table id="tablaMovimientos">
+      <thead>
+        <tr>
+          <th>#L</th><th>Nombre</th><th>DNI</th><th>H.Entrada</th><th>H.Salida</th><th>Tipo</th><th>Eliminar</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <button id="btnImprimirUltima">Imprimir Última Página</button>
+  </div>
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+  <div id="sectionUsuarios" class="section">
+    <h2>Gestión de Usuarios</h2>
+    <div class="form-usuario">
+      <input type="number" id="inpL" placeholder="#L (solo números)">
+      <input type="text" id="inpNombre" placeholder="Nombre Completo">
+      <input type="number" id="inpDNI" placeholder="DNI">
+      <select id="inpTipo">
+        <option value="">Seleccione Tipo</option>
+        <option value="propietario">Propietario</option>
+        <option value="empleado">Empleado</option>
+        <option value="obrero">Obrero</option>
+        <option value="invitado">Invitado</option>
+        <option value="guardia">Guardia</option>
+        <option value="otro">Otro</option>
+      </select>
+      <button id="btnAgregarUsuario">Agregar Usuario</button>
+      <p id="mensajeUsuario" class="mensaje"></p>
+    </div>
+    <div id="listaUsuarios"></div>
+  </div>
 
-// Master password
-const MASTER_PASSWORD = "9999";
-
-const sections = {
-  panel: document.getElementById("panel"),
-  usuarios: document.getElementById("usuarios"),
-  config: document.getElementById("config")
-};
-
-document.getElementById("btnPanel").addEventListener("click", () => showSection("panel"));
-document.getElementById("btnUsuarios").addEventListener("click", () => { showSection("usuarios"); cargarUsuarios(); });
-document.getElementById("btnConfig").addEventListener("click", () => showSection("config"));
-
-function showSection(name){
-  Object.values(sections).forEach(sec => sec.classList.remove("active"));
-  sections[name].classList.add("active");
-}
-
-// ------------------- USUARIOS -------------------
-const btnAgregarUsuario = document.getElementById("btnAgregarUsuario");
-const mensajeUsuario = document.getElementById("mensajeUsuario");
-const listaUsuariosDiv = document.getElementById("listaUsuarios");
-
-btnAgregarUsuario.addEventListener("click", async () => {
-  const inputL = document.getElementById("inputL").value;
-  const inputNombre = document.getElementById("inputNombre").value;
-  const inputDNI = document.getElementById("inputDNI").value;
-  const inputTipo = document.getElementById("inputTipo").value;
-
-  if(!inputL || !inputNombre || !inputDNI || !inputTipo){
-    mensajeUsuario.textContent = "Todos los campos son obligatorios";
-    mensajeUsuario.style.color = "red";
-    return;
-  }
-
-  try {
-    await addDoc(collection(db, "usuarios"), {
-      L: Number(inputL),
-      nombre: inputNombre,
-      dni: Number(inputDNI),
-      tipo: inputTipo,
-      codigoEntrada: Math.floor(Math.random()*10000000),
-      codigoSalida: Math.floor(Math.random()*10000000)
-    });
-    mensajeUsuario.textContent = "Usuario agregado con éxito";
-    mensajeUsuario.style.color = "#4CAF50";
-    cargarUsuarios();
-  } catch(err){
-    mensajeUsuario.textContent = "Error al agregar usuario";
-    mensajeUsuario.style.color = "red";
-    console.error(err);
-  }
-});
-
-async function cargarUsuarios(){
-  listaUsuariosDiv.innerHTML = "";
-  const querySnapshot = await getDocs(collection(db, "usuarios"));
-  querySnapshot.forEach(docu => {
-    const user = docu.data();
-    const div = document.createElement("div");
-    div.textContent = `#${user.L} - ${user.nombre} - ${user.dni} - Tipo: ${user.tipo}`;
-    listaUsuariosDiv.appendChild(div);
-  });
-}
-
-// ------------------- CONFIG -------------------
-document.getElementById("btnGuardarPass").addEventListener("click", async () => {
-  const nuevaPass = document.getElementById("inputNuevaPass").value;
-  if(!nuevaPass || nuevaPass.length !== 4){
-    document.getElementById("mensajeConfig").textContent = "La contraseña debe tener 4 dígitos";
-    document.getElementById("mensajeConfig").style.color = "red";
-    return;
-  }
-  try{
-    await updateDoc(doc(db, "config", "contraseña"), {clave: nuevaPass});
-    document.getElementById("mensajeConfig").textContent = "Contraseña guardada con éxito";
-    document.getElementById("mensajeConfig").style.color = "#4CAF50";
-  }catch(err){
-    console.error(err);
-    document.getElementById("mensajeConfig").textContent = "Error al guardar contraseña";
-    document.getElementById("mensajeConfig").style.color = "red";
-  }
-});
-
-// ------------------- PANEL -------------------
-// Aquí se agregarán más adelante escaneo, movimientos en tiempo real e impresión de última página
-
-showSection("panel");
+  <div id="sectionConfig" class="section">
+    <h2>Configuración</h2>
+    <input type="password" id="inpNuevaContraseña" placeholder="Nueva Contraseña 4 dígitos">
+    <button id="btnCambiarContraseña">Cambiar Contraseña</button>
+    <p id="mensajeConfig" class="mensaje"></p>
+  </div>
+</body>
+</html>
