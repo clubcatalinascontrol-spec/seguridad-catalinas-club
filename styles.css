@@ -32,7 +32,7 @@ body{
 .nav-btn{
   background:var(--panel);
   color:var(--accent);
-@@ -29,38 +32,43 @@ body{
+@@ -29,40 +32,45 @@
   cursor:pointer;
 }
 .nav-btn.active{ background:var(--accent); color:#111; border-color:var(--accent); }
@@ -80,3 +80,5 @@ input::placeholder{ color:#999; }
 /* impresión */
 @media print {
   body{ background:#fff; color:#000; }
+  .sheet{ page-break-after:always; }
+}
