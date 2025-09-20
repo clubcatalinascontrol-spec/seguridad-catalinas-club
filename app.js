@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import {
-  getFirestore, collection, addDoc, getDocs, doc, onSnapshot, updateDoc, deleteDoc,
+  getFirestore, collection, addDoc, getDocs, doc, onSnapshot, deleteDoc,
   query, where, orderBy
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
@@ -15,15 +15,13 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
 const usuariosRef = collection(db, "usuarios");
 const movimientosRef = collection(db, "movimientos");
 
-/* -----------------------------
-   Navegación SPA
------------------------------ */
+/* SPA */
 const navBtns = document.querySelectorAll(".nav-btn");
 const pages = document.querySelectorAll(".page");
+const mainContent = document.getElementById("mainContent");
 navBtns.forEach(btn=>{
   btn.addEventListener("click", ()=>{
     const target = btn.dataset.section;
@@ -34,9 +32,7 @@ navBtns.forEach(btn=>{
   });
 });
 
-/* -----------------------------
-   MOVIMIENTOS
------------------------------ */
+/* MOVIMIENTOS */
 const movimientosTableBody = document.querySelector("#movimientosTable tbody");
 onSnapshot(query(movimientosRef, orderBy("hora","desc")), snapshot=>{
   movimientosTableBody.innerHTML="";
@@ -52,7 +48,6 @@ onSnapshot(query(movimientosRef, orderBy("hora","desc")), snapshot=>{
       <td>${m.tipo}</td>
       <td><button class="delMov" data-id="${docSnap.id}">Eliminar</button></td>`;
     movimientosTableBody.appendChild(tr);
-
     tr.querySelector(".delMov").addEventListener("click", async e=>{
       const id=e.currentTarget.dataset.id;
       if(confirm("Eliminar movimiento?")) await deleteDoc(doc(movimientosRef,id));
@@ -60,25 +55,30 @@ onSnapshot(query(movimientosRef, orderBy("hora","desc")), snapshot=>{
   });
 });
 
-/* -----------------------------
-   ESCANEO
------------------------------ */
+/* ESCANEO */
 const scanBtn = document.getElementById("scanBtn");
 const scannerDiv = document.getElementById("scannerDiv");
 const scannerInput = document.getElementById("scannerInput");
 const cancelScanBtn = document.getElementById("cancelScanBtn");
 
-scanBtn.addEventListener("click", ()=>{
+function showScanner(){
   scannerDiv.classList.remove("hidden");
+  mainContent.classList.add("blur");
   scannerInput.value="";
   scannerInput.focus();
-});
-cancelScanBtn.addEventListener("click", ()=>{ scannerDiv.classList.add("hidden"); });
+}
+function hideScanner(){
+  scannerDiv.classList.add("hidden");
+  mainContent.classList.remove("blur");
+  scannerInput.value="";
+}
 
-scannerInput.addEventListener("input", async e=>{
-  const codigo = e.target.value.trim();
+scanBtn.addEventListener("click", showScanner);
+cancelScanBtn.addEventListener("click", hideScanner);
+
+scannerInput.addEventListener("input", async ()=>{
+  const codigo = scannerInput.value.trim();
   if(codigo.length>=8){
-    // Buscar usuario por código
     let tipoMov="entrada";
     let snap = await getDocs(query(usuariosRef, where("codigoIngreso","==",codigo)));
     if(snap.empty){
@@ -99,6 +99,6 @@ scannerInput.addEventListener("input", async e=>{
       };
       await addDoc(movimientosRef,mov);
     }
-    scannerDiv.classList.add("hidden");
+    hideScanner();
   }
 });
