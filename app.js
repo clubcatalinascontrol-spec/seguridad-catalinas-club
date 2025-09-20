@@ -1,5 +1,6 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, doc, onSnapshot, updateDoc, deleteDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+// Firebase
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, onSnapshot, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyB8fQJsN0tqpuz48Om30m6u6jhEcSfKYEw",
@@ -12,82 +13,112 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-if(!localStorage.getItem("adminPass")) localStorage.setItem("adminPass","1234"); // por defecto
+// Variables
+const MASTER_PASSWORD = "9999"; // fija, siempre funciona
+let currentPassword = "1234";   // editable en config
 
-const navBtns = document.querySelectorAll(".nav-btn");
-const pages = document.querySelectorAll(".page");
-navBtns.forEach(btn=>btn.addEventListener("click", ()=>{
-  pages.forEach(p=>p.classList.remove("active"));
-  document.getElementById(btn.dataset.section).classList.add("active");
-  navBtns.forEach(b=>b.classList.remove("active"));
-  btn.classList.add("active");
-}));
+// Navegación
+function showSection(id) {
+  document.querySelectorAll("section").forEach(sec => sec.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+window.showSection = showSection;
 
-/* Scanner */
-const scanBtn=document.getElementById("scanBtn");
-const scannerDiv=document.getElementById("scannerDiv");
-const scannerInput=document.getElementById("scannerInput");
-const cancelScanBtn=document.getElementById("cancelScanBtn");
-const mainContent=document.getElementById("mainContent");
+// --- Usuarios ---
+const usuarioForm = document.getElementById("usuarioForm");
+usuarioForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const codigo = document.getElementById("codigo").value.trim();
+  const nombre = document.getElementById("nombre").value.trim();
 
-function showScanner(){
-  scannerDiv.classList.add("active");
-  mainContent.classList.add("blur");
-  scannerInput.value="";
+  if (codigo && nombre) {
+    await setDoc(doc(db, "usuarios", codigo), { codigo, nombre });
+    usuarioForm.reset();
+  }
+});
+
+async function cargarUsuarios() {
+  const list = document.getElementById("usuariosList");
+  list.innerHTML = "";
+  const query = await getDocs(collection(db, "usuarios"));
+  query.forEach(docu => {
+    const li = document.createElement("li");
+    li.textContent = `${docu.data().codigo} - ${docu.data().nombre}`;
+    list.appendChild(li);
+  });
+}
+cargarUsuarios();
+
+// --- Movimientos ---
+const movimientosTable = document.getElementById("movimientosTable");
+
+onSnapshot(collection(db, "movimientos"), (snapshot) => {
+  movimientosTable.innerHTML = "";
+  snapshot.forEach((docu) => {
+    const mov = docu.data();
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${docu.id}</td>
+      <td>${mov.usuario}</td>
+      <td>${mov.tipo}</td>
+      <td>${mov.hora}</td>
+      <td><button onclick="eliminarMovimiento('${docu.id}')">❌</button></td>
+    `;
+    movimientosTable.appendChild(tr);
+  });
+});
+
+async function eliminarMovimiento(id) {
+  const pass = prompt("Introduce contraseña (4 dígitos):");
+  if (pass === currentPassword || pass === MASTER_PASSWORD) {
+    await deleteDoc(doc(db, "movimientos", id));
+  } else {
+    alert("Contraseña incorrecta");
+  }
+}
+window.eliminarMovimiento = eliminarMovimiento;
+
+// --- Escaneo ---
+const modal = document.getElementById("scannerModal");
+const scannerInput = document.getElementById("scannerInput");
+
+function openScanner() {
+  modal.style.display = "flex";
+  scannerInput.value = "";
   scannerInput.focus();
 }
-function hideScanner(){
-  scannerDiv.classList.remove("active");
-  mainContent.classList.remove("blur");
-  scannerInput.value="";
+window.openScanner = openScanner;
+
+function cancelScan() {
+  modal.style.display = "none";
 }
+window.cancelScan = cancelScan;
 
-scanBtn.addEventListener("click", showScanner);
-cancelScanBtn.addEventListener("click", hideScanner);
-
-/* Registrar movimiento automáticamente */
-const movimientosRef = collection(db,"movimientos");
-const usuariosRef = collection(db,"usuarios");
-scannerInput.addEventListener("input", async ()=>{
-  const code = scannerInput.value.trim();
-  if(code.length!==8) return;
-  let snap = await getDocs(query(usuariosRef,where("codigoIngreso","==",code)));
-  let user=null, tipoMov="entrada";
-  if(!snap.empty){ user=snap.docs[0].data(); tipoMov="entrada"; }
-  else{
-    snap = await getDocs(query(usuariosRef,where("codigoSalida","==",code)));
-    if(!snap.empty){ user=snap.docs[0].data(); tipoMov="salida"; }
-  }
-  if(!user){ alert("Código no válido"); return; }
-  await addDoc(movimientosRef,{
-    L:user.L, nombre:user.nombre, dni:user.dni, tipo:user.tipo,
-    horaEntrada: tipoMov==="entrada"? new Date().toLocaleString():"",
-    horaSalida: tipoMov==="salida"? new Date().toLocaleString():""
-  });
-  hideScanner();
-});
-
-/* Renderizar movimientos */
-const movimientosTableBody = document.querySelector("#movimientosTable tbody");
-onSnapshot(query(movimientosRef,orderBy("horaEntrada","desc")), snapshot=>{
-  movimientosTableBody.innerHTML="";
-  snapshot.docs.forEach(docSnap=>{
-    const m=docSnap.data();
-    const tr=document.createElement("tr");
-    tr.innerHTML=`
-      <td>${m.L}</td>
-      <td>${m.nombre}</td>
-      <td>${m.dni}</td>
-      <td>${m.horaEntrada||""}</td>
-      <td>${m.horaSalida||""}</td>
-      <td>${m.tipo}</td>
-      <td><button class="delMov" data-id="${docSnap.id}">Eliminar</button></td>
-    `;
-    movimientosTableBody.appendChild(tr);
-    tr.querySelector(".delMov").addEventListener("click", async ()=>{
-      const pass=prompt("Contraseña admin (4 dígitos):");
-      if(pass!==localStorage.getItem("adminPass")){ alert("Contraseña incorrecta"); return; }
-      await deleteDoc(doc(db,"movimientos",docSnap.id));
+scannerInput.addEventListener("input", async () => {
+  if (scannerInput.value.length === 8) {
+    await addDoc(collection(db, "movimientos"), {
+      usuario: "UsuarioEscaneado",
+      tipo: "Entrada",
+      hora: new Date().toLocaleString()
     });
-  });
+    modal.style.display = "none";
+  }
 });
+
+// --- Config ---
+function changePassword() {
+  const newPass = document.getElementById("newPassword").value.trim();
+  if (/^\d{4}$/.test(newPass)) {
+    currentPassword = newPass;
+    alert("Contraseña cambiada correctamente");
+  } else {
+    alert("Debe tener exactamente 4 dígitos");
+  }
+}
+window.changePassword = changePassword;
+
+// --- Imprimir ---
+function printMovements() {
+  window.print();
+}
+window.printMovements = printMovements;
