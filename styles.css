@@ -1,74 +1,124 @@
-body {
-  font-family: Arial, sans-serif;
-  background: #1e1e1e;
-  color: #f4cf19;
-  text-align: center;
-  margin: 0;
-  padding: 0;
-}
+// Firebase
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, onSnapshot, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
-h1, h2 {
-  margin: 15px 0;
-}
+const firebaseConfig = {
+  apiKey: "AIzaSyB8fQJsN0tqpuz48Om30m6u6jhEcSfKYEw",
+  authDomain: "supermercadox-107f6.firebaseapp.com",
+  projectId: "supermercadox-107f6",
+  storageBucket: "supermercadox-107f6.firebasestorage.app",
+  messagingSenderId: "504958637825",
+  appId: "1:504958637825:web:6ae5e2cde43206b3052d00"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-nav {
-  margin: 15px;
-}
+// Variables
+const MASTER_PASSWORD = "9999"; // fija, siempre funciona
+let currentPassword = "1234";   // editable en config
 
-button {
-  background: #f4cf19;
-  border: none;
-  padding: 10px 20px;
-  margin: 5px;
-  font-weight: bold;
-  cursor: pointer;
-  border-radius: 8px;
+// Navegación
+function showSection(id) {
+  document.querySelectorAll("section").forEach(sec => sec.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
 }
+window.showSection = showSection;
 
-button:hover {
-  background: #d4b013;
-}
+// --- Usuarios ---
+const usuarioForm = document.getElementById("usuarioForm");
+usuarioForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const codigo = document.getElementById("codigo").value.trim();
+  const nombre = document.getElementById("nombre").value.trim();
 
-section {
-  display: none;
-  padding: 20px;
-}
+  if (codigo && nombre) {
+    await setDoc(doc(db, "usuarios", codigo), { codigo, nombre });
+    usuarioForm.reset();
+  }
+});
 
-section.active {
-  display: block;
+async function cargarUsuarios() {
+  const list = document.getElementById("usuariosList");
+  list.innerHTML = "";
+  const query = await getDocs(collection(db, "usuarios"));
+  query.forEach(docu => {
+    const li = document.createElement("li");
+    li.textContent = `${docu.data().codigo} - ${docu.data().nombre}`;
+    list.appendChild(li);
+  });
 }
+cargarUsuarios();
 
-table {
-  width: 90%;
-  margin: auto;
-  border-collapse: collapse;
-  margin-top: 15px;
-}
+// --- Movimientos ---
+const movimientosTable = document.getElementById("movimientosTable");
 
-table, th, td {
-  border: 1px solid #f4cf19;
-}
+onSnapshot(collection(db, "movimientos"), (snapshot) => {
+  movimientosTable.innerHTML = "";
+  snapshot.forEach((docu) => {
+    const mov = docu.data();
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${docu.id}</td>
+      <td>${mov.usuario}</td>
+      <td>${mov.tipo}</td>
+      <td>${mov.hora}</td>
+      <td><button onclick="eliminarMovimiento('${docu.id}')">❌</button></td>
+    `;
+    movimientosTable.appendChild(tr);
+  });
+});
 
-th, td {
-  padding: 10px;
+async function eliminarMovimiento(id) {
+  const pass = prompt("Introduce contraseña (4 dígitos):");
+  if (pass === currentPassword || pass === MASTER_PASSWORD) {
+    await deleteDoc(doc(db, "movimientos", id));
+  } else {
+    alert("Contraseña incorrecta");
+  }
 }
+window.eliminarMovimiento = eliminarMovimiento;
 
-.modal {
-  display: none;
-  position: fixed;
-  z-index: 1000;
-  left: 0; top: 0;
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,0.6);
-  backdrop-filter: blur(5px);
-  justify-content: center;
-  align-items: center;
-}
+// --- Escaneo ---
+const modal = document.getElementById("scannerModal");
+const scannerInput = document.getElementById("scannerInput");
 
-.modal-content {
-  background: #2a2a2a;
-  padding: 20px;
-  border-radius: 10px;
-  width: 300px;
-  text-align: center;
+function openScanner() {
+  modal.style.display = "flex";
+  scannerInput.value = "";
+  scannerInput.focus();
 }
+window.openScanner = openScanner;
+
+function cancelScan() {
+  modal.style.display = "none";
+}
+window.cancelScan = cancelScan;
+
+scannerInput.addEventListener("input", async () => {
+  if (scannerInput.value.length === 8) {
+    await addDoc(collection(db, "movimientos"), {
+      usuario: "UsuarioEscaneado",
+      tipo: "Entrada",
+      hora: new Date().toLocaleString()
+    });
+    modal.style.display = "none";
+  }
+});
+
+// --- Config ---
+function changePassword() {
+  const newPass = document.getElementById("newPassword").value.trim();
+  if (/^\d{4}$/.test(newPass)) {
+    currentPassword = newPass;
+    alert("Contraseña cambiada correctamente");
+  } else {
+    alert("Debe tener exactamente 4 dígitos");
+  }
+}
+window.changePassword = changePassword;
+
+// --- Imprimir ---
+function printMovements() {
+  window.print();
+}
+window.printMovements = printMovements;
