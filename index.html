@@ -21,10 +21,10 @@
   <main class="container">
     <!-- PANEL -->
     <section id="panel" class="page active">
-      <h2 class="centered-title">Control de acceso y egreso de Catalinas Country</h2>
+      <h2 style="text-align:center;">Control de acceso y egreso de Catalinas Country</h2>
       <div class="controls">
         <button id="scanBtn">ESCANEAR</button>
-        <button id="btnPrint">Imprimir movimientos</button>
+        <button id="printPageBtn">Imprimir movimientos</button>
       </div>
       <div class="table-wrap">
         <table id="movimientosTable" class="sheet">
@@ -41,7 +41,7 @@
 
     <!-- USUARIOS -->
     <section id="usuarios" class="page">
-      <h2 class="centered-title">Gestión de Usuarios</h2>
+      <h2 style="text-align:center;">Gestión de Usuarios</h2>
       <div class="form-row">
         <input id="userL" placeholder="#L (num, max 3)" maxlength="3" inputmode="numeric" />
         <input id="userNombre" placeholder="Nombre completo (max 30)" maxlength="30" />
@@ -71,7 +71,7 @@
 
     <!-- CONFIG -->
     <section id="config" class="page">
-      <h2 class="centered-title">Cambiar Contraseña</h2>
+      <h2>Cambiar Contraseña</h2>
       <div class="form-row">
         <input id="currentPass" type="password" placeholder="Contraseña actual (4 dígitos)" maxlength="4" inputmode="numeric" />
         <input id="newPass" type="password" placeholder="Nueva contraseña (4 dígitos)" maxlength="4" inputmode="numeric" />
@@ -80,15 +80,6 @@
       <p class="muted">La contraseña debe estar compuesta únicamente por 4 números. Se usará para editar/eliminar usuarios y movimientos en el panel y para imprimir las tarjetas de cada usuario</p>
     </section>
   </main>
-
-  <!-- DIV FLOTANTE ESCANEAR -->
-  <div id="scannerDiv" class="scanner-overlay hidden">
-    <div class="scanner-box">
-      <input id="scannerInput" maxlength="8" placeholder="Escanee el código" autofocus />
-      <button id="cancelScanBtn">Cancelar</button>
-      <span id="scanMessage" class="okmsg"></span>
-    </div>
-  </div>
 
   <script type="module" src="app.js"></script>
 </body>
