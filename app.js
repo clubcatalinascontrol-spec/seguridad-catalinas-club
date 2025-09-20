@@ -1,9 +1,13 @@
+// app.js (módulo) - Firebase 9.22
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import {
   getFirestore, collection, addDoc, getDocs, doc, onSnapshot, updateDoc, deleteDoc,
-  query, orderBy
+  query, where, orderBy
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
+/* -----------------------------
+   Firebase config
+----------------------------- */
 const firebaseConfig = {
   apiKey: "AIzaSyBmgexrB3aDlx5XARYqigaPoFsWX5vDz_4",
   authDomain: "seguridad-catalinas-club.firebaseapp.com",
@@ -15,34 +19,68 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const usuariosRef = collection(db,"usuarios");
-const movimientosRef = collection(db,"movimientos");
-const expiredRef = collection(db,"expiredCodes");
+/* -----------------------------
+   Colecciones
+----------------------------- */
+const usuariosRef = collection(db, "usuarios");
+const movimientosRef = collection(db, "movimientos");
+const expiredRef = collection(db, "expiredCodes");
 
-const MASTER_PASS="9999";
-if(!localStorage.getItem("adminPass")) localStorage.setItem("adminPass","1234");
-function checkPass(pass){return pass===MASTER_PASS||pass===localStorage.getItem("adminPass");}
+/* -----------------------------
+   Contraseñas
+----------------------------- */
+const MASTER_PASS = "9999";
+if (!localStorage.getItem("adminPass")) localStorage.setItem("adminPass", "1234");
+function checkPass(pass){ return pass===MASTER_PASS || pass===localStorage.getItem("adminPass"); }
 
-function generarCodigo(){return Math.random().toString(36).substring(2,10).toUpperCase();}
-function horaActualStr(){const d=new Date();return `${d.getHours().toString().padStart(2,"0")}:${d.getMinutes().toString().padStart(2,"0")} (${d.getDate().toString().padStart(2,"0")}/${(d.getMonth()+1).toString().padStart(2,"0")}/${d.getFullYear()})`;}
+/* -----------------------------
+   Helpers
+----------------------------- */
+function generarCodigo(){ return Math.random().toString(36).substring(2,10).toUpperCase(); }
+function horaActualStr(){
+  const d=new Date();
+  const hh=d.getHours().toString().padStart(2,"0");
+  const mm=d.getMinutes().toString().padStart(2,"0");
+  const dd=d.getDate().toString().padStart(2,"0");
+  const mo=(d.getMonth()+1).toString().padStart(2,"0");
+  const yyyy=d.getFullYear();
+  return `${hh}:${mm} (${dd}/${mo}/${yyyy})`;
+}
 
+/* -----------------------------
+   Navegación SPA
+----------------------------- */
 const navBtns=document.querySelectorAll(".nav-btn");
 const pages=document.querySelectorAll(".page");
-navBtns.forEach(btn=>btn.addEventListener("click",()=>{pages.forEach(p=>p.classList.remove("active"));document.getElementById(btn.dataset.section).classList.add("active");navBtns.forEach(b=>b.classList.remove("active"));btn.classList.add("active");}));
+navBtns.forEach(btn=>btn.addEventListener("click",()=>{
+  const target=btn.dataset.section;
+  pages.forEach(p=>p.classList.remove("active"));
+  document.getElementById(target).classList.add("active");
+  navBtns.forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+}));
 
-// #L desplegable
-function llenarLSelect(select){
-  select.innerHTML="";
-  for(let i=0;i<=999;i++){
-    let n=i.toString().padStart(3,"0");
-    let opt=document.createElement("option");
-    opt.value=n; opt.textContent=n; select.appendChild(opt);
+/* -----------------------------
+   Select #L desplegable
+----------------------------- */
+const userL = document.getElementById("userL");
+const editUserL = document.getElementById("editUserL");
+function llenarLSelect(){
+  userL.innerHTML = "";
+  editUserL.innerHTML = "";
+  for(let i=0;i<1000;i++){
+    const val = i.toString().padStart(3,"0");
+    const opt = document.createElement("option"); opt.value=val; opt.textContent=val;
+    userL.appendChild(opt);
+    const opt2 = document.createElement("option"); opt2.value=val; opt2.textContent=val;
+    editUserL.appendChild(opt2);
   }
 }
-const userL=document.getElementById("userL");
-const editUserL=document.getElementById("editUserL");
-llenarLSelect(userL);llenarLSelect(editUserL);
+llenarLSelect();
 
+/* -----------------------------
+   USUARIOS
+----------------------------- */
 const userNombre=document.getElementById("userNombre");
 const userDni=document.getElementById("userDni");
 const userTipo=document.getElementById("userTipo");
@@ -53,131 +91,136 @@ const usersTableBody=document.querySelector("#usersTable tbody");
 // Agregar usuario
 addUserBtn.addEventListener("click",async ()=>{
   const L=userL.value.trim(), nombre=userNombre.value.trim(), dni=userDni.value.trim(), tipo=userTipo.value;
-  if(!L||!nombre||!dni||!tipo){userMessage.textContent="Complete todos los campos";return;}
-  if(!/^\d{3}$/.test(L)){userMessage.textContent="#L inválido";return;}
-  if(!/^\d{8}$/.test(dni)){userMessage.textContent="DNI inválido";return;}
+  if(!L||!nombre||!dni||!tipo){ userMessage.textContent="Complete todos los campos"; return; }
+  if(!/^\d{3}$/.test(L)){ userMessage.textContent="#L debe ser 3 dígitos"; return; }
+  if(!/^\d{8}$/.test(dni)){ userMessage.textContent="DNI debe tener 8 dígitos"; return; }
   try{
     await addDoc(usuariosRef,{L,nombre,dni,tipo,codigoIngreso:generarCodigo(),codigoSalida:generarCodigo()});
     userMessage.textContent="Usuario agregado";
-    userNombre.value=""; userDni.value=""; userTipo.value="";
+    userL.value="000"; userNombre.value=""; userDni.value=""; userTipo.value="";
     setTimeout(()=>userMessage.textContent="",2500);
-  }catch(err){console.error(err);userMessage.textContent="Error";}
+  }catch(err){ console.error(err); userMessage.textContent="Error"; }
 });
 
-// Render usuarios
-onSnapshot(query(usuariosRef,orderBy("L")),snapshot=>{
+// Render usuarios en tiempo real
+onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
   usersTableBody.innerHTML="";
   snapshot.docs.forEach(docSnap=>{
     const u=docSnap.data();
     const tr=document.createElement("tr");
     tr.innerHTML=`
-      <td>${u.L}</td><td>${u.nombre}</td><td>${u.dni}</td><td>${u.tipo}</td>
+      <td>${u.L}</td>
+      <td>${u.nombre}</td>
+      <td>${u.dni}</td>
+      <td>${u.tipo}</td>
       <td>
         <button class="edit-btn" data-id="${docSnap.id}">Editar</button>
         <button class="del-btn" data-id="${docSnap.id}">Eliminar</button>
         <button class="print-btn" data-id="${docSnap.id}">Imprimir Tarjeta</button>
-      </td>`;
+      </td>
+    `;
     usersTableBody.appendChild(tr);
 
+    // EDITAR
     tr.querySelector(".edit-btn").addEventListener("click",()=>{
       const id=docSnap.id;
       const pass=prompt("Ingrese contraseña de administración para continuar");
       if(!checkPass(pass)){ alert("Contraseña incorrecta"); return; }
       document.getElementById("editUserModal").classList.add("active");
-      editUserL.value=u.L; document.getElementById("editUserNombre").value=u.nombre; document.getElementById("editUserDni").value=u.dni; document.getElementById("editUserTipo").value=u.tipo;
+      editUserL.value=u.L;
+      document.getElementById("editUserNombre").value=u.nombre;
+      document.getElementById("editUserDni").value=u.dni;
+      document.getElementById("editUserTipo").value=u.tipo;
+
       const finalizeBtn=document.getElementById("finalizeEditBtn");
       const cancelBtn=document.getElementById("cancelEditBtn");
       const msgSpan=document.getElementById("editUserMsg");
+
       finalizeBtn.onclick=async ()=>{
-        const newL=editUserL.value.trim(), newNombre=document.getElementById("editUserNombre").value.trim(), newDni=document.getElementById("editUserDni").value.trim(), newTipo=document.getElementById("editUserTipo").value;
-        if(!newL||!newNombre||!newDni||!newTipo){msgSpan.textContent="Complete todos los campos";return;}
-        try{await updateDoc(doc(db,"usuarios",id),{L:newL,nombre:newNombre,dni:newDni,tipo:newTipo});msgSpan.style.color="green";msgSpan.textContent="Usuario editado"; setTimeout(()=>{document.getElementById("editUserModal").classList.remove("active");msgSpan.textContent="";msgSpan.style.color="#0a0";},1500);}catch(err){console.error(err);msgSpan.textContent="Error editando";}
+        const newL=editUserL.value.trim();
+        const newNombre=document.getElementById("editUserNombre").value.trim();
+        const newDni=document.getElementById("editUserDni").value.trim();
+        const newTipo=document.getElementById("editUserTipo").value;
+        if(!newL||!newNombre||!newDni||!newTipo){ msgSpan.textContent="Faltan datos, por favor complete todos los campos"; return; }
+        if(!/^\d{3}$/.test(newL)){ msgSpan.textContent="#L debe ser 3 dígitos"; return; }
+        if(!/^\d{8}$/.test(newDni)){ msgSpan.textContent="DNI debe tener 8 dígitos"; return; }
+        try{ await updateDoc(doc(usuariosRef,id),{L:newL,nombre:newNombre,dni:newDni,tipo:newTipo}); msgSpan.textContent="Usuario editado"; setTimeout(()=>document.getElementById("editUserModal").classList.remove("active"),1500); } catch(err){ console.error(err); msgSpan.textContent="Error"; }
       };
-      cancelBtn.onclick=()=>{document.getElementById("editUserModal").classList.remove("active");msgSpan.textContent="";};
+      cancelBtn.onclick=()=>document.getElementById("editUserModal").classList.remove("active");
     });
 
+    // ELIMINAR
     tr.querySelector(".del-btn").addEventListener("click",async ()=>{
-      const pass=prompt("Ingrese contraseña de administración para continuar");
+      const pass=prompt("Ingrese contraseña de administración para eliminar usuario");
       if(!checkPass(pass)){ alert("Contraseña incorrecta"); return; }
-      if(!confirm("Eliminar usuario permanentemente?")) return;
-      try{
-        if(u.codigoIngreso) await addDoc(expiredRef,{code:u.codigoIngreso,reason:"usuario_eliminado",L:u.L,nombre:u.nombre,when:new Date()});
-        if(u.codigoSalida) await addDoc(expiredRef,{code:u.codigoSalida,reason:"usuario_eliminado",L:u.L,nombre:u.nombre,when:new Date()});
-        await deleteDoc(doc(db,"usuarios",docSnap.id));
-        alert("Usuario eliminado y códigos invalidados.");
-      }catch(err){console.error(err);alert("Error eliminando usuario");}
+      if(confirm("¿Desea eliminar este usuario?")) await deleteDoc(doc(usuariosRef,docSnap.id));
     });
 
+    // IMPRIMIR TARJETA
     tr.querySelector(".print-btn").addEventListener("click",()=>{
-      const pass=prompt("Ingrese contraseña de administración para continuar");
+      const pass=prompt("Ingrese contraseña para imprimir tarjeta");
       if(!checkPass(pass)){ alert("Contraseña incorrecta"); return; }
-      const borderColor={"propietario":"violet","administracion":"orange","empleado":"green","obrero":"yellow","invitado":"cyan","guardia":"red"}[u.tipo]||"gray";
-      const w=window.open("","_blank","width=600,height=380");
-      w.document.write(`<html><head><title>Tarjeta ${u.L}</title><style>body{font-family:Arial;text-align:center}.card{width:15cm;height:6cm;border:12px solid ${borderColor};box-sizing:border-box;padding:12px;margin:auto;display:flex;flex-direction:column;justify-content:center;align-items:center}.card h2{margin:0}svg{margin-top:10px}</style></head><body><div class="card"><h2>${u.nombre}</h2><div>#L: ${u.L} | ${u.tipo}</div><svg id="barcode"></svg></div><script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script><script>JsBarcode("#barcode","${u.codigoIngreso}",{format:"CODE128",displayValue:true,width:2,height:40})</script></body></html>`);
-      w.document.close();
-      w.print();
+      const tarjeta=window.open("","_blank","width=320,height=200");
+      tarjeta.document.write(`<h3>${u.nombre}</h3><p>#L: ${u.L}</p><p>DNI: ${u.dni}</p><svg id="barcode"></svg>`);
+      tarjeta.document.close();
+      JsBarcode(tarjeta.document.getElementById("barcode"), u.codigoIngreso, {format:"CODE128"});
+      tarjeta.focus();
+      tarjeta.print();
     });
   });
 });
 
-// Panel movimientos
-const scanBtn=document.getElementById("scanBtn");
-const printPageBtn=document.getElementById("printPageBtn");
+/* -----------------------------
+   SCAN PANEL
+----------------------------- */
 const scanModal=document.getElementById("scanModal");
 const scanInput=document.getElementById("scanInput");
-const confirmScanBtn=document.getElementById("confirmScanBtn");
 const cancelScanBtn=document.getElementById("cancelScanBtn");
-const scanMessage=document.getElementById("scanMessage");
+const scanBtn=document.getElementById("scanBtn");
 const scanOk=document.getElementById("scanOk");
-const movimientosTableBody=document.querySelector("#movimientosTable tbody");
 
-scanBtn.addEventListener("click",()=>{scanModal.classList.add("active");scanInput.value="";scanInput.focus();scanMessage.textContent="";});
-cancelScanBtn.addEventListener("click",()=>{scanModal.classList.remove("active");scanMessage.textContent="";});
-
-confirmScanBtn.addEventListener("click",async ()=>{
-  const code=scanInput.value.trim();
-  if(!code){scanMessage.textContent="Ingrese código";return;}
-  // Buscar usuario por código
-  let usuarioSnapshot=await getDocs(query(usuariosRef));
-  let found=null;
-  usuarioSnapshot.forEach(docSnap=>{const u=docSnap.data();if(u.codigoIngreso===code||u.codigoSalida===code) found={id:docSnap.id,...u};});
-  if(!found){scanMessage.textContent="Código inválido";return;}
-  // Determinar si es entrada o salida
-  const tipoMov=found.codigoIngreso===code?"entrada":"salida";
-  try{
-    await addDoc(movimientosRef,{L:found.L,nombre:found.nombre,dni:found.dni,tipo:tipoMov,hora:horaActualStr()});
-    scanOk.style.display="inline";setTimeout(()=>scanOk.style.display="none",1000);
-    scanModal.classList.remove("active");
-  }catch(err){scanMessage.textContent="Error registrando movimiento";}
+scanBtn.onclick=()=>{ scanModal.classList.add("active"); scanInput.focus(); };
+cancelScanBtn.onclick=()=>{ scanModal.classList.remove("active"); scanInput.value=""; };
+scanInput.addEventListener("keydown",async e=>{
+  if(e.key==="Enter"){
+    const code=scanInput.value.trim();
+    if(!code){ alert("Ingrese código"); return; }
+    const q=query(usuariosRef,where("codigoIngreso","==",code));
+    const snap=await getDocs(q);
+    if(!snap.empty){
+      const u=snap.docs[0].data();
+      await addDoc(movimientosRef,{L:u.L,nombre:u.nombre,dni:u.dni,entrada:horaActualStr(),salida:"",tipo:u.tipo});
+      scanOk.style.display="inline"; setTimeout(()=>scanOk.style.display="none",2000);
+      scanInput.value=""; scanModal.classList.remove("active");
+    } else { document.getElementById("scanMessage").textContent="Código no válido"; }
+  }
 });
 
-// Mostrar movimientos
-onSnapshot(query(movimientosRef,orderBy("hora","desc")),snapshot=>{
-  movimientosTableBody.innerHTML="";
-  snapshot.docs.forEach(docSnap=>{
-    const m=docSnap.data();
-    const tr=document.createElement("tr");
-    tr.innerHTML=`<td>${m.L}</td><td>${m.nombre}</td><td>${m.dni}</td><td>${m.tipo==="entrada"?m.hora:"-"}</td><td>${m.tipo==="salida"?m.hora:"-"}</td><td>${m.tipo}</td><td></td>`;
-    movimientosTableBody.appendChild(tr);
-  });
-});
+/* -----------------------------
+   IMPRIMIR MOVIMIENTOS
+----------------------------- */
+document.getElementById("printPageBtn").onclick=()=>{
+  const pass=prompt("Ingrese contraseña para imprimir movimientos");
+  if(!checkPass(pass)){ alert("Contraseña incorrecta"); return; }
+  const tabla=movimientosTable.innerHTML;
+  const win=window.open("","_blank","width=800,height=600");
+  win.document.write("<h2>Movimientos</h2><table border=1>"+tabla+"</table>");
+  win.document.close(); win.focus(); win.print();
+};
 
-// Imprimir movimientos
-printPageBtn.addEventListener("click",()=>{window.print();});
-
-// Cambiar contraseña
-document.getElementById("savePassBtn").addEventListener("click",()=>{
-  const c=document.getElementById("currentPass").value;
-  const n=document.getElementById("newPass").value;
-  if(!c||!n){alert("Complete ambos campos");return;}
-  if(!checkPass(c)){alert("Contraseña actual incorrecta");return;}
-  if(!/^\d{4}$/.test(n)){alert("Nueva contraseña inválida");return;}
-  localStorage.setItem("adminPass",n);
-  alert("Contraseña actualizada");
-});
-
-// Restaurar contraseña
-document.getElementById("restoreDefaultBtn").addEventListener("click",()=>{
+/* -----------------------------
+   Cambiar contraseña
+----------------------------- */
+document.getElementById("savePassBtn").onclick=()=>{
+  const cur=document.getElementById("currentPass").value;
+  const neu=document.getElementById("newPass").value;
+  if(!checkPass(cur)){ alert("Contraseña actual incorrecta"); return; }
+  if(!/^\d{4}$/.test(neu)){ alert("Nueva contraseña debe ser 4 dígitos"); return; }
+  localStorage.setItem("adminPass",neu);
+  alert("Contraseña cambiada");
+};
+document.getElementById("restoreDefaultBtn").onclick=()=>{
   localStorage.setItem("adminPass","123456789");
-  document.getElementById("restoreMsg").textContent="Contraseña restaurada"; setTimeout(()=>{document.getElementById("restoreMsg").textContent="";},2500);
-});
+  document.getElementById("restoreMsg").textContent="Contraseña restaurada a 123456789";
+  setTimeout(()=>document.getElementById("restoreMsg").textContent="",2000);
+};
