@@ -1,11 +1,11 @@
 :root{
   --bg:#f5f5f5;
-  --panel:#ffffff;
-  --accent:#d8a800;
+  --panel:#111;
+  --accent:#f4cf19;
   --muted:#666666;
-  --text:#111111;
+  --text:#fff;
   --white:#ffffff;
-  --blur-bg:rgba(0,0,0,0.35);
+  --blur-bg:rgba(0,0,0,0.7);
 }
 
 /* reset y base */
@@ -14,7 +14,7 @@ html,body{height:100%}
 body{
   margin:0;
   font-family:"Inter",Arial,sans-serif;
-  background:var(--bg);
+  background:#1f2634;
   color:var(--text);
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
@@ -49,7 +49,7 @@ button:hover{ background:var(--accent); color:#111; }
 /* forms */
 .form-row{ display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
 input, select{
-  background:#fafafa; color:var(--text);
+  background:#fafafa; color:#111;
   border:1px solid #ccc; padding:8px 10px; border-radius:8px; min-width:140px;
 }
 input::placeholder{ color:#999; }
