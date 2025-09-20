@@ -1,3 +1,4 @@
+/* General */
 body {
   font-family: Arial, sans-serif;
   background-color: #1f1f1f;
@@ -9,10 +10,16 @@ body {
   align-items: center;
 }
 
+header {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
 .nav {
   display: flex;
-  gap: 10px;
-  margin: 20px 0;
+  gap: 15px;
 }
 
 .nav button {
@@ -23,6 +30,7 @@ body {
   cursor: pointer;
   border-radius: 5px;
   font-weight: bold;
+  transition: all 0.2s ease;
 }
 
 .nav button:hover {
@@ -30,21 +38,25 @@ body {
   color: #333;
 }
 
-section {
-  display: none;
+main {
   width: 90%;
   max-width: 900px;
-  margin-bottom: 40px;
+  margin-top: 20px;
+}
+
+section {
+  display: none;
 }
 
 section.active {
   display: block;
 }
 
+/* Tables */
 table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 10px;
+  margin-top: 15px;
   background-color: #fff;
   color: #000;
 }
@@ -60,10 +72,7 @@ th {
   color: #000;
 }
 
-button {
-  margin-top: 10px;
-}
-
+/* Forms */
 .formUsuario, .formConfig {
   display: flex;
   gap: 10px;
@@ -80,4 +89,9 @@ input, select {
 span {
   color: #4CAF50;
   font-weight: bold;
+}
+
+button {
+  margin-top: 10px;
+  cursor: pointer;
 }
