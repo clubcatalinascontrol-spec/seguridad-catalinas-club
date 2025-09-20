@@ -240,7 +240,7 @@ cancelScanBtn.addEventListener("click", ()=>{
 });
 scanInput.addEventListener("input", async ()=>{
   const codigo = scanInput.value.trim();
-  if(codigo.length >= 6){
+  if(codigo.length >= 8){
     try{
       let snap = await getDocs(query(usuariosRef, where("codigoIngreso","==",codigo)));
       let tipoMov="entrada";
@@ -262,3 +262,4 @@ scanInput.addEventListener("input", async ()=>{
     }catch(err){ console.error(err); alert("Error registrando movimiento"); scanInput.value=""; }
   }
 });
+
