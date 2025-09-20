@@ -1,13 +1,11 @@
-// app.js - usa el SDK modular (tal como diste al principio)
+// app.js - usa CDN modular Firebase 9.x (tal como pediste)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import {
   getFirestore, collection, addDoc, getDocs, doc, onSnapshot, updateDoc, deleteDoc,
   query, where, orderBy, limit
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-/* -------------------------
-   Firebase - usar tu config
-   ------------------------- */
+/* ---------- CONFIG FIREBASE (usa tu config) ---------- */
 const firebaseConfig = {
   apiKey: "AIzaSyBmgexrB3aDlx5XARYqigaPoFsWX5vDz_4",
   authDomain: "seguridad-catalinas-club.firebaseapp.com",
@@ -16,23 +14,17 @@ const firebaseConfig = {
   messagingSenderId: "980866194296",
   appId: "1:980866194296:web:3fefc2a107d0ec6052468d"
 };
-
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 const usuariosRef = collection(db, "usuarios");
 const movimientosRef = collection(db, "movimientos");
 
-/* -------------------------
-   PIN maestro (localStorage)
-   ------------------------- */
+/* ---------- PIN maestro (localStorage) ---------- */
 if (!localStorage.getItem("pinMaestro")) localStorage.setItem("pinMaestro", "1234");
 
-/* -------------------------
-   Helpers
-   ------------------------- */
+/* ---------- HELPERS ---------- */
 function generarCodigo() {
-  // 8 chars alfanum mayúsculas
   return Math.random().toString(36).substring(2, 10).toUpperCase();
 }
 function horaActualStr() {
@@ -45,9 +37,7 @@ function horaActualStr() {
   return `${hh}:${mm} (${dd}/${mo}/${yyyy})`;
 }
 
-/* -------------------------
-   Default users (ensure exist)
-   ------------------------- */
+/* ---------- USUARIOS POR DEFECTO (asegurar existencia) ---------- */
 const defaultUsers = [
   { L: "999", nombre: "Prueba A", dni: "11222333", tipo: "otro", codigoIngreso: generarCodigo(), codigoSalida: generarCodigo() },
   { L: "998", nombre: "Prueba B", dni: "44555666", tipo: "empleado", codigoIngreso: generarCodigo(), codigoSalida: generarCodigo() }
@@ -55,22 +45,20 @@ const defaultUsers = [
 
 async function loadDefaultUsers() {
   try {
-    const snapshot = await getDocs(usuariosRef);
-    const existingL = snapshot.docs.map(d => d.data().L);
+    const snap = await getDocs(usuariosRef);
+    const existingL = snap.docs.map(d => d.data().L);
     for (const u of defaultUsers) {
       if (!existingL.includes(u.L)) {
         await addDoc(usuariosRef, u);
       }
     }
   } catch (err) {
-    console.error("Error cargando usuarios por defecto:", err);
+    console.error("Error al cargar usuarios por defecto:", err);
   }
 }
 loadDefaultUsers();
 
-/* -------------------------
-   Navigation (SPA)
-   ------------------------- */
+/* ---------- NAVEGACIÓN (SPA) ---------- */
 const navBtns = document.querySelectorAll(".nav-btn");
 const pages = document.querySelectorAll(".page");
 navBtns.forEach(btn => {
@@ -83,9 +71,7 @@ navBtns.forEach(btn => {
   });
 });
 
-/* -------------------------
-   USUARIOS: agregar + render + acciones
-   ------------------------- */
+/* ---------- ELEMENTOS USUARIOS ---------- */
 const userL = document.getElementById("userL");
 const userNombre = document.getElementById("userNombre");
 const userDni = document.getElementById("userDni");
@@ -94,6 +80,7 @@ const addUserBtn = document.getElementById("addUserBtn");
 const userMessage = document.getElementById("userMessage");
 const usersTableBody = document.querySelector("#usersTable tbody");
 
+/* Agregar usuario */
 addUserBtn.addEventListener("click", async () => {
   const L = userL.value.trim();
   const nombre = userNombre.value.trim();
@@ -120,7 +107,7 @@ addUserBtn.addEventListener("click", async () => {
   }
 });
 
-/* Render usuarios en tiempo real */
+/* Render usuarios (real-time) */
 onSnapshot(query(usuariosRef, orderBy("L")), snapshot => {
   usersTableBody.innerHTML = "";
   snapshot.docs.forEach(docSnap => {
@@ -139,7 +126,7 @@ onSnapshot(query(usuariosRef, orderBy("L")), snapshot => {
     `;
     usersTableBody.appendChild(tr);
 
-    // Editar -> solicita PIN maestro
+    /* Editar (PIN requerido) */
     tr.querySelector(".editUser").addEventListener("click", async () => {
       const pin = prompt("Ingrese PIN maestro:");
       if (pin !== localStorage.getItem("pinMaestro")) { alert("PIN incorrecto"); return; }
@@ -152,24 +139,21 @@ onSnapshot(query(usuariosRef, orderBy("L")), snapshot => {
       if (newTipo === null) return;
       try {
         await updateDoc(doc(db, "usuarios", docSnap.id), { nombre: newNombre, dni: newDni, tipo: newTipo });
-      } catch (err) { console.error(err); alert("Error editando"); }
+      } catch (err) { console.error(err); alert("Error editando usuario"); }
     });
 
-    // Eliminar -> solicita PIN maestro
+    /* Eliminar (PIN requerido) */
     tr.querySelector(".delUser").addEventListener("click", async () => {
       const pin = prompt("Ingrese PIN maestro:");
       if (pin !== localStorage.getItem("pinMaestro")) { alert("PIN incorrecto"); return; }
       if (!confirm("Eliminar usuario permanentemente?")) return;
-      try {
-        await deleteDoc(doc(db, "usuarios", docSnap.id));
-      } catch (err) { console.error(err); alert("Error eliminando"); }
+      try { await deleteDoc(doc(db, "usuarios", docSnap.id)); } catch (err) { console.error(err); alert("Error eliminando usuario"); }
     });
 
-    // Imprimir tarjeta (PIN)
+    /* Imprimir tarjeta (PIN requerido) */
     tr.querySelector(".printUser").addEventListener("click", () => {
       const pin = prompt("Ingrese PIN maestro:");
       if (pin !== localStorage.getItem("pinMaestro")) { alert("PIN incorrecto"); return; }
-      // Abrir ventana e imprimir tarjeta (ingreso arriba, salida abajo)
       const w = window.open("", "_blank", "width=600,height=350");
       const borderColor = (function (t) {
         switch (t) {
@@ -197,7 +181,7 @@ onSnapshot(query(usuariosRef, orderBy("L")), snapshot => {
           JsBarcode(document.getElementById('codeIn'), "${u.codigoIngreso}", {format:'CODE128', width:2, height:40});
           JsBarcode(document.getElementById('codeOut'), "${u.codigoSalida}", {format:'CODE128', width:2, height:40});
           window.print();
-          setTimeout(()=>window.close(), 500);
+          setTimeout(()=>window.close(), 600);
         <\/script>
         </body></html>
       `);
@@ -205,14 +189,13 @@ onSnapshot(query(usuariosRef, orderBy("L")), snapshot => {
   });
 });
 
-/* -------------------------
-   MOVIMIENTOS: real-time + paginación
-   ------------------------- */
+/* ---------- MOVIMIENTOS (real-time, paginación y auto-print) ---------- */
 const movimientosTableBody = document.querySelector("#movimientosTable tbody");
 const paginationDiv = document.getElementById("pagination");
 const MOV_LIMIT = 25;
-let movimientosCache = []; // arreglo con movimientos ordenados por hora desc
+let movimientosCache = [];
 let currentPage = 1;
+let prevMovCount = 0;
 
 function renderPagination(totalItems) {
   const totalPages = Math.min(10, Math.max(1, Math.ceil(totalItems / MOV_LIMIT)));
@@ -220,7 +203,7 @@ function renderPagination(totalItems) {
   for (let p = 1; p <= totalPages; p++) {
     const btn = document.createElement("button");
     btn.textContent = p;
-    if (p === currentPage) btn.style.background = "#d8a800", btn.style.color = "#111";
+    if (p === currentPage) { btn.style.background = "#d8a800"; btn.style.color = "#111"; }
     btn.addEventListener("click", () => { currentPage = p; renderMovsPage(); });
     paginationDiv.appendChild(btn);
   }
@@ -242,46 +225,43 @@ function renderMovsPage() {
     });
   });
   renderPagination(movimientosCache.length);
-
-  // Auto print when page full (25)
-  if (page.length === MOV_LIMIT) {
-    // imprimir automáticamente la página actual (últimos 25)
-    // Nota: para evitar impresiones indeseadas se deshabilita la autoimpresión en desarrollo.
-    // Si quieres habilitar auto print cuando llegue exactamente a 25, descomenta la linea siguiente:
-    // printMovementsPage(page);
-  }
 }
 
+/* printing helper for movements */
 function printMovementsPage(pageData) {
   const w = window.open("", "_blank");
-  let html = `<table border="1" style="width:100%;border-collapse:collapse"><thead><tr><th>#L</th><th>Nombre</th><th>DNI</th><th>Entrada</th><th>Salida</th><th>Tipo</th></tr></thead><tbody>`;
-  pageData.forEach(m => {
-    html += `<tr><td>${m.L}</td><td>${m.nombre}</td><td>${m.dni}</td><td>${m.entrada||""}</td><td>${m.salida||""}</td><td>${m.tipo}</td></tr>`;
-  });
-  html += `</tbody></table>`;
+  let html = `<html><head><title>Movimientos</title><style>table{width:100%;border-collapse:collapse}th,td{border:1px solid #000;padding:6px;text-align:center}</style></head><body>`;
+  html += `<h3>Últimos ${pageData.length} movimientos</h3>`;
+  html += `<table><thead><tr><th>#L</th><th>Nombre</th><th>DNI</th><th>Entrada</th><th>Salida</th><th>Tipo</th></tr></thead><tbody>`;
+  pageData.forEach(m => { html += `<tr><td>${m.L}</td><td>${m.nombre}</td><td>${m.dni}</td><td>${m.entrada||""}</td><td>${m.salida||""}</td><td>${m.tipo}</td></tr>`; });
+  html += `</tbody></table></body></html>`;
   w.document.write(html);
   w.print();
   w.close();
 }
 
-/* onSnapshot para movimientos: orden by hora desc */
+/* onSnapshot movimientos (orden descendente por hora) */
 onSnapshot(query(movimientosRef, orderBy("hora", "desc")), snapshot => {
-  // reconstruir cache (cada item incluye __id para operaciones de delete)
   movimientosCache = snapshot.docs.map(d => ({ __id: d.id, ...d.data() }));
-  // mostrar página actual (si la página quedó fuera, reajustar)
+  // si llegó nueva data y el total es múltiplo exacto de MOV_LIMIT -> imprimir automáticamente últimos MOV_LIMIT
+  const newCount = movimientosCache.length;
+  if (newCount > prevMovCount && (newCount % MOV_LIMIT) === 0) {
+    // imprimir los últimos MOV_LIMIT (página 1)
+    const pageToPrint = movimientosCache.slice(0, MOV_LIMIT);
+    try { printMovementsPage(pageToPrint); } catch (err) { console.error("Error auto-print:", err); }
+  }
+  prevMovCount = newCount;
+  // ajustar currentPage si es necesario y renderizar
   const totalPages = Math.min(10, Math.max(1, Math.ceil(movimientosCache.length / MOV_LIMIT)));
   if (currentPage > totalPages) currentPage = totalPages;
   renderMovsPage();
 });
 
-/* -------------------------
-   ESCANEO - un solo botón
-   ------------------------- */
+/* ---------- ESCANEO (un solo botón) ---------- */
 document.getElementById("scanBtn").addEventListener("click", async () => {
   const codigo = prompt("Escanee código de barra:");
   if (!codigo) return;
   try {
-    // buscar por ingreso
     let snap = await getDocs(query(usuariosRef, where("codigoIngreso", "==", codigo)));
     let tipoMov = "entrada";
     if (snap.empty) {
@@ -289,41 +269,33 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
       if (snap.empty) { alert("Código no reconocido"); return; }
       tipoMov = "salida";
     }
-    // registrar un movimiento por cada usuario encontrado (normalmente 1)
     for (const d of snap.docs) {
       const u = d.data();
-      const mov = {
-        L: u.L, nombre: u.nombre, dni: u.dni, tipo: u.tipo,
-        hora: new Date()
-      };
+      const mov = { L: u.L, nombre: u.nombre, dni: u.dni, tipo: u.tipo, hora: new Date() };
       if (tipoMov === "entrada") mov.entrada = horaActualStr();
       else mov.salida = horaActualStr();
       await addDoc(movimientosRef, mov);
     }
     alert("Movimiento registrado");
   } catch (err) {
-    console.error(err);
+    console.error("Error en escaneo:", err);
     alert("Error registrando movimiento");
   }
 });
 
-/* -------------------------
-   IMPRIMIR ÚLTIMA PÁGINA (manualmente)
-   ------------------------- */
+/* ---------- IMPRIMIR ÚLTIMA PÁGINA (manual) ---------- */
 document.getElementById("printPageBtn").addEventListener("click", async () => {
   try {
     const snap = await getDocs(query(movimientosRef, orderBy("hora", "desc"), limit(MOV_LIMIT)));
     const data = snap.docs.map(d => d.data());
     printMovementsPage(data);
   } catch (err) {
-    console.error(err);
+    console.error("Error imprimiendo última página:", err);
     alert("Error imprimiendo última página");
   }
 });
 
-/* -------------------------
-   CONFIG: cambiar PIN (requiere PIN actual)
-   ------------------------- */
+/* ---------- CONFIG: cambiar PIN (requiere PIN actual) ---------- */
 document.getElementById("savePin").addEventListener("click", () => {
   const current = document.getElementById("currentPin").value.trim();
   const nuevo = document.getElementById("newPin").value.trim();
@@ -334,7 +306,3 @@ document.getElementById("savePin").addEventListener("click", () => {
   document.getElementById("currentPin").value = "";
   document.getElementById("newPin").value = "";
 });
-
-/* -------------------------
-   Fin app.js
-   ------------------------- */
