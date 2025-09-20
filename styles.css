@@ -1,13 +1,11 @@
-/* Minimal, centrado, negro + amarillo opaco; tablas limpias (look "excel" en impresión) */
-
 :root{
   --bg:#0e0e0e;
   --panel:#151515;
-  --accent:#d8a800; /* amarillo opaco */
-  --muted:#666;
+  --accent:#d8a800;
   --white:#ffffff;
 }
 
+/* Reset básico */
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
@@ -16,11 +14,10 @@ body{
   color:var(--white);
   font-family:Inter, "Segoe UI", Arial, sans-serif;
   -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
 }
 
 /* Top nav */
-.topbar { padding:18px 10px; background:transparent; display:flex; justify-content:center; }
+.topbar { padding:18px 10px; display:flex; justify-content:center; }
 .nav-center { display:flex; gap:12px; align-items:center; }
 .nav-btn{
   background:var(--panel);
@@ -32,11 +29,10 @@ body{
   cursor:pointer;
 }
 .nav-btn.active{ background:var(--accent); color:#111; border-color:var(--accent); }
-.nav-btn:hover{ opacity:0.95; }
 
 /* layout */
 .container{ max-width:1100px; margin:18px auto; padding:0 16px; }
-.page{ display:none; background:var(--panel); padding:18px; border-radius:12px; box-shadow: 0 4px 18px rgba(0,0,0,0.6); }
+.page{ display:none; background:var(--panel); padding:18px; border-radius:12px; }
 .page.active{ display:block; }
 
 /* controls */
@@ -50,9 +46,8 @@ input, select{
   background:#111; color:var(--white);
   border:1px solid #333; padding:8px 10px; border-radius:8px; min-width:140px;
 }
-input::placeholder{ color:#999; }
 
-/* tables */
+/* tables: apariencia similar a "excel" en blanco y negro para impresión */
 .table-wrap{ overflow:auto; margin-top:10px; }
 .sheet{ width:100%; border-collapse:collapse; background:#fff; color:#000; }
 .sheet th, .sheet td{
@@ -63,10 +58,10 @@ input::placeholder{ color:#999; }
 /* pagination */
 .pagination{ margin-top:12px; display:flex; gap:6px; justify-content:center; flex-wrap:wrap; }
 
-/* small messages */
+/* mensajes */
 .okmsg{ color:#8fd19e; font-weight:700; margin-left:8px; }
 
-/* printing card style (only used inside new window) */
+/* impresión */
 @media print {
   body{ background:#fff; color:#000; }
   .sheet{ page-break-after:always; }
