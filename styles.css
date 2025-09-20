@@ -37,13 +37,15 @@ input::placeholder{color:#999;}
 .sheet{width:100%; border-collapse:collapse; background:#fff; color:#000;}
 .sheet th, .sheet td{border:1px solid #000; padding:8px; text-align:center;}
 .sheet thead th{background:#f2f2f2; font-weight:700;}
+.sheet td button{padding:4px 8px; border-radius:6px; background:#c0392b; border:none; color:#fff; cursor:pointer;}
+.sheet td button:hover{opacity:0.8;}
 
 /* messages */
 .okmsg{color:#8fd19e; font-weight:700; margin-left:8px;}
 .muted{color:var(--muted); font-size:13px;}
 
 /* scanner div */
-.scanner-div{display:none; justify-content:center; align-items:center; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:1000;}
+.scanner-div{display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:1000; justify-content:center; align-items:center;}
 .scanner-div.active{display:flex;}
 .scanner-box{background:#1c1c1c; padding:24px; border-radius:12px; display:flex; flex-direction:column; align-items:center; gap:12px;}
 .scanner-box input{padding:8px 12px; border-radius:6px; border:1px solid #aaa; background:#111; color:#fff; width:220px; text-align:center; font-size:16px;}
