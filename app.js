@@ -1,122 +1,56 @@
-// Firebase inicialización
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+// EDITAR
+tr.querySelector(".edit-btn").addEventListener("click",()=>{
+  const id=docSnap.id;
+  const pass=prompt("Ingrese contraseña de administración para continuar");
+  if(!checkPass(pass)){ alert("Contraseña incorrecta"); return; }
 
-const firebaseConfig = {
-  apiKey: "AIzaSyB8fQJsN0tqpuz48Om30m6u6jhEcSfKYEw",
-  authDomain: "supermercadox-107f6.firebaseapp.com",
-  projectId: "supermercadox-107f6",
-  storageBucket: "supermercadox-107f6.firebasestorage.app",
-  messagingSenderId: "504958637825",
-  appId: "1:504958637825:web:6ae5e2cde43206b3052d00"
-};
+  document.getElementById("editUserModal").classList.add("active");
+  document.getElementById("editUserL").value=u.L;
+  document.getElementById("editUserNombre").value=u.nombre;
+  document.getElementById("editUserDni").value=u.dni;
+  document.getElementById("editUserTipo").value=u.tipo; // ahora es readonly
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+  const finalizeBtn=document.getElementById("finalizeEditBtn");
+  const cancelBtn=document.getElementById("cancelEditBtn");
+  const msgSpan=document.getElementById("editUserMsg");
 
-// --- MOVIMIENTOS ---
-const movimientosLista = document.getElementById("movimientos-lista");
-const imprimirMovimientosBtn = document.getElementById("imprimirMovimientos");
+  finalizeBtn.onclick=async ()=>{
+    const newL=document.getElementById("editUserL").value.trim();
+    const newNombre=document.getElementById("editUserNombre").value.trim();
+    const newDni=document.getElementById("editUserDni").value.trim();
+    const tipoFijo=document.getElementById("editUserTipo").value;
 
-onSnapshot(collection(db, "movimientos"), (snapshot) => {
-  movimientosLista.innerHTML = "";
-  snapshot.forEach((doc) => {
-    const mov = doc.data();
-    const div = document.createElement("div");
-    div.textContent = `ID: ${doc.id} - ${mov.accion} - ${mov.fecha}`;
-    movimientosLista.appendChild(div);
-  });
-});
+    if(!newL||!newNombre||!newDni||!tipoFijo){
+      msgSpan.textContent="Faltan datos, por favor complete todos los campos"; return;
+    }
+    if(!/^\d{1,3}$/.test(newL)||newNombre.length>25||!/^\d{8}$/.test(newDni)){
+      msgSpan.textContent="Datos inválidos"; return;
+    }
 
-imprimirMovimientosBtn.addEventListener("click", () => {
-  const ventana = window.open("", "_blank");
-  ventana.document.write("<h1>Movimientos</h1>");
-  movimientosLista.querySelectorAll("div").forEach(div => {
-    ventana.document.write(`<p>${div.textContent}</p>`);
-  });
-  ventana.print();
-});
+    // Comprobar si DNI existe en otro usuario (pero sin restricción de #L)
+    const qDni=query(usuariosRef, where("dni","==",newDni));
+    const snapDni=await getDocs(qDni);
+    if(!snapDni.empty && snapDni.docs[0].id!==id){
+      msgSpan.style.color="red";
+      msgSpan.textContent="Este DNI ya existe en otro usuario";
+      return;
+    }
 
-// --- USUARIOS ---
-const usuariosLista = document.getElementById("usuarios-lista");
-const modalEditar = document.getElementById("modal-editar");
-const editarL = document.getElementById("editarL");
-const editarNombre = document.getElementById("editarNombre");
-const editarDni = document.getElementById("editarDni");
-const editarTipo = document.getElementById("editarTipo");
-const cancelarEdicion = document.getElementById("cancelarEdicion");
-const finalizarEdicion = document.getElementById("finalizarEdicion");
-const mensajeEdicion = document.getElementById("mensajeEdicion");
+    try{
+      await updateDoc(doc(db,"usuarios",id),{
+        L:newL,nombre:newNombre,dni:newDni,tipo:tipoFijo
+      });
+      msgSpan.style.color="green";
+      msgSpan.textContent="Usuario editado con éxito";
+      setTimeout(()=>{
+        document.getElementById("editUserModal").classList.remove("active");
+        msgSpan.textContent=""; msgSpan.style.color="#0a0";
+      },1500);
+    }catch(err){ console.error(err); msgSpan.textContent="Error editando"; }
+  };
 
-let usuarioActualId = null;
-
-onSnapshot(collection(db, "usuarios"), (snapshot) => {
-  usuariosLista.innerHTML = "";
-  snapshot.forEach((docu) => {
-    const usuario = docu.data();
-    const div = document.createElement("div");
-    div.textContent = `#L: ${usuario.l} - ${usuario.nombre} - DNI: ${usuario.dni} - Tipo: ${usuario.tipo}`;
-
-    const btnEditar = document.createElement("button");
-    btnEditar.textContent = "Editar";
-    btnEditar.addEventListener("click", () => {
-      usuarioActualId = docu.id;
-      editarL.value = usuario.l;
-      editarNombre.value = usuario.nombre;
-      editarDni.value = usuario.dni;
-      editarTipo.value = usuario.tipo;
-      modalEditar.style.display = "flex";
-    });
-
-    div.appendChild(btnEditar);
-    usuariosLista.appendChild(div);
-  });
-});
-
-cancelarEdicion.addEventListener("click", () => {
-  modalEditar.style.display = "none";
-});
-
-finalizarEdicion.addEventListener("click", async () => {
-  if (!editarL.value || !editarNombre.value || !editarDni.value || !editarTipo.value) {
-    mensajeEdicion.textContent = "Faltan datos, por favor complete todos los campos";
-    mensajeEdicion.className = "error";
-    return;
-  }
-  await updateDoc(doc(db, "usuarios", usuarioActualId), {
-    l: editarL.value,
-    nombre: editarNombre.value,
-    dni: editarDni.value,
-    tipo: editarTipo.value
-  });
-  mensajeEdicion.textContent = "Usuario editado con éxito";
-  mensajeEdicion.className = "exito";
-  setTimeout(() => { modalEditar.style.display = "none"; }, 1000);
-});
-
-// --- CONFIG: Restaurar contraseña ---
-const restaurarBtn = document.getElementById("restaurarContrasena");
-const modalRestaurar = document.getElementById("modal-restaurar");
-const cancelarRestaurar = document.getElementById("cancelarRestaurar");
-const confirmarRestaurar = document.getElementById("confirmarRestaurar");
-const inputContrasenaMaestra = document.getElementById("inputContrasenaMaestra");
-const mensajeRestaurar = document.getElementById("mensajeRestaurar");
-
-restaurarBtn.addEventListener("click", () => {
-  modalRestaurar.style.display = "flex";
-});
-
-cancelarRestaurar.addEventListener("click", () => {
-  modalRestaurar.style.display = "none";
-});
-
-confirmarRestaurar.addEventListener("click", async () => {
-  if (inputContrasenaMaestra.value === "9999") {
-    await setDoc(doc(db, "config", "contrasena"), { valor: "1234" });
-    mensajeRestaurar.textContent = "La contraseña ahora es 1234";
-    mensajeRestaurar.className = "exito";
-  } else {
-    mensajeRestaurar.textContent = "Contraseña maestra incorrecta";
-    mensajeRestaurar.className = "error";
-  }
+  cancelBtn.onclick=()=>{
+    document.getElementById("editUserModal").classList.remove("active");
+    msgSpan.textContent="";
+  };
 });
