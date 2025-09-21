@@ -1,11 +1,11 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Catalinas Country — Control de Ingreso</title>
-  <link rel="stylesheet" href="styles.css" />
-  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Catalinas Country — Control de Ingreso</title>
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 </head>
 <body>
 <header class="topbar">
@@ -31,7 +31,13 @@
       <table id="movimientosTable" class="sheet">
         <thead>
           <tr>
-            <th>#L</th><th>Nombre</th><th>DNI</th><th>H. Entrada</th><th>H. Salida</th><th>Tipo</th><th>Acción</th>
+            <th>#L</th>
+            <th>Nombre</th>
+            <th>DNI</th>
+            <th>H. Entrada</th>
+            <th>H. Salida</th>
+            <th>Tipo</th>
+            <th>Acción</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -45,8 +51,8 @@
     <h2 class="title-centered">Gestión de Usuarios</h2>
     <div class="form-row">
       <select id="userL"></select>
-      <input id="userNombre" placeholder="Nombre Completo (25 letras)" maxlength="25" />
-      <input id="userDni" placeholder="DNI (max 8 dígitos)" maxlength="8" inputmode="numeric" />
+      <input id="userNombre" placeholder="Nombre Completo (25 letras)" maxlength="25">
+      <input id="userDni" placeholder="DNI (max 8 dígitos)" maxlength="8" inputmode="numeric">
       <select id="userTipo">
         <option value="">Tipo</option>
         <option value="propietario">propietario</option>
@@ -63,7 +69,13 @@
     <div class="table-wrap">
       <table id="usersTable" class="sheet">
         <thead>
-          <tr><th>#L</th><th>Nombre</th><th>DNI</th><th>Tipo</th><th>Acciones</th></tr>
+          <tr>
+            <th>#L</th>
+            <th>Nombre</th>
+            <th>DNI</th>
+            <th>Tipo</th>
+            <th>Acciones</th>
+          </tr>
         </thead>
         <tbody></tbody>
       </table>
@@ -74,8 +86,8 @@
   <section id="config" class="page">
     <h2 class="title-centered">Cambiar Contraseña</h2>
     <div class="form-row">
-      <input id="currentPass" type="password" placeholder="Contraseña actual (4 dígitos)" maxlength="4" inputmode="numeric" />
-      <input id="newPass" type="password" placeholder="Nueva contraseña (4 dígitos)" maxlength="4" inputmode="numeric" />
+      <input id="currentPass" type="password" placeholder="Contraseña actual (4 dígitos)" maxlength="4" inputmode="numeric">
+      <input id="newPass" type="password" placeholder="Nueva contraseña (4 dígitos)" maxlength="4" inputmode="numeric">
       <button id="savePassBtn">Cambiar Contraseña</button>
     </div>
     <div class="form-row">
@@ -90,7 +102,7 @@
 <div id="scanModal" class="scanner-overlay">
   <div class="scanner-box" role="dialog" aria-modal="true" aria-labelledby="scan-title">
     <h3 id="scan-title">Escanear código</h3>
-    <input id="scanInput" maxlength="32" placeholder="Pegue/teclee 8 caracteres" inputmode="text" />
+    <input id="scanInput" maxlength="32" placeholder="Pegue/teclee 8 caracteres" inputmode="text">
     <div style="margin-top:10px;display:flex;gap:8px;justify-content:center;align-items:center;">
       <button id="cancelScanBtn">Cancelar</button>
     </div>
@@ -103,8 +115,8 @@
   <div class="scanner-box">
     <h3>Editar Usuario</h3>
     <select id="editUserL"></select>
-    <input id="editUserNombre" placeholder="Nombre completo (max 25)" maxlength="25"/>
-    <input id="editUserDni" placeholder="DNI (8 dígitos)" maxlength="8" inputmode="numeric"/>
+    <input id="editUserNombre" placeholder="Nombre completo (max 25)" maxlength="25">
+    <input id="editUserDni" placeholder="DNI (8 dígitos)" maxlength="8" inputmode="numeric">
     <select id="editUserTipo">
       <option value="">Tipo</option>
       <option value="propietario">propietario</option>
