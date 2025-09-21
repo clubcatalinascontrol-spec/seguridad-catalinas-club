@@ -1,310 +1,227 @@
-// Firebase
+// Importar Firebase
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-import {
-  getFirestore, collection, addDoc, getDocs, setDoc, doc,
-  deleteDoc, updateDoc, getDoc, query, orderBy
-} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, serverTimestamp, limit, where } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
+// Configuración Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyB8fQJsN0tqpuz48Om30m6u6jhEcSfKYEw",
   authDomain: "supermercadox-107f6.firebaseapp.com",
   projectId: "supermercadox-107f6",
-  storageBucket: "supermercadox-107f6.appspot.com",
+  storageBucket: "supermercadox-107f6.firebasestorage.app",
   messagingSenderId: "504958637825",
   appId: "1:504958637825:web:6ae5e2cde43206b3052d00"
 };
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Variables
-let usuarios = [];
-let movimientos = [];
-let password = "1234";
-const passwordMaestra = "9999";
-let usuarioEditandoId = null;
+// Referencias
+const usuariosRef = collection(db,"usuarios");
+const movimientosRef = collection(db,"movimientos");
 
-// Elementos DOM
-const seccionMovimientos = document.getElementById("seccion-movimientos");
-const seccionUsuarios = document.getElementById("seccion-usuarios");
-const seccionConfig = document.getElementById("seccion-config");
-const tablaUsuarios = document.getElementById("tabla-usuarios");
-const tablaMovimientos = document.getElementById("tabla-movimientos");
-const paginacionDiv = document.getElementById("paginacion");
+const usuariosBtn = document.getElementById("usuariosBtn");
+const movimientosBtn = document.getElementById("movimientosBtn");
+const usuariosSection = document.getElementById("usuariosSection");
+const movimientosSection = document.getElementById("movimientosSection");
 
-const modalEscanear = document.getElementById("modal-escanear");
-const inputCodigo = document.getElementById("input-codigo");
-const mensajeEscanear = document.getElementById("mensaje-escanear");
+usuariosBtn.addEventListener("click",()=>{usuariosSection.classList.remove("hidden"); movimientosSection.classList.add("hidden");});
+movimientosBtn.addEventListener("click",()=>{movimientosSection.classList.remove("hidden"); usuariosSection.classList.add("hidden");});
 
-const modalEditar = document.getElementById("modal-editar");
-const formEditar = document.getElementById("form-editar-usuario");
-const editarLote = document.getElementById("editarLote");
-const editarNombre = document.getElementById("editarNombre");
-const editarDni = document.getElementById("editarDni");
-const editarTipo = document.getElementById("editarTipo");
-const mensajeEditar = document.getElementById("mensaje-editar");
+// ================== USUARIOS ==================
+const usuarioForm = document.getElementById("usuarioForm");
+const usuariosTable = document.querySelector("#usuariosTable tbody");
 
-// Navegación
-document.getElementById("btn-movimientos").onclick = () => mostrarSeccion("movimientos");
-document.getElementById("btn-usuarios").onclick = () => mostrarSeccion("usuarios");
-document.getElementById("btn-config").onclick = () => mostrarSeccion("config");
-
-function mostrarSeccion(seccion) {
-  seccionMovimientos.classList.remove("activa");
-  seccionUsuarios.classList.remove("activa");
-  seccionConfig.classList.remove("activa");
-  if (seccion === "movimientos") seccionMovimientos.classList.add("activa");
-  if (seccion === "usuarios") seccionUsuarios.classList.add("activa");
-  if (seccion === "config") seccionConfig.classList.add("activa");
-}
-
-// Escanear
-document.getElementById("btn-escanear").onclick = () => {
-  modalEscanear.style.display = "block";
-  inputCodigo.value = "";
-  mensajeEscanear.textContent = "";
-  inputCodigo.focus();
-};
-document.getElementById("btn-cancelar-escanear").onclick = () => {
-  modalEscanear.style.display = "none";
-};
-
-// Escucha de input sin necesidad de Enter
-inputCodigo.addEventListener("input", async () => {
-  if (inputCodigo.value.length >= 8) {
-    await registrarMovimiento(inputCodigo.value.trim());
-    inputCodigo.value = "";
-  }
-});
-
-// Registrar movimiento
-async function registrarMovimiento(codigo) {
-  try {
-    // Buscar usuario por entrada o salida
-    const usuario = usuarios.find(u => u.codigoEntrada === codigo || u.codigoSalida === codigo);
-
-    if (!usuario) {
-      mensajeEscanear.textContent = "Tarjeta expirada, este usuario no existe";
-      mensajeEscanear.className = "error";
-      return;
-    }
-
-    const accion = (usuario.codigoEntrada === codigo) ? "entrada" : "salida";
-
-    const ahora = new Date();
-    const fecha = ahora.toLocaleDateString("es-AR");
-    const hora = ahora.toLocaleTimeString("es-AR");
-
-    await addDoc(collection(db, "movimientos"), {
-      lote: usuario.lote,
-      nombre: usuario.nombre,
-      dni: usuario.dni,
-      tipo: usuario.tipo,
-      accion,
-      fecha,
-      hora,
-      timestamp: ahora.getTime()
-    });
-
-    mensajeEscanear.textContent = "OK";
-    mensajeEscanear.className = "ok";
-    cargarMovimientos();
-  } catch (e) {
-    console.error("Error al registrar:", e);
-    mensajeEscanear.textContent = "Error al registrar";
-    mensajeEscanear.className = "error";
-  }
-}
-
-// Cargar usuarios
-async function cargarUsuarios() {
-  const snapshot = await getDocs(collection(db, "usuarios"));
-  usuarios = [];
-  snapshot.forEach(docu => usuarios.push({ id: docu.id, ...docu.data() }));
-  renderUsuarios();
-}
-
-// Render usuarios
-function renderUsuarios() {
-  tablaUsuarios.innerHTML = "";
-  usuarios.forEach(u => {
+async function cargarUsuarios(){
+  usuariosTable.innerHTML="";
+  const q = query(usuariosRef, orderBy("L"));
+  const snapshot = await getDocs(q);
+  snapshot.forEach(d=>{
+    const u = d.data();
     const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${u.lote}</td>
+    tr.innerHTML=`
+      <td>${u.L}</td>
       <td>${u.nombre}</td>
       <td>${u.dni}</td>
       <td>${u.tipo}</td>
       <td>
-        <button onclick="editarUsuario('${u.id}')">Editar</button>
-        <button onclick="eliminarUsuario('${u.id}')">Eliminar</button>
-        <button onclick="imprimirTarjeta('${u.id}')">Imprimir Tarjeta</button>
-      </td>`;
-    tablaUsuarios.appendChild(tr);
+        <button onclick="editarUsuario('${d.id}','${u.L}','${u.nombre}','${u.dni}','${u.tipo}')">Editar</button>
+        <button onclick="eliminarUsuario('${d.id}')">Eliminar</button>
+        <button onclick="imprimirTarjeta('${u.L}','${u.nombre}','${u.dni}','${u.tipo}')">Imprimir Tarjeta</button>
+      </td>
+    `;
+    usuariosTable.appendChild(tr);
   });
 }
+cargarUsuarios();
 
-// Agregar usuario
-document.getElementById("form-usuario").addEventListener("submit", async e => {
+usuarioForm.addEventListener("submit", async e=>{
   e.preventDefault();
-  const lote = document.getElementById("numeroLote").value;
-  const nombre = document.getElementById("nombreCompleto").value;
-  const dni = document.getElementById("dni").value;
-  const tipo = document.getElementById("tipoUsuario").value;
-
-  if (!lote || !nombre || !dni || !tipo) return;
-
-  const codigoEntrada = `${dni}-IN`;
-  const codigoSalida = `${dni}-OUT`;
-
-  await addDoc(collection(db, "usuarios"), { lote, nombre, dni, tipo, codigoEntrada, codigoSalida });
+  const id = document.getElementById("usuarioId").value;
+  const uData = {
+    L: document.getElementById("usuarioL").value.trim(),
+    nombre: document.getElementById("usuarioNombre").value.trim(),
+    dni: document.getElementById("usuarioDni").value.trim(),
+    tipo: document.getElementById("usuarioTipo").value
+  };
+  if(id){
+    await updateDoc(doc(db,"usuarios",id),uData);
+  }else{
+    await addDoc(usuariosRef,uData);
+  }
+  usuarioForm.reset();
+  document.getElementById("usuarioId").value="";
   cargarUsuarios();
-  e.target.reset();
 });
 
-// Editar usuario
-window.editarUsuario = id => {
-  const u = usuarios.find(us => us.id === id);
-  if (!u) return;
-  usuarioEditandoId = id;
-  editarLote.value = u.lote;
-  editarNombre.value = u.nombre;
-  editarDni.value = u.dni;
-  editarTipo.value = u.tipo;
-  mensajeEditar.textContent = "";
-  modalEditar.style.display = "block";
+window.editarUsuario=(id,L,nombre,dni,tipo)=>{
+  document.getElementById("usuarioId").value=id;
+  document.getElementById("usuarioL").value=L;
+  document.getElementById("usuarioNombre").value=nombre;
+  document.getElementById("usuarioDni").value=dni;
+  document.getElementById("usuarioTipo").value=tipo;
 };
-document.getElementById("btn-cancelar-editar").onclick = () => modalEditar.style.display = "none";
 
-formEditar.addEventListener("submit", async e => {
-  e.preventDefault();
-  if (!usuarioEditandoId) return;
-  const lote = editarLote.value;
-  const nombre = editarNombre.value;
-  const dni = editarDni.value;
-  const tipo = editarTipo.value;
-  if (!lote || !nombre || !dni || !tipo) {
-    mensajeEditar.textContent = "Faltan datos, por favor complete todos los campos";
-    mensajeEditar.className = "error";
-    return;
+window.eliminarUsuario=async(id)=>{
+  if(confirm("¿Seguro que desea eliminar este usuario?")){
+    await deleteDoc(doc(db,"usuarios",id));
+    cargarUsuarios();
   }
-  const codigoEntrada = `${dni}-IN`;
-  const codigoSalida = `${dni}-OUT`;
-  await updateDoc(doc(db, "usuarios", usuarioEditandoId), { lote, nombre, dni, tipo, codigoEntrada, codigoSalida });
-  mensajeEditar.textContent = "Usuario editado con éxito";
-  mensajeEditar.className = "ok";
-  setTimeout(() => { modalEditar.style.display = "none"; cargarUsuarios(); }, 1000);
-});
-
-// Eliminar usuario
-window.eliminarUsuario = async id => {
-  const clave = prompt("Ingrese contraseña para eliminar:");
-  if (clave !== password && clave !== passwordMaestra) {
-    alert("Contraseña incorrecta");
-    return;
-  }
-  await deleteDoc(doc(db, "usuarios", id));
-  cargarUsuarios();
 };
 
 // Imprimir tarjeta
-window.imprimirTarjeta = id => {
-  const u = usuarios.find(us => us.id === id);
-  if (!u) return;
-  const w = window.open("", "PRINT", "height=400,width=600");
-  w.document.write(`<h1>Tarjeta de ${u.nombre}</h1>`);
-  w.document.write(`<p>#L: ${u.lote}</p>`);
-  w.document.write(`<p>DNI: ${u.dni}</p>`);
-  w.document.write(`<p>Entrada: ${u.codigoEntrada}</p>`);
-  w.document.write(`<p>Salida: ${u.codigoSalida}</p>`);
-  w.print();
+window.imprimirTarjeta=(L,nombre,dni,tipo)=>{
+  const entradaCode = `ENT-${L}-${dni}`;
+  const salidaCode = `SAL-${L}-${dni}`;
+  const win = window.open("","_blank");
+  win.document.write(`
+    <html><head><title>Tarjeta</title></head><body>
+    <h3>${nombre}</h3>
+    <p>#L: ${L} - DNI: ${dni} - Tipo: ${tipo}</p>
+    <p><b>Entrada:</b> ${entradaCode}</p>
+    <p><b>Salida:</b> ${salidaCode}</p>
+    <script>window.print();</script>
+    </body></html>
+  `);
+  win.document.close();
 };
 
-// Cargar movimientos
-async function cargarMovimientos() {
-  const q = query(collection(db, "movimientos"), orderBy("timestamp", "desc"));
-  const snapshot = await getDocs(q);
-  movimientos = [];
-  snapshot.forEach(docu => movimientos.push({ id: docu.id, ...docu.data() }));
-  renderMovimientos();
+// ================== MOVIMIENTOS ==================
+const scannerInput=document.getElementById("scannerInput");
+const scanMsg=document.getElementById("scanMsg");
+const movimientosTable=document.querySelector("#movimientosTable tbody");
+
+let paginaActual=1;
+const porPagina=25;
+
+scannerInput.addEventListener("input", async ()=>{
+  const code=scannerInput.value.trim();
+  if(code.length<5) return;
+  await procesarCodigo(code);
+  scannerInput.value="";
+});
+
+function horaActualStr(){
+  const now=new Date();
+  return now.toLocaleString("es-AR");
 }
 
-// Render movimientos con paginación
-const porPagina = 25;
-let paginaActual = 1;
+async function procesarCodigo(code){
+  try{
+    let esEntrada=code.startsWith("ENT-");
+    let esSalida=code.startsWith("SAL-");
+    if(!esEntrada && !esSalida){
+      scanMsg.textContent="Código inválido";
+      scanMsg.style.color="red"; return;
+    }
+    const parts=code.split("-");
+    const L=parts[1];
+    const dni=parts[2];
+    const qU=query(usuariosRef, where("L","==",L), where("dni","==",dni));
+    const snapU=await getDocs(qU);
+    if(snapU.empty){scanMsg.textContent="Usuario no encontrado"; scanMsg.style.color="red"; return;}
+    const u=snapU.docs[0].data();
 
-function renderMovimientos() {
-  tablaMovimientos.innerHTML = "";
-  const inicio = (paginaActual - 1) * porPagina;
-  const paginados = movimientos.slice(inicio, inicio + porPagina);
-  paginados.forEach(m => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${m.lote}</td>
+    if(esEntrada){
+      await addDoc(movimientosRef,{
+        L:u.L,nombre:u.nombre,dni:u.dni,tipo:u.tipo,
+        entrada:horaActualStr(),salida:"",hora:serverTimestamp()
+      });
+    } else {
+      // Corrección: buscar último movimiento abierto sin depender de índice compuesto
+      const movQ=query(movimientosRef, where("L","==",u.L), orderBy("hora","desc"), limit(5));
+      const movSnap=await getDocs(movQ);
+      let lastMov=null;
+      movSnap.forEach(docu=>{
+        const data=docu.data();
+        if(data.salida==="") lastMov=docu;
+      });
+      if(lastMov){
+        await updateDoc(doc(db,"movimientos",lastMov.id),{salida:horaActualStr()});
+      } else {
+        await addDoc(movimientosRef,{
+          L:u.L,nombre:u.nombre,dni:u.dni,tipo:u.tipo,
+          entrada:"",salida:horaActualStr(),hora:serverTimestamp()
+        });
+      }
+    }
+    scanMsg.textContent="Registro exitoso";
+    scanMsg.style.color="lime";
+    cargarMovimientos();
+  }catch(err){
+    console.error(err);
+    scanMsg.textContent="Error al registrar";
+    scanMsg.style.color="red";
+  }
+}
+
+// Cargar movimientos
+async function cargarMovimientos(){
+  movimientosTable.innerHTML="";
+  const q=query(movimientosRef, orderBy("hora","desc"));
+  const snapshot=await getDocs(q);
+  const docs=snapshot.docs;
+  const totalPaginas=Math.ceil(docs.length/porPagina);
+  if(paginaActual>totalPaginas) paginaActual=totalPaginas||1;
+  const start=(paginaActual-1)*porPagina;
+  const end=start+porPagina;
+  const pageDocs=docs.slice(start,end);
+
+  pageDocs.forEach(d=>{
+    const m=d.data();
+    const tr=document.createElement("tr");
+    tr.innerHTML=`
+      <td>${m.L}</td>
       <td>${m.nombre}</td>
       <td>${m.dni}</td>
       <td>${m.tipo}</td>
-      <td>${m.accion}</td>
-      <td>${m.fecha}</td>
-      <td>${m.hora}</td>
-      <td><button onclick="eliminarMovimiento('${m.id}')">Eliminar</button></td>`;
-    tablaMovimientos.appendChild(tr);
+      <td>${m.entrada}</td>
+      <td>${m.salida}</td>
+      <td><button onclick="eliminarMovimiento('${d.id}')">Eliminar</button></td>
+    `;
+    movimientosTable.appendChild(tr);
   });
 
-  // Paginación
-  paginacionDiv.innerHTML = "";
-  const totalPaginas = Math.ceil(movimientos.length / porPagina);
-  for (let i = 1; i <= totalPaginas; i++) {
-    const btn = document.createElement("button");
-    btn.textContent = i;
-    btn.disabled = (i === paginaActual);
-    btn.onclick = () => { paginaActual = i; renderMovimientos(); };
-    paginacionDiv.appendChild(btn);
-  }
+  document.getElementById("pageInfo").textContent=`${paginaActual}/${totalPaginas||1}`;
 }
+cargarMovimientos();
+
+document.getElementById("prevPage").addEventListener("click",()=>{if(paginaActual>1){paginaActual--;cargarMovimientos();}});
+document.getElementById("nextPage").addEventListener("click",()=>{paginaActual++;cargarMovimientos();});
 
 // Eliminar movimiento
-window.eliminarMovimiento = async id => {
-  const clave = prompt("Ingrese contraseña para eliminar:");
-  if (clave !== password && clave !== passwordMaestra) {
+window.eliminarMovimiento=async(id)=>{
+  const pass=prompt("Ingrese contraseña para eliminar:");
+  if(pass==="123456789"||pass==="admin"){ 
+    await deleteDoc(doc(db,"movimientos",id));
+    cargarMovimientos();
+  } else {
     alert("Contraseña incorrecta");
-    return;
   }
-  await deleteDoc(doc(db, "movimientos", id));
-  cargarMovimientos();
-};
-
-// Cambiar contraseña
-document.getElementById("btn-cambiar-password").onclick = () => {
-  const nueva = document.getElementById("nuevaPassword").value;
-  if (nueva) {
-    password = nueva;
-    alert("Contraseña cambiada");
-  }
-};
-document.getElementById("btn-restaurar-password").onclick = () => {
-  password = "1234";
-  alert("Contraseña restaurada");
 };
 
 // Imprimir movimientos
-document.getElementById("btn-imprimir-movimientos").onclick = () => {
-  const w = window.open("", "PRINT", "height=400,width=600");
-  w.document.write("<h1>Movimientos</h1>");
-  w.document.write("<table border='1'><tr><th>#L</th><th>Nombre</th><th>DNI</th><th>Tipo</th><th>Acción</th><th>Fecha</th><th>Hora</th></tr>");
-  movimientos.forEach(m => {
-    w.document.write(`<tr>
-      <td>${m.lote}</td>
-      <td>${m.nombre}</td>
-      <td>${m.dni}</td>
-      <td>${m.tipo}</td>
-      <td>${m.accion}</td>
-      <td>${m.fecha}</td>
-      <td>${m.hora}</td>
-    </tr>`);
-  });
-  w.document.write("</table>");
-  w.print();
-};
-
-// Inicial
-cargarUsuarios();
-cargarMovimientos();
+document.getElementById("imprimirMovimientosBtn").addEventListener("click",()=>{
+  const tabla=document.getElementById("movimientosTable").outerHTML;
+  const win=window.open("","_blank");
+  win.document.write(`<html><head><title>Movimientos</title></head><body>${tabla}<script>window.print();</script></body></html>`);
+  win.document.close();
+});
