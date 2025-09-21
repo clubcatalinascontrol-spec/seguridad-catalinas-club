@@ -1,6 +1,6 @@
-// Firestore
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+// Firebase inicialización
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyB8fQJsN0tqpuz48Om30m6u6jhEcSfKYEw",
@@ -10,219 +10,113 @@ const firebaseConfig = {
   messagingSenderId: "504958637825",
   appId: "1:504958637825:web:6ae5e2cde43206b3052d00"
 };
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Secciones
-function mostrarSeccion(id) {
-  document.querySelectorAll('.seccion').forEach(s => s.classList.remove('activa'));
-  document.getElementById(id).classList.add('activa');
-}
-window.mostrarSeccion = mostrarSeccion;
+// --- MOVIMIENTOS ---
+const movimientosLista = document.getElementById("movimientos-lista");
+const imprimirMovimientosBtn = document.getElementById("imprimirMovimientos");
 
-// Escáner
-function mostrarEscaner() {
-  document.getElementById('overlay').classList.remove('hidden');
-  document.getElementById('codigoEscaneo').value = "";
-  document.getElementById('resultadoEscaneo').innerText = "";
-  document.getElementById('codigoEscaneo').focus();
-}
-window.mostrarEscaner = mostrarEscaner;
+onSnapshot(collection(db, "movimientos"), (snapshot) => {
+  movimientosLista.innerHTML = "";
+  snapshot.forEach((doc) => {
+    const mov = doc.data();
+    const div = document.createElement("div");
+    div.textContent = `ID: ${doc.id} - ${mov.accion} - ${mov.fecha}`;
+    movimientosLista.appendChild(div);
+  });
+});
 
-function cancelarEscaneo() {
-  document.getElementById('overlay').classList.add('hidden');
-}
-window.cancelarEscaneo = cancelarEscaneo;
+imprimirMovimientosBtn.addEventListener("click", () => {
+  const ventana = window.open("", "_blank");
+  ventana.document.write("<h1>Movimientos</h1>");
+  movimientosLista.querySelectorAll("div").forEach(div => {
+    ventana.document.write(`<p>${div.textContent}</p>`);
+  });
+  ventana.print();
+});
 
-document.getElementById('codigoEscaneo').addEventListener('input', async (e) => {
-  if (e.target.value.length === 8) {
-    const codigo = e.target.value;
-    const usuarioSnap = await getDocs(collection(db, "usuarios"));
-    let encontrado = null;
-    usuarioSnap.forEach(docu => {
-      if (docu.data().codigo === codigo) {
-        encontrado = { id: docu.id, ...docu.data() };
-      }
+// --- USUARIOS ---
+const usuariosLista = document.getElementById("usuarios-lista");
+const modalEditar = document.getElementById("modal-editar");
+const editarL = document.getElementById("editarL");
+const editarNombre = document.getElementById("editarNombre");
+const editarDni = document.getElementById("editarDni");
+const editarTipo = document.getElementById("editarTipo");
+const cancelarEdicion = document.getElementById("cancelarEdicion");
+const finalizarEdicion = document.getElementById("finalizarEdicion");
+const mensajeEdicion = document.getElementById("mensajeEdicion");
+
+let usuarioActualId = null;
+
+onSnapshot(collection(db, "usuarios"), (snapshot) => {
+  usuariosLista.innerHTML = "";
+  snapshot.forEach((docu) => {
+    const usuario = docu.data();
+    const div = document.createElement("div");
+    div.textContent = `#L: ${usuario.l} - ${usuario.nombre} - DNI: ${usuario.dni} - Tipo: ${usuario.tipo}`;
+
+    const btnEditar = document.createElement("button");
+    btnEditar.textContent = "Editar";
+    btnEditar.addEventListener("click", () => {
+      usuarioActualId = docu.id;
+      editarL.value = usuario.l;
+      editarNombre.value = usuario.nombre;
+      editarDni.value = usuario.dni;
+      editarTipo.value = usuario.tipo;
+      modalEditar.style.display = "flex";
     });
 
-    if (!encontrado) {
-      document.getElementById('resultadoEscaneo').innerText = "Tarjeta expirada, debe imprimir una nueva, este usuario no existe en la base de datos";
-      document.getElementById('resultadoEscaneo').className = "error";
-    } else {
-      await addDoc(collection(db, "movimientos"), {
-        ...encontrado,
-        fecha: new Date().toLocaleString()
-      });
-      document.getElementById('resultadoEscaneo').innerText = "OK";
-      document.getElementById('resultadoEscaneo').className = "ok";
-    }
-
-    setTimeout(() => {
-      cancelarEscaneo();
-    }, 1500);
-  }
+    div.appendChild(btnEditar);
+    usuariosLista.appendChild(div);
+  });
 });
 
-// Usuarios
-const formUsuario = document.getElementById("form-usuario");
-formUsuario.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const lote = document.getElementById("lote").value;
-  const nombre = document.getElementById("nombre").value;
-  const dni = document.getElementById("dni").value;
-  const tipo = document.getElementById("tipo").value;
-
-  if (!lote || !nombre || !dni || !tipo) {
-    alert("Complete todos los campos");
-    return;
-  }
-
-  const codigo = Math.random().toString(36).substring(2, 10).toUpperCase();
-  await addDoc(collection(db, "usuarios"), {
-    lote, nombre, dni, tipo, codigo
-  });
-  formUsuario.reset();
-  cargarUsuarios();
+cancelarEdicion.addEventListener("click", () => {
+  modalEditar.style.display = "none";
 });
 
-async function cargarUsuarios() {
-  const tbody = document.getElementById("tabla-usuarios");
-  tbody.innerHTML = "";
-  const querySnapshot = await getDocs(collection(db, "usuarios"));
-  querySnapshot.forEach(docu => {
-    const u = docu.data();
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${u.lote}</td>
-      <td>${u.nombre}</td>
-      <td>${u.dni}</td>
-      <td>${u.tipo}</td>
-      <td>${u.codigo}</td>
-      <td>
-        <button onclick="editarUsuario('${docu.id}')">Editar</button>
-        <button onclick="eliminarUsuario('${docu.id}')">Eliminar</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-window.cargarUsuarios = cargarUsuarios;
-
-// Editar usuario
-let usuarioEditando = null;
-async function editarUsuario(id) {
-  usuarioEditando = id;
-  const docRef = doc(db, "usuarios", id);
-  const docSnap = await getDoc(docRef);
-  if (docSnap.exists()) {
-    const u = docSnap.data();
-    document.getElementById("edit-lote").value = u.lote;
-    document.getElementById("edit-nombre").value = u.nombre;
-    document.getElementById("edit-dni").value = u.dni;
-    document.getElementById("edit-tipo").value = u.tipo;
-    document.getElementById("overlay-editar").classList.remove("hidden");
-    document.getElementById("resultadoEditar").innerText = "";
-  }
-}
-window.editarUsuario = editarUsuario;
-
-function cancelarEdicion() {
-  document.getElementById("overlay-editar").classList.add("hidden");
-}
-window.cancelarEdicion = cancelarEdicion;
-
-async function finalizarEdicion() {
-  const lote = document.getElementById("edit-lote").value;
-  const nombre = document.getElementById("edit-nombre").value;
-  const dni = document.getElementById("edit-dni").value;
-  const tipo = document.getElementById("edit-tipo").value;
-
-  if (!lote || !nombre || !dni || !tipo) {
-    document.getElementById("resultadoEditar").innerText = "Faltan datos, por favor complete todos los campos";
-    document.getElementById("resultadoEditar").className = "error";
+finalizarEdicion.addEventListener("click", async () => {
+  if (!editarL.value || !editarNombre.value || !editarDni.value || !editarTipo.value) {
+    mensajeEdicion.textContent = "Faltan datos, por favor complete todos los campos";
+    mensajeEdicion.className = "error";
     return;
   }
-
-  await setDoc(doc(db, "usuarios", usuarioEditando), {
-    lote, nombre, dni, tipo, codigo: (await getDoc(doc(db,"usuarios",usuarioEditando))).data().codigo
+  await updateDoc(doc(db, "usuarios", usuarioActualId), {
+    l: editarL.value,
+    nombre: editarNombre.value,
+    dni: editarDni.value,
+    tipo: editarTipo.value
   });
+  mensajeEdicion.textContent = "Usuario editado con éxito";
+  mensajeEdicion.className = "exito";
+  setTimeout(() => { modalEditar.style.display = "none"; }, 1000);
+});
 
-  document.getElementById("resultadoEditar").innerText = "Usuario editado con éxito";
-  document.getElementById("resultadoEditar").className = "ok";
-  setTimeout(() => {
-    cancelarEdicion();
-    cargarUsuarios();
-  }, 1500);
-}
-window.finalizarEdicion = finalizarEdicion;
+// --- CONFIG: Restaurar contraseña ---
+const restaurarBtn = document.getElementById("restaurarContrasena");
+const modalRestaurar = document.getElementById("modal-restaurar");
+const cancelarRestaurar = document.getElementById("cancelarRestaurar");
+const confirmarRestaurar = document.getElementById("confirmarRestaurar");
+const inputContrasenaMaestra = document.getElementById("inputContrasenaMaestra");
+const mensajeRestaurar = document.getElementById("mensajeRestaurar");
 
-// Eliminar usuario
-async function eliminarUsuario(id) {
-  const pass = prompt("Ingrese contraseña:");
-  if (pass === "1234" || pass === "9999") {
-    await deleteDoc(doc(db, "usuarios", id));
-    cargarUsuarios();
+restaurarBtn.addEventListener("click", () => {
+  modalRestaurar.style.display = "flex";
+});
+
+cancelarRestaurar.addEventListener("click", () => {
+  modalRestaurar.style.display = "none";
+});
+
+confirmarRestaurar.addEventListener("click", async () => {
+  if (inputContrasenaMaestra.value === "9999") {
+    await setDoc(doc(db, "config", "contrasena"), { valor: "1234" });
+    mensajeRestaurar.textContent = "La contraseña ahora es 1234";
+    mensajeRestaurar.className = "exito";
   } else {
-    alert("Contraseña incorrecta");
+    mensajeRestaurar.textContent = "Contraseña maestra incorrecta";
+    mensajeRestaurar.className = "error";
   }
-}
-window.eliminarUsuario = eliminarUsuario;
-
-// Movimientos
-async function cargarMovimientos() {
-  const tbody = document.getElementById("tabla-movimientos");
-  tbody.innerHTML = "";
-  const querySnapshot = await getDocs(collection(db, "movimientos"));
-  querySnapshot.forEach(docu => {
-    const m = docu.data();
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${docu.id}</td>
-      <td>${m.lote}</td>
-      <td>${m.nombre}</td>
-      <td>${m.dni}</td>
-      <td>${m.tipo}</td>
-      <td>${m.fecha}</td>
-      <td><button onclick="eliminarMovimiento('${docu.id}')">Eliminar</button></td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-window.cargarMovimientos = cargarMovimientos;
-
-async function eliminarMovimiento(id) {
-  const pass = prompt("Ingrese contraseña:");
-  if (pass === "1234" || pass === "9999") {
-    await deleteDoc(doc(db, "movimientos", id));
-    cargarMovimientos();
-  } else {
-    alert("Contraseña incorrecta");
-  }
-}
-window.eliminarMovimiento = eliminarMovimiento;
-
-function imprimirMovimientos() {
-  const contenido = document.getElementById("tabla-movimientos").outerHTML;
-  const ventana = window.open("", "", "width=800,height=600");
-  ventana.document.write("<html><head><title>Movimientos</title></head><body>");
-  ventana.document.write(contenido);
-  ventana.document.write("</body></html>");
-  ventana.document.close();
-  ventana.print();
-}
-window.imprimirMovimientos = imprimirMovimientos;
-
-// Config: restaurar contraseña
-async function restaurarContrasena() {
-  const pass = prompt("Ingrese contraseña maestra para continuar:");
-  if (pass === "9999") {
-    alert("La contraseña ahora es 1234");
-  } else {
-    alert("Contraseña maestra incorrecta");
-  }
-}
-window.restaurarContrasena = restaurarContrasena;
-
-// Inicial
-cargarUsuarios();
-cargarMovimientos();
+});
