@@ -2,52 +2,33 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Panel de Accesos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control de Accesos</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header>
-    <h1>Panel de Accesos</h1>
-    <nav>
-      <button id="btn-movimientos">Movimientos</button>
-      <button id="btn-usuarios">Usuarios</button>
-      <button id="btn-config">Config</button>
-      <button id="btn-escanear">Escanear</button>
-    </nav>
-  </header>
+  <div class="container">
+    <h1>Control de Accesos</h1>
 
-  <main>
-    <!-- Movimientos -->
-    <section id="seccion-movimientos" class="seccion activa">
-      <h2>Movimientos</h2>
-      <button id="btn-imprimir-movimientos">Imprimir Movimientos</button>
-      <table>
-        <thead>
-          <tr>
-            <th>#L</th>
-            <th>Nombre</th>
-            <th>DNI</th>
-            <th>Tipo</th>
-            <th>Acción</th>
-            <th>Fecha</th>
-            <th>Hora</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody id="tabla-movimientos"></tbody>
-      </table>
-      <div id="paginacion"></div>
-    </section>
+    <div class="menu">
+      <button id="usuariosBtn">USUARIOS</button>
+      <button id="movimientosBtn">MOVIMIENTOS</button>
+    </div>
 
-    <!-- Usuarios -->
-    <section id="seccion-usuarios" class="seccion">
+    <!-- Sección Usuarios -->
+    <section id="usuariosSection" class="hidden">
       <h2>Usuarios</h2>
-      <form id="form-usuario">
-        <input type="text" id="numeroLote" placeholder="#L" maxlength="3" required>
-        <input type="text" id="nombreCompleto" placeholder="Nombre completo" maxlength="25" required>
-        <input type="text" id="dni" placeholder="DNI" maxlength="8" required>
-        <select id="tipoUsuario" required>
-          <option value="">Tipo</option>
+      <form id="usuarioForm">
+        <input type="hidden" id="usuarioId">
+        <label>#L:</label>
+        <input type="text" id="usuarioL" required>
+        <label>Nombre Completo:</label>
+        <input type="text" id="usuarioNombre" required>
+        <label>DNI:</label>
+        <input type="text" id="usuarioDni" required>
+        <label>Tipo:</label>
+        <select id="usuarioTipo" required>
+          <option value="">Seleccionar</option>
           <option value="propietario">propietario</option>
           <option value="administración">administración</option>
           <option value="empleado">empleado</option>
@@ -56,9 +37,10 @@
           <option value="guardia">guardia</option>
           <option value="otro">otro</option>
         </select>
-        <button type="submit">Agregar Usuario</button>
+        <button type="submit">Guardar</button>
       </form>
-      <table>
+
+      <table id="usuariosTable">
         <thead>
           <tr>
             <th>#L</th>
@@ -68,56 +50,39 @@
             <th>Acciones</th>
           </tr>
         </thead>
-        <tbody id="tabla-usuarios"></tbody>
+        <tbody></tbody>
       </table>
     </section>
 
-    <!-- Config -->
-    <section id="seccion-config" class="seccion">
-      <h2>Configuración</h2>
-      <label>
-        Cambiar contraseña:
-        <input type="password" id="nuevaPassword">
-        <button id="btn-cambiar-password">Guardar</button>
-      </label>
-      <p>Restaurar contraseña por defecto: Si restaura la contraseña por defecto volverá a ser "1234"</p>
-      <button id="btn-restaurar-password">Restaurar</button>
+    <!-- Sección Movimientos -->
+    <section id="movimientosSection" class="hidden">
+      <h2>Movimientos</h2>
+      <div class="scanner">
+        <input type="text" id="scannerInput" placeholder="Escanea o escribe código aquí">
+        <p id="scanMsg"></p>
+      </div>
+
+      <table id="movimientosTable">
+        <thead>
+          <tr>
+            <th>#L</th>
+            <th>Nombre</th>
+            <th>DNI</th>
+            <th>Tipo</th>
+            <th>Entrada</th>
+            <th>Salida</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div class="paginacion">
+        <button id="prevPage">Anterior</button>
+        <span id="pageInfo"></span>
+        <button id="nextPage">Siguiente</button>
+      </div>
+      <button id="imprimirMovimientosBtn">Imprimir Movimientos</button>
     </section>
-  </main>
-
-  <!-- Modal Escanear -->
-  <div id="modal-escanear" class="modal">
-    <div class="modal-contenido">
-      <h2>Escanear código</h2>
-      <input type="text" id="input-codigo" maxlength="20" autofocus>
-      <div id="mensaje-escanear"></div>
-      <button id="btn-cancelar-escanear">Cancelar</button>
-    </div>
-  </div>
-
-  <!-- Modal Editar Usuario -->
-  <div id="modal-editar" class="modal">
-    <div class="modal-contenido">
-      <h2>Editar Usuario</h2>
-      <form id="form-editar-usuario">
-        <input type="text" id="editarLote" maxlength="3" required>
-        <input type="text" id="editarNombre" maxlength="25" required>
-        <input type="text" id="editarDni" maxlength="8" required>
-        <select id="editarTipo" required>
-          <option value="">Tipo</option>
-          <option value="propietario">propietario</option>
-          <option value="administración">administración</option>
-          <option value="empleado">empleado</option>
-          <option value="obrero">obrero</option>
-          <option value="invitado">invitado</option>
-          <option value="guardia">guardia</option>
-          <option value="otro">otro</option>
-        </select>
-        <button type="submit">Finalizar</button>
-        <button type="button" id="btn-cancelar-editar">Cancelar</button>
-      </form>
-      <div id="mensaje-editar"></div>
-    </div>
   </div>
 
   <script type="module" src="app.js"></script>
