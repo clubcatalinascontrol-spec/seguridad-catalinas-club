@@ -1,8 +1,8 @@
-// app.js (completo) - Firebase 9.22
+// app.js (módulo) - Firebase 9.22
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import {
   getFirestore, collection, addDoc, getDocs, doc, onSnapshot, updateDoc, deleteDoc,
-  query, where, orderBy, limit
+  query, where, orderBy
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
 /* -----------------------------
@@ -29,7 +29,7 @@ const expiredRef = collection(db, "expiredCodes");
 /* -----------------------------
    Contraseñas
 ----------------------------- */
-const MASTER_PASS = "123456789"; // tu regla original
+const MASTER_PASS = "9999";
 if (!localStorage.getItem("adminPass")) localStorage.setItem("adminPass", "1234");
 function checkPass(pass){ return pass===MASTER_PASS || pass===localStorage.getItem("adminPass"); }
 
@@ -70,14 +70,6 @@ const userTipo=document.getElementById("userTipo");
 const addUserBtn=document.getElementById("addUserBtn");
 const userMessage=document.getElementById("userMessage");
 const usersTableBody=document.querySelector("#usersTable tbody");
-const editUserModal = document.getElementById("editUserModal");
-const editUserL = document.getElementById("editUserL");
-const editUserNombre = document.getElementById("editUserNombre");
-const editUserDni = document.getElementById("editUserDni");
-const editUserTipo = document.getElementById("editUserTipo");
-const finalizeEditBtn = document.getElementById("finalizeEditBtn");
-const cancelEditBtn = document.getElementById("cancelEditBtn");
-const editUserMsg = document.getElementById("editUserMsg");
 
 // Agregar usuario
 addUserBtn.addEventListener("click",async ()=>{
@@ -85,12 +77,6 @@ addUserBtn.addEventListener("click",async ()=>{
   if(!L||!nombre||!dni||!tipo){ userMessage.textContent="Complete todos los campos"; return; }
   if(!/^\d{1,3}$/.test(L)){ userMessage.textContent="#L debe ser hasta 3 dígitos"; return; }
   if(!/^\d{8}$/.test(dni)){ userMessage.textContent="DNI debe tener 8 dígitos"; return; }
-
-  // Solo validar DNI único
-  const qDni=query(usuariosRef, where("dni","==",dni));
-  const snapDni=await getDocs(qDni);
-  if(!snapDni.empty){ userMessage.textContent="Este DNI ya existe"; return; }
-
   try{
     await addDoc(usuariosRef,{L,nombre,dni,tipo,codigoIngreso:generarCodigo(),codigoSalida:generarCodigo()});
     userMessage.textContent="Usuario agregado";
@@ -102,21 +88,20 @@ addUserBtn.addEventListener("click",async ()=>{
 // Render usuarios en tiempo real
 onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
   usersTableBody.innerHTML="";
-  userL.innerHTML=""; editUserL.innerHTML="";
   snapshot.docs.forEach(docSnap=>{
     const u=docSnap.data();
-    // llenar selects de #L
-    const opt = document.createElement("option"); opt.value=u.L; opt.textContent=u.L;
-    userL.appendChild(opt.cloneNode(true));
-    editUserL.appendChild(opt.cloneNode(true));
-
     const tr=document.createElement("tr");
-    tr.innerHTML=`<td>${u.L}</td><td>${u.nombre}</td><td>${u.dni}</td><td>${u.tipo}</td>
+    tr.innerHTML=`
+      <td>${u.L}</td>
+      <td>${u.nombre}</td>
+      <td>${u.dni}</td>
+      <td>${u.tipo}</td>
       <td>
         <button class="edit-btn" data-id="${docSnap.id}">Editar</button>
         <button class="del-btn" data-id="${docSnap.id}">Eliminar</button>
         <button class="print-btn" data-id="${docSnap.id}">Imprimir Tarjeta</button>
-      </td>`;
+      </td>
+    `;
     usersTableBody.appendChild(tr);
 
     // EDITAR
@@ -124,32 +109,44 @@ onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
       const id=docSnap.id;
       const pass=prompt("Ingrese contraseña de administración para continuar");
       if(!checkPass(pass)){ alert("Contraseña incorrecta"); return; }
-      editUserModal.classList.add("active");
-      editUserL.value=u.L;
-      editUserNombre.value=u.nombre;
-      editUserDni.value=u.dni;
-      editUserTipo.value=u.tipo; // solo lectura
+      document.getElementById("editUserModal").classList.add("active");
+      document.getElementById("editUserL").value=u.L;
+      document.getElementById("editUserNombre").value=u.nombre;
+      document.getElementById("editUserDni").value=u.dni;
+      document.getElementById("editUserTipo").value=u.tipo;
 
-      finalizeEditBtn.onclick=async ()=>{
-        const newL=editUserL.value.trim();
-        const newNombre=editUserNombre.value.trim();
-        const newDni=editUserDni.value.trim();
-        const newTipo=editUserTipo.value;
-        if(!newL||!newNombre||!newDni||!newTipo){ editUserMsg.textContent="Faltan datos"; return; }
-        if(!/^\d{1,3}$/.test(newL)||newNombre.length>25||!/^\d{8}$/.test(newDni)){ editUserMsg.textContent="Datos inválidos"; return; }
+      const finalizeBtn=document.getElementById("finalizeEditBtn");
+      const cancelBtn=document.getElementById("cancelEditBtn");
+      const msgSpan=document.getElementById("editUserMsg");
 
-        // Solo validar DNI único
+      finalizeBtn.onclick=async ()=>{
+        const newL=document.getElementById("editUserL").value.trim();
+        const newNombre=document.getElementById("editUserNombre").value.trim();
+        const newDni=document.getElementById("editUserDni").value.trim();
+        const newTipo=document.getElementById("editUserTipo").value;
+        if(!newL||!newNombre||!newDni||!newTipo){ msgSpan.textContent="Faltan datos, por favor complete todos los campos"; return; }
+        if(!/^\d{1,3}$/.test(newL)||newNombre.length>25||!/^\d{8}$/.test(newDni)){ msgSpan.textContent="Datos inválidos"; return; }
+
+        // Comprobar si DNI existe en otro usuario
         const qDni=query(usuariosRef, where("dni","==",newDni));
         const snapDni=await getDocs(qDni);
-        if(!snapDni.empty && snapDni.docs[0].id!==id){ editUserMsg.style.color="red"; editUserMsg.textContent="Este DNI ya existe"; return; }
+        if(!snapDni.empty && snapDni.docs[0].id!==id){
+          msgSpan.style.color="red";
+          msgSpan.textContent=`Este DNI ya existe en #L${snapDni.docs[0].data().L}`;
+          return;
+        }
 
         try{
           await updateDoc(doc(db,"usuarios",id),{L:newL,nombre:newNombre,dni:newDni,tipo:newTipo});
-          editUserMsg.style.color="green"; editUserMsg.textContent="Usuario editado con éxito";
-          setTimeout(()=>{ editUserModal.classList.remove("active"); editUserMsg.textContent=""; editUserMsg.style.color="#0a0"; },1500);
-        }catch(err){ console.error(err); editUserMsg.textContent="Error editando"; }
+          msgSpan.style.color="green";
+          msgSpan.textContent="Usuario editado con éxito";
+          setTimeout(()=>{
+            document.getElementById("editUserModal").classList.remove("active");
+            msgSpan.textContent=""; msgSpan.style.color="#0a0";
+          },1500);
+        }catch(err){ console.error(err); msgSpan.textContent="Error editando"; }
       };
-      cancelEditBtn.onclick=()=>{ editUserModal.classList.remove("active"); editUserMsg.textContent=""; };
+      cancelBtn.onclick=()=>{ document.getElementById("editUserModal").classList.remove("active"); msgSpan.textContent=""; };
     });
 
     // ELIMINAR
@@ -171,7 +168,8 @@ onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
       if(!checkPass(pass)){ alert("Contraseña incorrecta"); return; }
       const borderColor={"propietario":"violet","administracion":"orange","empleado":"green","obrero":"yellow","invitado":"cyan","guardia":"red"}[u.tipo]||"gray";
       const w=window.open("","_blank","width=600,height=380");
-      w.document.write(`<html><head><title>Tarjeta ${u.L}</title>
+      w.document.write(`
+        <html><head><title>Tarjeta ${u.L}</title>
         <style>body{font-family:Arial;text-align:center}.card{width:15cm;height:6cm;border:12px solid ${borderColor};box-sizing:border-box;padding:8px}</style>
         <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script></head><body>
           <div class="card">
@@ -185,7 +183,8 @@ onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
             window.print();
             setTimeout(()=>window.close(),700);
           <\/script>
-        </body></html>`);
+        </body></html>
+      `);
     });
   });
 });
@@ -193,103 +192,163 @@ onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
 /* -----------------------------
    MOVIMIENTOS
 ----------------------------- */
-const scanModal=document.getElementById("scanModal");
-const scanInput=document.getElementById("scanInput");
-const scanBtn=document.getElementById("scanBtn");
-const cancelScanBtn=document.getElementById("cancelScanBtn");
-const scanMessage=document.getElementById("scanMessage");
-const scanOk=document.getElementById("scanOk");
 const movimientosTableBody=document.querySelector("#movimientosTable tbody");
+const paginationDiv=document.getElementById("pagination");
+const MOV_LIMIT=25;
+let movimientosCache=[],currentPage=1;
 
-// Abrir modal escaneo
-scanBtn.addEventListener("click",()=>{ scanModal.classList.add("active"); scanInput.value=""; scanInput.focus(); scanMessage.textContent=""; });
-
-// Cancelar escaneo
-cancelScanBtn.addEventListener("click",()=>{ scanModal.classList.remove("active"); });
-
-// Procesar escaneo
-scanInput.addEventListener("keypress",async e=>{
-  if(e.key==="Enter"){
-    const code=scanInput.value.trim();
-    if(!code){ scanMessage.textContent="Ingrese código"; return; }
-
-    // Verificar si código ya vencido
-    const qExp=query(expiredRef, where("code","==",code), limit(1));
-    const snapExp=await getDocs(qExp);
-    if(!snapExp.empty){ scanMessage.textContent="Código inválido/vencido"; return; }
-
-    // Buscar usuario por código ingreso/salida
-    const qUser=query(usuariosRef, where("codigoIngreso","==",code));
-    const snapUser=await getDocs(qUser);
-    let tipoMovimiento="entrada";
-    let usuario=null;
-
-    if(!snapUser.empty){ usuario=snapUser.docs[0].data(); }
-    else{
-      const qOut=query(usuariosRef, where("codigoSalida","==",code));
-      const snapOut=await getDocs(qOut);
-      if(!snapOut.empty){ usuario=snapOut.docs[0].data(); tipoMovimiento="salida"; }
-    }
-    if(!usuario){ scanMessage.textContent="Código no registrado"; return; }
-
-    // Registrar movimiento
-    try{
-      if(tipoMovimiento==="entrada") await addDoc(movimientosRef,{L:usuario.L,nombre:usuario.nombre,dni:usuario.dni,entrada:new Date(),salida:null,tipo:usuario.tipo});
-      else{
-        // buscar último movimiento sin salida
-        const qMov=query(movimientosRef, where("dni","==",usuario.dni), orderBy("entrada","desc"), limit(1));
-        const snapMov=await getDocs(qMov);
-        if(!snapMov.empty){
-          const mDoc=snapMov.docs[0];
-          if(!mDoc.data().salida) await updateDoc(doc(db,"movimientos",mDoc.id),{salida:new Date()});
-          else scanMessage.textContent="Usuario ya registró salida";
-        }
-      }
-      scanOk.style.display="inline"; setTimeout(()=>scanOk.style.display="none",1200);
-      scanModal.classList.remove("active");
-    }catch(err){ console.error(err); scanMessage.textContent="Error registrando"; }
+function renderPagination(totalItems){
+  const totalPages=Math.min(10,Math.max(1,Math.ceil(totalItems/MOV_LIMIT)));
+  paginationDiv.innerHTML="";
+  for(let p=1;p<=totalPages;p++){
+    const btn=document.createElement("button");
+    btn.textContent=p;
+    if(p===currentPage){ btn.style.background="#d8a800"; btn.style.color="#111"; }
+    btn.addEventListener("click",()=>{ currentPage=p; renderMovsPage(); });
+    paginationDiv.appendChild(btn);
   }
-});
-
-// Render movimientos
-onSnapshot(query(movimientosRef, orderBy("entrada","desc")), snapshot=>{
+}
+function renderMovsPage(){
   movimientosTableBody.innerHTML="";
-  snapshot.docs.forEach(docSnap=>{
-    const m=docSnap.data();
+  const start=(currentPage-1)*MOV_LIMIT;
+  const page=movimientosCache.slice(start,start+MOV_LIMIT);
+  page.forEach(item=>{
     const tr=document.createElement("tr");
-    tr.innerHTML=`<td>${m.L}</td><td>${m.nombre}</td><td>${m.dni}</td>
-      <td>${m.entrada?new Date(m.entrada.seconds*1000).toLocaleString():""}</td>
-      <td>${m.salida?new Date(m.salida.seconds*1000).toLocaleString():""}</td>
-      <td>${m.tipo}</td>
-      <td><button class="del-btn" data-id="${docSnap.id}">Eliminar</button></td>`;
+    tr.innerHTML=`<td>${item.L}</td><td>${item.nombre}</td><td>${item.dni}</td>
+      <td>${item.entrada||""}</td><td>${item.salida||""}</td><td>${item.tipo}</td>
+      <td><button class="delMov" data-id="${item.__id}">Eliminar</button></td>`;
     movimientosTableBody.appendChild(tr);
-    tr.querySelector(".del-btn").addEventListener("click",async ()=>{
-      const pass=prompt("Contraseña administración");
-      if(!checkPass(pass)){ alert("Incorrecta"); return; }
-      if(confirm("Eliminar registro?")) await deleteDoc(doc(db,"movimientos",docSnap.id));
+    tr.querySelector(".delMov").addEventListener("click",async e=>{
+      const pass=prompt("Ingrese contraseña de administración para continuar");
+      if(!checkPass(pass)){ alert("Contraseña incorrecta"); return; }
+      if(!confirm("Eliminar movimiento permanentemente?")) return;
+      try{ await deleteDoc(doc(db,"movimientos",e.currentTarget.dataset.id)); } catch(err){ console.error(err); alert("Error eliminando movimiento"); }
     });
   });
+  renderPagination(movimientosCache.length);
+}
+
+onSnapshot(query(movimientosRef, orderBy("hora","desc")),snapshot=>{
+  movimientosCache=snapshot.docs.map(d=>({__id:d.id,...d.data()}));
+  const totalPages=Math.min(10,Math.max(1,Math.ceil(movimientosCache.length/MOV_LIMIT)));
+  if(currentPage>totalPages) currentPage=totalPages;
+  renderMovsPage();
+});
+
+// Imprimir movimientos
+document.getElementById("printPageBtn").addEventListener("click",()=>{
+  const w=window.open("","_blank","width=900,height=600");
+  let html=`<html><head><title>Movimientos</title><style>table{width:100%;border-collapse:collapse} th,td{border:1px solid #000;padding:6px;text-align:center}</style></head><body><h3>Movimientos</h3><table><thead><tr><th>#L</th><th>Nombre</th><th>DNI</th><th>H. Entrada</th><th>H. Salida</th><th>Tipo</th></tr></thead><tbody>`;
+  movimientosCache.forEach(m=>{
+    html+=`<tr><td>${m.L}</td><td>${m.nombre}</td><td>${m.dni}</td><td>${m.entrada||""}</td><td>${m.salida||""}</td><td>${m.tipo}</td></tr>`;
+  });
+  html+="</tbody></table></body></html>";
+  w.document.write(html);
+  w.print();
 });
 
 /* -----------------------------
-   CONFIGURACIÓN CONTRASEÑA
+   ESCANEAR CÓDIGOS
 ----------------------------- */
-const currentPass=document.getElementById("currentPass");
-const newPass=document.getElementById("newPass");
+const scanBtn = document.getElementById("scanBtn");
+const scanModal = document.getElementById("scanModal");
+const scanInput = document.getElementById("scanInput");
+const cancelScanBtn = document.getElementById("cancelScanBtn");
+const scanMessage = document.getElementById("scanMessage");
+const scanOk = document.getElementById("scanOk");
+
+scanBtn.addEventListener("click", () => {
+  scanModal.classList.add("active");
+  scanInput.value = "";
+  scanMessage.textContent = "";
+  scanInput.focus();
+});
+
+cancelScanBtn.addEventListener("click", () => {
+  scanModal.classList.remove("active");
+  scanMessage.textContent = "";
+});
+
+scanInput.addEventListener("keydown", async (e) => {
+  if (e.key !== "Enter") return;
+  const code = scanInput.value.trim().toUpperCase();
+  if (!code) return;
+
+  // Buscar usuario por código de entrada o salida
+  const q = query(usuariosRef, where("codigoIngreso", "==", code));
+  const snap = await getDocs(q);
+  let userDoc = null;
+  let tipoAccion = "entrada";
+
+  if (snap.empty) {
+    const q2 = query(usuariosRef, where("codigoSalida", "==", code));
+    const snap2 = await getDocs(q2);
+    if (snap2.empty) {
+      scanMessage.style.color = "red";
+      scanMessage.textContent = "Código no válido";
+      return;
+    } else {
+      userDoc = snap2.docs[0];
+      tipoAccion = "salida";
+    }
+  } else {
+    userDoc = snap.docs[0];
+  }
+
+  const u = userDoc.data();
+  const hora = horaActualStr();
+
+  try {
+    if (tipoAccion === "entrada") {
+      await addDoc(movimientosRef, {
+        L: u.L, nombre: u.nombre, dni: u.dni, tipo: u.tipo,
+        entrada: hora, salida: "", hora: new Date()
+      });
+    } else {
+      const movQuery = query(movimientosRef, where("L", "==", u.L), where("salida", "==", ""));
+      const movSnap = await getDocs(movQuery);
+      if (!movSnap.empty) {
+        const lastMov = movSnap.docs[movSnap.docs.length - 1];
+        await updateDoc(doc(db, "movimientos", lastMov.id), { salida: hora });
+      } else {
+        await addDoc(movimientosRef, {
+          L: u.L, nombre: u.nombre, dni: u.dni, tipo: u.tipo,
+          entrada: "", salida: hora, hora: new Date()
+        });
+      }
+    }
+    scanOk.style.display = "inline";
+    setTimeout(() => { scanOk.style.display = "none"; }, 1500);
+    scanModal.classList.remove("active");
+  } catch (err) {
+    console.error(err);
+    scanMessage.style.color = "red";
+    scanMessage.textContent = "Error al registrar";
+  }
+});
+
+/* -----------------------------
+   CONFIG
+----------------------------- */
+const currentPassInput=document.getElementById("currentPass");
+const newPassInput=document.getElementById("newPass");
 const savePassBtn=document.getElementById("savePassBtn");
 const restoreDefaultBtn=document.getElementById("restoreDefaultBtn");
 const restoreMsg=document.getElementById("restoreMsg");
 
 savePassBtn.addEventListener("click",()=>{
-  if(!checkPass(currentPass.value)){ restoreMsg.textContent="Contraseña incorrecta"; return; }
-  if(!/^\d{4}$/.test(newPass.value)){ restoreMsg.textContent="Nueva debe ser 4 dígitos"; return; }
-  localStorage.setItem("adminPass",newPass.value);
-  restoreMsg.style.color="green"; restoreMsg.textContent="Contraseña cambiada";
-  setTimeout(()=>restoreMsg.textContent="",2000);
+  const cur=currentPassInput.value.trim(), nue=newPassInput.value.trim();
+  if(!checkPass(cur)){ restoreMsg.style.color="red"; restoreMsg.textContent="Contraseña incorrecta"; return; }
+  if(!/^\d{4}$/.test(nue)){ restoreMsg.style.color="red"; restoreMsg.textContent="Nueva contraseña inválida"; return; }
+  localStorage.setItem("adminPass",nue);
+  restoreMsg.style.color="green"; restoreMsg.textContent="Contraseña cambiada con éxito";
+  setTimeout(()=>restoreMsg.textContent="",2500);
 });
 
 restoreDefaultBtn.addEventListener("click",()=>{
-  localStorage.setItem("adminPass","123456789");
-  restoreMsg.style.color="green"; restoreMsg.textContent="Contraseña restaurada a predeterminada";
-  setTimeout(()=>restoreMsg.textContent="",2000);
-});
+  const p=prompt("Ingrese contraseña maestra para restaurar la contraseña por defecto");
+  if(p!==MASTER_PASS){ alert("Contraseña incorrecta"); return; }
+  localStorage.setItem("adminPass","1234");
+  restoreMsg.style.color="green"; restoreMsg.textContent="La contraseña ahora es 1234";
+  setTimeout(()=>restoreMsg.textContent="",2500);
+});   
