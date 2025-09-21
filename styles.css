@@ -1,81 +1,32 @@
-body {
-  background: #000;
-  color: #f4cf19;
-  font-family: Arial, sans-serif;
-  margin: 0;
-  padding: 0;
-}
-.container {
-  max-width: 1000px;
-  margin: auto;
-  padding: 20px;
-}
-h1, h2 {
-  text-align: center;
-  color: #f4cf19;
-}
-.menu {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-button {
-  background: #f4cf19;
-  color: #000;
-  border: none;
-  padding: 10px 20px;
-  font-weight: bold;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: 0.3s;
-}
-button:hover {
-  background: #d4b60f;
-}
-.hidden {
-  display: none;
-}
-form {
-  display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-form label {
-  align-self: center;
-}
-form input, form select {
-  padding: 5px;
-}
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 20px;
-}
-table th, table td {
-  border: 1px solid #f4cf19;
-  padding: 8px;
-  text-align: center;
-}
-table th {
-  background: #1f2634;
-}
-.scanner {
-  text-align: center;
-  margin-bottom: 15px;
-}
-#scannerInput {
-  width: 80%;
-  padding: 10px;
-  text-align: center;
-}
-#scanMsg {
-  font-weight: bold;
-}
-.paginacion {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  margin-bottom: 15px;
-}
+/* GENERAL */
+body{margin:0;font-family:Arial;background:#1f2634;color:#f4cf19}
+h1,h2,h3{margin:8px 0}
+header{background:#111;padding:10px;text-align:center}
+nav{margin-top:6px}
+nav button{margin:2px;padding:6px 12px;background:#333;color:#f4cf19;border:none;cursor:pointer;border-radius:4px;transition:0.2s}
+nav button:hover{background:#f4cf19;color:#111}
+nav button.active{background:#f4cf19;color:#111}
+
+/* PAGES */
+.page{display:none;padding:12px}
+.page.active{display:block}
+
+/* FORM */
+.form-group{margin:6px 0}
+label{display:block;margin-bottom:2px}
+input, select{padding:4px 6px;width:200px;border:1px solid #f4cf19;border-radius:4px;background:#111;color:#f4cf19}
+
+/* BUTTONS */
+button{background:#f4cf19;color:#111;padding:6px 12px;border:none;border-radius:4px;cursor:pointer;transition:0.2s}
+button:hover{background:#d8a800}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse;margin-top:12px}
+th,td{border:1px solid #f4cf19;padding:6px;text-align:center}
+th{background:#111}
+
+/* MODAL */
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);align-items:center;justify-content:center}
+.modal.active{display:flex}
+.modal-content{background:#222;color:#f4cf19;padding:20px;border-radius:8px;width:300px;max-width:90%;text-align:center}
+#scanOk{display:none;color:green;font-weight:bold;margin-left:6px}
