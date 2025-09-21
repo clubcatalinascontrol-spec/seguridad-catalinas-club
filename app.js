@@ -95,6 +95,7 @@ addUserBtn.addEventListener("click",async ()=>{
   if(!/^\d{3}$/.test(L)){ userMessage.textContent="#L debe ser 3 dígitos"; return; }
   if(!/^\d{8}$/.test(dni)){ userMessage.textContent="DNI debe tener 8 dígitos"; return; }
   try{
+    // Verificar que DNI no exista ya en otro usuario
     const qDni = query(usuariosRef, where("dni","==",dni));
     const existing = await getDocs(qDni);
     if(!existing.empty){
@@ -103,6 +104,7 @@ addUserBtn.addEventListener("click",async ()=>{
       setTimeout(()=>{ userMessage.textContent=""; userMessage.style.color=""; }, 2500);
       return;
     }
+
     await addDoc(usuariosRef,{L,nombre,dni,tipo,codigoIngreso:generarCodigo(),codigoSalida:generarCodigo()});
     userMessage.style.color = "green";
     userMessage.textContent="Usuario agregado";
@@ -154,6 +156,7 @@ onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
         if(!/^\d{3}$/.test(newL)){ msgSpan.style.color="red"; msgSpan.textContent="#L debe ser 3 dígitos"; return; }
         if(!/^\d{8}$/.test(newDni)){ msgSpan.style.color="red"; msgSpan.textContent="DNI debe tener 8 dígitos"; return; }
 
+        // Comprobar si DNI existe en otro usuario
         const qDni=query(usuariosRef, where("dni","==",newDni));
         const snapDni=await getDocs(qDni);
         if(!snapDni.empty && snapDni.docs[0].id!==id){
@@ -247,6 +250,7 @@ function renderMovsPage(){
       </td>`;
     movimientosTableBody.appendChild(tr);
 
+    // Eliminar movimiento (requiere contraseña maestra o admin)
     tr.querySelector(".delMov").addEventListener("click",async e=>{
       const pass=prompt("Ingrese contraseña de administración para continuar");
       if(!checkPass(pass)){ alert("Contraseña incorrecta"); return; }
@@ -257,6 +261,7 @@ function renderMovsPage(){
   renderPagination(movimientosCache.length);
 }
 
+// Escuchar movimientos ordenados por hora descendente (más recientes arriba)
 onSnapshot(query(movimientosRef, orderBy("hora","desc")),snapshot=>{
   movimientosCache=snapshot.docs.map(d=>({__id:d.id,...d.data()}));
   const totalPages=Math.max(1,Math.ceil(movimientosCache.length/MOV_LIMIT));
@@ -337,20 +342,14 @@ scanInput.addEventListener("input", async () => {
         entrada: horaActualStr(), salida: "", hora: serverTimestamp()
       });
     } else {
-      // ---- CORRECCIÓN: buscar último movimiento abierto por L en memoria ----
-      const movQ = query(movimientosRef, where("L","==",u.L), orderBy("hora","desc"), limit(10));
+      // CORRECCIÓN: Registro de salida funciona aunque no haya entrada
+      const movQ = query(movimientosRef, where("L","==",u.L), where("salida","==",""), orderBy("hora","desc"), limit(1));
       const movSnap = await getDocs(movQ);
-      let lastMov = null;
-      for(const docSnap of movSnap.docs){
-        const data = docSnap.data();
-        if(!data.salida || data.salida.trim()===""){
-          lastMov = docSnap;
-          break;
-        }
-      }
-      if(lastMov){
+      if(!movSnap.empty){
+        const lastMov = movSnap.docs[0];
         await updateDoc(doc(db,"movimientos",lastMov.id), { salida: horaActualStr() });
       } else {
+        // Si no hay movimiento abierto, se crea uno solo con salida
         await addDoc(movimientosRef, {
           L: u.L, nombre: u.nombre, dni: u.dni, tipo: u.tipo,
           entrada: "", salida: horaActualStr(), hora: serverTimestamp()
@@ -358,14 +357,16 @@ scanInput.addEventListener("input", async () => {
       }
     }
 
-    scanOk.style.display = "inline-block";
-    setTimeout(()=>scanOk.style.display="none",1000);
-    scanInput.value="";
+    scanMessage.style.color = "green";
+    scanMessage.textContent = `Registrado ${tipoAccion} de ${u.nombre}`;
+    scanOk.play?.();
+    setTimeout(()=>{ scanMessage.textContent=""; scanInput.value=""; scanProcessing=false; }, 1800);
+
   } catch(err){
     console.error(err);
-    scanMessage.style.color="red";
+    scanMessage.style.color = "red";
     scanMessage.textContent = "Error al registrar";
-    setTimeout(()=>scanMessage.textContent="",1800);
+    scanProcessing = false;
+    setTimeout(()=>{ scanMessage.textContent=""; scanInput.value=""; },1800);
   }
-  scanProcessing = false;
 });
