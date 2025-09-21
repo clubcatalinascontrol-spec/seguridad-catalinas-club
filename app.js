@@ -63,12 +63,150 @@ navBtns.forEach(btn=>btn.addEventListener("click",()=>{
 /* -----------------------------
    USUARIOS
 ----------------------------- */
-// (Aquí se mantiene igual que tu código existente)
-// ...
+const userL=document.getElementById("userL");
+const editUserL=document.getElementById("editUserL");
+const userNombre=document.getElementById("userNombre");
+const userDni=document.getElementById("userDni");
+const userTipo=document.getElementById("userTipo");
+const addUserBtn=document.getElementById("addUserBtn");
+const userMessage=document.getElementById("userMessage");
+const usersTableBody=document.querySelector("#usersTable tbody");
+
+// Llenar selects con 000–999
+function fillLSelect(select){
+  select.innerHTML="";
+  for(let i=0;i<=999;i++){
+    const opt=document.createElement("option");
+    opt.value=i.toString().padStart(3,"0");
+    opt.textContent=i.toString().padStart(3,"0");
+    select.appendChild(opt);
+  }
+}
+fillLSelect(userL);
+fillLSelect(editUserL);
+
+// Agregar usuario
+addUserBtn.addEventListener("click",async ()=>{
+  const L=userL.value.trim(), nombre=userNombre.value.trim(), dni=userDni.value.trim(), tipo=userTipo.value;
+  if(!L||!nombre||!dni||!tipo){ userMessage.textContent="Complete todos los campos"; return; }
+  if(!/^\d{1,3}$/.test(L)){ userMessage.textContent="#L debe ser hasta 3 dígitos"; return; }
+  if(!/^\d{8}$/.test(dni)){ userMessage.textContent="DNI debe tener 8 dígitos"; return; }
+  try{
+    await addDoc(usuariosRef,{L,nombre,dni,tipo,codigoIngreso:generarCodigo(),codigoSalida:generarCodigo()});
+    userMessage.textContent="Usuario agregado";
+    userL.value=""; userNombre.value=""; userDni.value=""; userTipo.value="";
+    setTimeout(()=>userMessage.textContent="",2500);
+  }catch(err){ console.error(err); userMessage.textContent="Error"; }
+});
+
+// Render usuarios en tiempo real
+onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
+  usersTableBody.innerHTML="";
+  snapshot.docs.forEach(docSnap=>{
+    const u=docSnap.data();
+    const tr=document.createElement("tr");
+    tr.innerHTML=`
+      <td>${u.L}</td>
+      <td>${u.nombre}</td>
+      <td>${u.dni}</td>
+      <td>${u.tipo}</td>
+      <td>
+        <button class="edit-btn" data-id="${docSnap.id}">Editar</button>
+        <button class="del-btn" data-id="${docSnap.id}">Eliminar</button>
+        <button class="print-btn" data-id="${docSnap.id}">Imprimir Tarjeta</button>
+      </td>
+    `;
+    usersTableBody.appendChild(tr);
+
+    // EDITAR
+    tr.querySelector(".edit-btn").addEventListener("click",()=>{
+      const id=docSnap.id;
+      const pass=prompt("Ingrese contraseña de administración para continuar");
+      if(!checkPass(pass)){ alert("Contraseña incorrecta"); return; }
+      document.getElementById("editUserModal").classList.add("active");
+      editUserL.value=u.L;
+      document.getElementById("editUserNombre").value=u.nombre;
+      document.getElementById("editUserDni").value=u.dni;
+      document.getElementById("editUserTipo").value=u.tipo;
+
+      const finalizeBtn=document.getElementById("finalizeEditBtn");
+      const cancelBtn=document.getElementById("cancelEditBtn");
+      const msgSpan=document.getElementById("editUserMsg");
+
+      finalizeBtn.onclick=async ()=>{
+        const newL=editUserL.value.trim();
+        const newNombre=document.getElementById("editUserNombre").value.trim();
+        const newDni=document.getElementById("editUserDni").value.trim();
+        const newTipo=document.getElementById("editUserTipo").value;
+        if(!newL||!newNombre||!newDni||!newTipo){ msgSpan.textContent="Faltan datos, complete todos los campos"; return; }
+        if(!/^\d{1,3}$/.test(newL)||newNombre.length>25||!/^\d{8}$/.test(newDni)){ msgSpan.textContent="Datos inválidos"; return; }
+
+        // Comprobar si DNI existe en otro usuario
+        const qDni=query(usuariosRef, where("dni","==",newDni));
+        const snapDni=await getDocs(qDni);
+        if(!snapDni.empty && snapDni.docs[0].id!==id){
+          msgSpan.style.color="red";
+          msgSpan.textContent=`Este DNI ya existe en #L${snapDni.docs[0].data().L}`;
+          return;
+        }
+
+        try{
+          await updateDoc(doc(db,"usuarios",id),{L:newL,nombre:newNombre,dni:newDni,tipo:newTipo});
+          msgSpan.style.color="green";
+          msgSpan.textContent="Usuario editado con éxito";
+          setTimeout(()=>{
+            document.getElementById("editUserModal").classList.remove("active");
+            msgSpan.textContent=""; msgSpan.style.color="#0a0";
+          },1500);
+        }catch(err){ console.error(err); msgSpan.textContent="Error editando"; }
+      };
+      cancelBtn.onclick=()=>{ document.getElementById("editUserModal").classList.remove("active"); msgSpan.textContent=""; };
+    });
+
+    // ELIMINAR
+    tr.querySelector(".del-btn").addEventListener("click",async ()=>{
+      const pass=prompt("Ingrese contraseña de administración para continuar");
+      if(!checkPass(pass)){ alert("Contraseña incorrecta"); return; }
+      if(!confirm("Eliminar usuario permanentemente? (esto invalidará sus códigos)")) return;
+      try{
+        if(u.codigoIngreso) await addDoc(expiredRef,{code:u.codigoIngreso,reason:"usuario_eliminado",L:u.L,nombre:u.nombre,when:new Date()});
+        if(u.codigoSalida) await addDoc(expiredRef,{code:u.codigoSalida,reason:"usuario_eliminado",L:u.L,nombre:u.nombre,when:new Date()});
+        await deleteDoc(doc(db,"usuarios",docSnap.id));
+        alert("Usuario eliminado y códigos invalidados.");
+      }catch(err){ console.error(err); alert("Error eliminando usuario"); }
+    });
+
+    // IMPRIMIR TARJETA
+    tr.querySelector(".print-btn").addEventListener("click",()=>{
+      const pass=prompt("Ingrese contraseña de administración para continuar");
+      if(!checkPass(pass)){ alert("Contraseña incorrecta"); return; }
+      const borderColor={"propietario":"violet","administracion":"orange","empleado":"green","obrero":"yellow","invitado":"cyan","guardia":"red"}[u.tipo]||"gray";
+      const w=window.open("","_blank","width=600,height=380");
+      w.document.write(`
+        <html><head><title>Tarjeta ${u.L}</title>
+        <style>body{font-family:Arial;text-align:center}.card{width:15cm;height:6cm;border:12px solid ${borderColor};box-sizing:border-box;padding:8px}</style>
+        <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script></head><body>
+          <div class="card">
+            <svg id="codeIn" style="display:block;margin:6px auto"></svg>
+            <div style="font-size:16px;font-weight:700;margin:6px 0">${u.L} — ${u.nombre}<br>DNI: ${u.dni}<br>${u.tipo}</div>
+            <svg id="codeOut" style="display:block;margin:6px auto"></svg>
+          </div>
+          <script>
+            JsBarcode(document.getElementById('codeIn'),"${u.codigoIngreso||''}",{format:'CODE128',width:2,height:40});
+            JsBarcode(document.getElementById('codeOut'),"${u.codigoSalida||''}",{format:'CODE128',width:2,height:40});
+            window.print();
+            setTimeout(()=>window.close(),700);
+          <\/script>
+        </body></html>
+      `);
+    });
+  });
+});
 
 /* -----------------------------
    MOVIMIENTOS
 ----------------------------- */
+
 const movimientosTableBody=document.querySelector("#movimientosTable tbody");
 const paginationDiv=document.getElementById("pagination");
 const MOV_LIMIT=25;
@@ -135,3 +273,4 @@ document.getElementById("restoreDefaultBtn").addEventListener("click", ()=>{
   document.getElementById("restoreMsg").textContent="Restaurada";
   setTimeout(()=>document.getElementById("restoreMsg").textContent="",2500);
 });
+
