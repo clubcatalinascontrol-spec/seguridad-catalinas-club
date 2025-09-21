@@ -95,6 +95,7 @@ addUserBtn.addEventListener("click",async ()=>{
   if(!/^\d{3}$/.test(L)){ userMessage.textContent="#L debe ser 3 dígitos"; return; }
   if(!/^\d{8}$/.test(dni)){ userMessage.textContent="DNI debe tener 8 dígitos"; return; }
   try{
+    // Verificar que DNI no exista ya en otro usuario
     const qDni = query(usuariosRef, where("dni","==",dni));
     const existing = await getDocs(qDni);
     if(!existing.empty){
@@ -103,6 +104,7 @@ addUserBtn.addEventListener("click",async ()=>{
       setTimeout(()=>{ userMessage.textContent=""; userMessage.style.color=""; }, 2500);
       return;
     }
+
     await addDoc(usuariosRef,{L,nombre,dni,tipo,codigoIngreso:generarCodigo(),codigoSalida:generarCodigo()});
     userMessage.style.color = "green";
     userMessage.textContent="Usuario agregado";
@@ -111,7 +113,7 @@ addUserBtn.addEventListener("click",async ()=>{
   }catch(err){ console.error(err); userMessage.textContent="Error"; }
 });
 
-// Render usuarios en tiempo real
+// Render usuarios en tiempo real (orden por L)
 onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
   usersTableBody.innerHTML="";
   snapshot.docs.forEach(docSnap=>{
@@ -154,6 +156,7 @@ onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
         if(!/^\d{3}$/.test(newL)){ msgSpan.style.color="red"; msgSpan.textContent="#L debe ser 3 dígitos"; return; }
         if(!/^\d{8}$/.test(newDni)){ msgSpan.style.color="red"; msgSpan.textContent="DNI debe tener 8 dígitos"; return; }
 
+        // Comprobar si DNI existe en otro usuario
         const qDni=query(usuariosRef, where("dni","==",newDni));
         const snapDni=await getDocs(qDni);
         if(!snapDni.empty && snapDni.docs[0].id!==id){
@@ -247,6 +250,7 @@ function renderMovsPage(){
       </td>`;
     movimientosTableBody.appendChild(tr);
 
+    // Eliminar movimiento
     tr.querySelector(".delMov").addEventListener("click",async e=>{
       const pass=prompt("Ingrese contraseña de administración para continuar");
       if(!checkPass(pass)){ alert("Contraseña incorrecta"); return; }
@@ -257,6 +261,7 @@ function renderMovsPage(){
   renderPagination(movimientosCache.length);
 }
 
+// Escuchar movimientos ordenados por hora descendente
 onSnapshot(query(movimientosRef, orderBy("hora","desc")),snapshot=>{
   movimientosCache=snapshot.docs.map(d=>({__id:d.id,...d.data()}));
   const totalPages=Math.max(1,Math.ceil(movimientosCache.length/MOV_LIMIT));
@@ -264,6 +269,7 @@ onSnapshot(query(movimientosRef, orderBy("hora","desc")),snapshot=>{
   renderMovsPage();
 });
 
+// Imprimir movimientos
 document.getElementById("printPageBtn").addEventListener("click",()=>{
   const pass=prompt("Ingrese contraseña para imprimir movimientos");
   if(!checkPass(pass)){ alert("Contraseña incorrecta"); return; }
@@ -278,7 +284,7 @@ document.getElementById("printPageBtn").addEventListener("click",()=>{
 });
 
 /* -----------------------------
-   ESCANEAR CÓDIGOS
+   ESCANEAR CÓDIGOS (CORREGIDO SALIDA)
 ----------------------------- */
 const scanBtn = document.getElementById("scanBtn");
 const scanModal = document.getElementById("scanModal");
@@ -311,14 +317,11 @@ scanInput.addEventListener("input", async () => {
     let userDoc = null;
     let tipoAccion = "entrada";
 
-    const qIngreso = query(usuariosRef, where("codigoIngreso", "==", code));
-    const snap = await getDocs(qIngreso);
-    if(!snap.empty){
-      userDoc = snap.docs[0];
-    } else {
-      const qSalida = query(usuariosRef, where("codigoSalida", "==", code));
-      const snap2 = await getDocs(qSalida);
-      if(!snap2.empty){ userDoc = snap2.docs[0]; tipoAccion="salida"; }
+    let snap = await getDocs(query(usuariosRef, where("codigoIngreso","==",code)));
+    if(!snap.empty){ userDoc = snap.docs[0]; }
+    else {
+      snap = await getDocs(query(usuariosRef, where("codigoSalida","==",code)));
+      if(!snap.empty){ userDoc = snap.docs[0]; tipoAccion="salida"; }
     }
 
     if(!userDoc){
@@ -331,38 +334,45 @@ scanInput.addEventListener("input", async () => {
 
     const u = userDoc.data();
 
-    if(tipoAccion === "entrada"){
-      await addDoc(movimientosRef, {
-        L: u.L, nombre: u.nombre, dni: u.dni, tipo: u.tipo,
+    if(tipoAccion==="entrada"){
+      await addDoc(movimientosRef,{
+        L:u.L, nombre:u.nombre, dni:u.dni, tipo:u.tipo,
         entrada: horaActualStr(), salida: "", hora: serverTimestamp()
       });
     } else {
-      const movSnap = await getDocs(query(movimientosRef, where("L","==",u.L), orderBy("hora","desc"), limit(10)));
+      const movSnap = await getDocs(query(
+        movimientosRef,
+        where("L","==",u.L),
+        orderBy("hora","desc"),
+        limit(20)
+      ));
+
       let lastOpen = null;
-      movSnap.docs.forEach(d => {
-        if(!d.data().salida) lastOpen = d;
+      movSnap.docs.forEach(d=>{
+        const salidaVal = d.data().salida;
+        if(!salidaVal || salidaVal==="") lastOpen=d;
       });
 
       if(lastOpen){
-        await updateDoc(doc(db,"movimientos",lastOpen.id), { salida: horaActualStr() });
+        await updateDoc(doc(db,"movimientos",lastOpen.id),{ salida: horaActualStr() });
       } else {
-        await addDoc(movimientosRef, {
-          L: u.L, nombre: u.nombre, dni: u.dni, tipo: u.tipo,
+        await addDoc(movimientosRef,{
+          L:u.L, nombre:u.nombre, dni:u.dni, tipo:u.tipo,
           entrada: "", salida: horaActualStr(), hora: serverTimestamp()
         });
       }
     }
 
-    scanOk.style.display = "inline-block";
-    setTimeout(()=>scanOk.style.display = "none", 900);
+    scanOk.style.display="inline-block";
+    setTimeout(()=>scanOk.style.display="none",900);
     scanModal.classList.remove("active");
-    scanInput.value = "";
-  } catch (err) {
+    scanInput.value="";
+  } catch(err){
     console.error(err);
-    scanMessage.style.color = "red";
-    scanMessage.textContent = "Error al registrar";
+    scanMessage.style.color="red";
+    scanMessage.textContent = "Error al registrar: " + err.message;
     setTimeout(()=>{ scanMessage.textContent=""; },1800);
   } finally {
-    scanProcessing = false;
+    scanProcessing=false;
   }
 });
