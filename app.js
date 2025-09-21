@@ -2,7 +2,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import {
   getFirestore, collection, addDoc, getDocs, doc, onSnapshot, updateDoc, deleteDoc,
-  query, where, orderBy, serverTimestamp
+  query, where, orderBy, limit, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
 /* -----------------------------
@@ -95,6 +95,7 @@ addUserBtn.addEventListener("click",async ()=>{
   if(!/^\d{3}$/.test(L)){ userMessage.textContent="#L debe ser 3 dígitos"; return; }
   if(!/^\d{8}$/.test(dni)){ userMessage.textContent="DNI debe tener 8 dígitos"; return; }
   try{
+    // Verificar que DNI no exista ya en otro usuario
     const qDni = query(usuariosRef, where("dni","==",dni));
     const existing = await getDocs(qDni);
     if(!existing.empty){
@@ -103,6 +104,7 @@ addUserBtn.addEventListener("click",async ()=>{
       setTimeout(()=>{ userMessage.textContent=""; userMessage.style.color=""; }, 2500);
       return;
     }
+
     await addDoc(usuariosRef,{L,nombre,dni,tipo,codigoIngreso:generarCodigo(),codigoSalida:generarCodigo()});
     userMessage.style.color = "green";
     userMessage.textContent="Usuario agregado";
@@ -111,7 +113,7 @@ addUserBtn.addEventListener("click",async ()=>{
   }catch(err){ console.error(err); userMessage.textContent="Error"; }
 });
 
-// Render usuarios en tiempo real
+// Render usuarios en tiempo real (orden por L)
 onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
   usersTableBody.innerHTML="";
   snapshot.docs.forEach(docSnap=>{
@@ -154,6 +156,7 @@ onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
         if(!/^\d{3}$/.test(newL)){ msgSpan.style.color="red"; msgSpan.textContent="#L debe ser 3 dígitos"; return; }
         if(!/^\d{8}$/.test(newDni)){ msgSpan.style.color="red"; msgSpan.textContent="DNI debe tener 8 dígitos"; return; }
 
+        // Comprobar si DNI existe en otro usuario
         const qDni=query(usuariosRef, where("dni","==",newDni));
         const snapDni=await getDocs(qDni);
         if(!snapDni.empty && snapDni.docs[0].id!==id){
@@ -216,12 +219,44 @@ onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
 });
 
 /* -----------------------------
-   MOVIMIENTOS
+   MOVIMIENTOS (ordenados por hora desc — más recientes arriba)
+   Ahora soportamos pestañas por tipo y paginación por pestaña
 ----------------------------- */
 const movimientosTableBody=document.querySelector("#movimientosTable tbody");
 const paginationDiv=document.getElementById("pagination");
 const MOV_LIMIT=25;
 let movimientosCache=[],currentPage=1;
+let activeTipo = "todos"; // pestaña activa ("todos" o cualquiera de los tipos)
+
+// pestañas
+const tabBtns = document.querySelectorAll(".tab-btn");
+tabBtns.forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    tabBtns.forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    activeTipo = btn.dataset.tipo;
+    currentPage = 1;
+    renderMovsPage();
+  });
+});
+
+// botón imprimir de la pestaña activa
+const printActiveBtn = document.getElementById("printActiveBtn");
+printActiveBtn.addEventListener("click", ()=>{ printMovimientosPorTipo(activeTipo); });
+
+// botón imprimir global (todos)
+document.getElementById("printPageBtn").addEventListener("click", ()=>{
+  const pass=prompt("Ingrese contraseña para imprimir movimientos");
+  if(!checkPass(pass)){ alert("Contraseña incorrecta"); return; }
+  const w=window.open("","_blank","width=900,height=600");
+  let html=`<html><head><title>Movimientos</title><style>table{width:100%;border-collapse:collapse} th,td{border:1px solid #000;padding:6px;text-align:center}</style></head><body><h3>Movimientos</h3><table><thead><tr><th>#L</th><th>Nombre</th><th>DNI</th><th>H. Entrada</th><th>H. Salida</th><th>Tipo</th></tr></thead><tbody>`;
+  movimientosCache.forEach(m=>{
+    html+=`<tr><td>${m.L||""}</td><td>${m.nombre||""}</td><td>${m.dni||""}</td><td>${m.entrada||""}</td><td>${m.salida||""}</td><td>${m.tipo||""}</td></tr>`;
+  });
+  html+="</tbody></table></body></html>";
+  w.document.write(html);
+  w.print();
+});
 
 function renderPagination(totalItems){
   const totalPages=Math.max(1,Math.ceil(totalItems/MOV_LIMIT));
@@ -236,8 +271,10 @@ function renderPagination(totalItems){
 }
 function renderMovsPage(){
   movimientosTableBody.innerHTML="";
+  // Filtrar por tipo activo
+  const filtered = activeTipo === "todos" ? movimientosCache : movimientosCache.filter(m=>m.tipo===activeTipo);
   const start=(currentPage-1)*MOV_LIMIT;
-  const page=movimientosCache.slice(start,start+MOV_LIMIT);
+  const page=filtered.slice(start,start+MOV_LIMIT);
   page.forEach(item=>{
     const tr=document.createElement("tr");
     tr.innerHTML=`<td>${item.L||""}</td><td>${item.nombre||""}</td><td>${item.dni||""}</td>
@@ -247,6 +284,7 @@ function renderMovsPage(){
       </td>`;
     movimientosTableBody.appendChild(tr);
 
+    // Eliminar movimiento (requiere contraseña maestra o admin)
     tr.querySelector(".delMov").addEventListener("click",async e=>{
       const pass=prompt("Ingrese contraseña de administración para continuar");
       if(!checkPass(pass)){ alert("Contraseña incorrecta"); return; }
@@ -254,37 +292,53 @@ function renderMovsPage(){
       try{ await deleteDoc(doc(db,"movimientos",e.currentTarget.dataset.id)); } catch(err){ console.error(err); alert("Error eliminando movimiento"); }
     });
   });
-  renderPagination(movimientosCache.length);
+  renderPagination(filtered.length);
 }
 
+// Escuchar movimientos ordenados por hora descendente (más recientes arriba)
 onSnapshot(query(movimientosRef, orderBy("hora","desc")),snapshot=>{
   movimientosCache=snapshot.docs.map(d=>({__id:d.id,...d.data()}));
   const totalPages=Math.max(1,Math.ceil(movimientosCache.length/MOV_LIMIT));
   if(currentPage>totalPages) currentPage=totalPages;
   renderMovsPage();
+
+  // chequeo de auto-print para propietarios: si cuenta propietarios es múltiplo de 25 y >0, auto print
+  const propietariosCount = movimientosCache.filter(m=>m.tipo==="propietario").length;
+  if(propietariosCount>0 && propietariosCount % MOV_LIMIT === 0){
+    // Imprimir automaticamente propietarios (sin pedir contraseña) - comportamiento solicitado
+    // Generamos la impresión de los últimos propietarios (puedes ajustar el rango si prefieres)
+    printMovimientosPorTipo("propietario", true);
+  }
 });
 
-document.getElementById("printPageBtn").addEventListener("click",()=>{
-  const pass=prompt("Ingrese contraseña para imprimir movimientos");
-  if(!checkPass(pass)){ alert("Contraseña incorrecta"); return; }
+// Imprimir movimientos por tipo
+function printMovimientosPorTipo(tipo, auto=false){
+  // Si auto=true significa auto-print (solo propietarios), no mostramos prompt
+  if(!auto){
+    const pass=prompt("Ingrese contraseña para imprimir movimientos de la pestaña");
+    if(!checkPass(pass)){ alert("Contraseña incorrecta"); return; }
+  }
+  const filtered = tipo==="todos" ? movimientosCache : movimientosCache.filter(m=>m.tipo===tipo);
   const w=window.open("","_blank","width=900,height=600");
-  let html=`<html><head><title>Movimientos</title><style>table{width:100%;border-collapse:collapse} th,td{border:1px solid #000;padding:6px;text-align:center}</style></head><body><h3>Movimientos</h3><table><thead><tr><th>#L</th><th>Nombre</th><th>DNI</th><th>H. Entrada</th><th>H. Salida</th><th>Tipo</th></tr></thead><tbody>`;
-  movimientosCache.forEach(m=>{
+  let title = tipo==="todos" ? "Movimientos - Todos" : `Movimientos - ${tipo}`;
+  let html=`<html><head><title>${title}</title><style>table{width:100%;border-collapse:collapse} th,td{border:1px solid #000;padding:6px;text-align:center}</style></head><body><h3>${title}</h3><table><thead><tr><th>#L</th><th>Nombre</th><th>DNI</th><th>H. Entrada</th><th>H. Salida</th><th>Tipo</th></tr></thead><tbody>`;
+  filtered.forEach(m=>{
     html+=`<tr><td>${m.L||""}</td><td>${m.nombre||""}</td><td>${m.dni||""}</td><td>${m.entrada||""}</td><td>${m.salida||""}</td><td>${m.tipo||""}</td></tr>`;
   });
   html+="</tbody></table></body></html>";
   w.document.write(html);
   w.print();
-});
+}
 
 /* -----------------------------
-   ESCANEAR CÓDIGOS
+   ESCANEAR CÓDIGOS AUTOMÁTICO (sin Enter)
 ----------------------------- */
 const scanBtn = document.getElementById("scanBtn");
 const scanModal = document.getElementById("scanModal");
 const scanInput = document.getElementById("scanInput");
 const cancelScanBtn = document.getElementById("cancelScanBtn");
 const scanMessage = document.getElementById("scanMessage");
+const scanOk = document.getElementById("scanOk");
 
 scanBtn.addEventListener("click", () => {
   scanModal.classList.add("active");
@@ -302,6 +356,7 @@ let scanProcessing = false;
 scanInput.addEventListener("input", async () => {
   const raw = scanInput.value.trim();
   if (scanProcessing) return;
+  // El código de barras esperado tiene 8 caracteres; si se pega/escanea, puede venir con más (CR). Aceptar >=8 y tomar primeros 8 útiles.
   if (raw.length < 8) return;
   scanProcessing = true;
   const code = raw.substring(0,8).toUpperCase();
@@ -311,12 +366,14 @@ scanInput.addEventListener("input", async () => {
     let tipoAccion = "entrada";
 
     const qIngreso = query(usuariosRef, where("codigoIngreso", "==", code));
-    const snapIngreso = await getDocs(qIngreso);
-    if(!snapIngreso.empty){ userDoc = snapIngreso.docs[0]; tipoAccion="entrada"; }
-    else {
+    const snap = await getDocs(qIngreso);
+    if(!snap.empty){
+      userDoc = snap.docs[0];
+      tipoAccion = "entrada";
+    } else {
       const qSalida = query(usuariosRef, where("codigoSalida", "==", code));
-      const snapSalida = await getDocs(qSalida);
-      if(!snapSalida.empty){ userDoc = snapSalida.docs[0]; tipoAccion="salida"; }
+      const snap2 = await getDocs(qSalida);
+      if(!snap2.empty){ userDoc = snap2.docs[0]; tipoAccion="salida"; }
     }
 
     if(!userDoc){
@@ -329,80 +386,62 @@ scanInput.addEventListener("input", async () => {
 
     const u = userDoc.data();
 
-    // Siempre crear nueva fila para entrada o salida
     if(tipoAccion === "entrada"){
+      // siempre crear nuevo movimiento
       await addDoc(movimientosRef, {
         L: u.L, nombre: u.nombre, dni: u.dni, tipo: u.tipo,
         entrada: horaActualStr(), salida: "", hora: serverTimestamp()
       });
     } else {
-      await addDoc(movimientosRef, {
-        L: u.L, nombre: u.nombre, dni: u.dni, tipo: u.tipo,
-        entrada: "", salida: horaActualStr(), hora: serverTimestamp()
-      });
+      // SALIDA: intentar cerrar movimiento abierto; si no hay ninguno, crear uno nuevo con sólo salida
+      // buscamos movimientos sin salida para esa L
+      const movQ = query(movimientosRef, where("L","==",u.L), where("salida","==",""));
+      const movSnap = await getDocs(movQ);
+      if(!movSnap.empty){
+        // elegimos el más reciente en base al campo hora (si existe)
+        let chosen = movSnap.docs[0];
+        let chosenTime = chosen.data().hora && chosen.data().hora.toDate ? chosen.data().hora.toDate() : new Date(0);
+        movSnap.docs.forEach(d=>{
+          const t = d.data().hora && d.data().hora.toDate ? d.data().hora.toDate() : new Date(0);
+          if(t > chosenTime){ chosen = d; chosenTime = t; }
+        });
+        await updateDoc(doc(db,"movimientos",chosen.id), { salida: horaActualStr() });
+      } else {
+        await addDoc(movimientosRef, {
+          L: u.L, nombre: u.nombre, dni: u.dni, tipo: u.tipo,
+          entrada: "", salida: horaActualStr(), hora: serverTimestamp()
+        });
+      }
     }
 
-    scanMessage.style.color = "green";
-    scanMessage.textContent = `${tipoAccion==="entrada"?"Entrada":"Salida"} registrada`;
-    scanInput.value="";
-    setTimeout(()=>{ scanMessage.textContent=""; },1800);
+    scanOk.style.display = "inline-block";
+    setTimeout(()=>scanOk.style.display = "none", 900);
+    scanModal.classList.remove("active");
+    scanInput.value = "";
+    // ya que hay snapshot escuchando, la tabla se actualizará automáticamente
 
-  } catch(err){
+  } catch (err) {
     console.error(err);
     scanMessage.style.color = "red";
-    scanMessage.textContent="Error al registrar";
-    setTimeout(()=>scanMessage.textContent="",1800);
+    scanMessage.textContent = "Error al registrar";
+    setTimeout(()=>{ scanMessage.textContent=""; },1800);
+  } finally {
+    scanProcessing = false;
   }
-
-  scanProcessing = false;
 });
 
 /* -----------------------------
-   CONFIG - CAMBIO / RESTAURAR CONTRASEÑA
+   CONFIGURACIÓN CONTRASEÑA
 ----------------------------- */
-const savePassBtn = document.getElementById("savePassBtn");
-const restoreBtn = document.getElementById("restoreDefaultBtn");
-const currentPassInput = document.getElementById("currentPass");
-const newPassInput = document.getElementById("newPass");
-const restoreMsg = document.getElementById("restoreMsg");
-
-savePassBtn.addEventListener("click", () => {
-  const curr = currentPassInput.value.trim();
-  const neu = newPassInput.value.trim();
-
-  if (!curr || !neu) {
-    restoreMsg.style.color = "red";
-    restoreMsg.textContent = "Complete ambos campos";
-    return;
-  }
-
-  if (curr !== localStorage.getItem("adminPass") && curr !== MASTER_PASS) {
-    restoreMsg.style.color = "red";
-    restoreMsg.textContent = "Contraseña actual incorrecta";
-    return;
-  }
-
-  if (!/^\d{4}$/.test(neu)) {
-    restoreMsg.style.color = "red";
-    restoreMsg.textContent = "La nueva contraseña debe ser 4 números";
-    return;
-  }
-
-  localStorage.setItem("adminPass", neu);
-  restoreMsg.style.color = "green";
-  restoreMsg.textContent = "Contraseña actualizada";
-  currentPassInput.value = "";
-  newPassInput.value = "";
-  setTimeout(() => { restoreMsg.textContent = ""; }, 2000);
+document.getElementById("savePassBtn").addEventListener("click", ()=>{
+  const cur=document.getElementById("currentPass").value.trim();
+  const nue=document.getElementById("newPass").value.trim();
+  if(!checkPass(cur)){ alert("Contraseña actual incorrecta"); return; }
+  if(!/^\d{4}$/.test(nue)){ alert("Nueva contraseña debe ser 4 dígitos"); return; }
+  localStorage.setItem("adminPass", nue);
+  alert("Contraseña cambiada correctamente");
+  document.getElementById("currentPass").value="";
+  document.getElementById("newPass").value="";
 });
 
-restoreBtn.addEventListener("click", () => {
-  const pass = prompt("Ingrese la contraseña maestra para restaurar la contraseña");
-  if (pass !== MASTER_PASS) {
-    alert("Contraseña incorrecta");
-    return;
-  }
-  localStorage.setItem("adminPass", "1234");
-  alert("Contraseña restaurada a valor por defecto: 1234");
-  restoreMsg.textContent = "";
-});
+// Res
