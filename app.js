@@ -2,7 +2,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import {
   getFirestore, collection, addDoc, getDocs, doc, onSnapshot, updateDoc, deleteDoc,
-  query, where, orderBy, limit, serverTimestamp
+  query, where, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
 /* -----------------------------
@@ -330,28 +330,14 @@ scanInput.addEventListener("input", async () => {
 
     const u = userDoc.data();
 
-    if(tipoAccion === "entrada"){
-      await addDoc(movimientosRef, {
-        L: u.L, nombre: u.nombre, dni: u.dni, tipo: u.tipo,
-        entrada: horaActualStr(), salida: "", hora: serverTimestamp()
-      });
-    } else {
-      const qMovs = query(movimientosRef, where("L","==",u.L), where("salida","==",""));
-      const movSnap = await getDocs(qMovs);
-      if(!movSnap.empty){
-        const lastMov = movSnap.docs.reduce((prev,curr)=>{
-          const prevTime = prev.data().hora?.toDate?.() || new Date(0);
-          const currTime = curr.data().hora?.toDate?.() || new Date(0);
-          return currTime > prevTime ? curr : prev;
-        });
-        await updateDoc(doc(db,"movimientos",lastMov.id), { salida: horaActualStr() });
-      } else {
-        await addDoc(movimientosRef,{
-          L: u.L, nombre: u.nombre, dni: u.dni, tipo: u.tipo,
-          entrada: "", salida: horaActualStr(), hora: serverTimestamp()
-        });
-      }
-    }
+    // Siempre crear nueva fila
+    const docData = {
+      L: u.L, nombre: u.nombre, dni: u.dni, tipo: u.tipo,
+      entrada: tipoAccion==="entrada"?horaActualStr():"",
+      salida: tipoAccion==="salida"?horaActualStr():"",
+      hora: serverTimestamp()
+    };
+    await addDoc(movimientosRef, docData);
 
     scanMessage.style.color = "green";
     scanMessage.textContent = `${tipoAccion==="entrada"?"Entrada":"Salida"} registrada`;
@@ -369,12 +355,13 @@ scanInput.addEventListener("input", async () => {
 });
 
 /* -----------------------------
-   CONFIG - CAMBIO DE CONTRASEÑA
+   CONFIG - CAMBIO Y RESTAURAR CONTRASEÑA
 ----------------------------- */
 const configBtn = document.getElementById("configBtn");
 const configModal = document.getElementById("configModal");
 const cancelConfigBtn = document.getElementById("cancelConfigBtn");
 const savePassBtn = document.getElementById("savePassBtn");
+const restorePassBtn = document.getElementById("restorePassBtn");
 const currentPassInput = document.getElementById("currentPass");
 const newPassInput = document.getElementById("newPass");
 const configMessage = document.getElementById("configMessage");
@@ -386,11 +373,19 @@ savePassBtn.addEventListener("click",()=>{
   const curr=currentPassInput.value.trim();
   const neu=newPassInput.value.trim();
   if(!curr||!neu){ configMessage.style.color="red"; configMessage.textContent="Complete ambos campos"; return; }
-  if(curr!==localStorage.getItem("adminPass") && curr!==MASTER_PASS){
+  if(!checkPass(curr)){
     configMessage.style.color="red"; configMessage.textContent="Contraseña actual incorrecta"; return;
   }
   localStorage.setItem("adminPass",neu);
   configMessage.style.color="green"; configMessage.textContent="Contraseña actualizada";
   currentPassInput.value=""; newPassInput.value="";
   setTimeout(()=>{ configModal.classList.remove("active"); configMessage.textContent=""; },1500);
+});
+
+restorePassBtn.addEventListener("click",()=>{
+  const pass=prompt("Ingrese contraseña maestra para restaurar contraseña");
+  if(pass!==MASTER_PASS){ alert("Contraseña incorrecta"); return; }
+  localStorage.setItem("adminPass","123456789");
+  alert("Contraseña restaurada a valor por defecto: 123456789");
+  configModal.classList.remove("active");
 });
