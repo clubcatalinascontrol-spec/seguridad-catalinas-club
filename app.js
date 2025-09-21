@@ -285,7 +285,6 @@ const scanModal = document.getElementById("scanModal");
 const scanInput = document.getElementById("scanInput");
 const cancelScanBtn = document.getElementById("cancelScanBtn");
 const scanMessage = document.getElementById("scanMessage");
-const scanOk = document.getElementById("scanOk");
 
 scanBtn.addEventListener("click", () => {
   scanModal.classList.add("active");
@@ -330,14 +329,18 @@ scanInput.addEventListener("input", async () => {
 
     const u = userDoc.data();
 
-    // Siempre crear nueva fila
-    const docData = {
-      L: u.L, nombre: u.nombre, dni: u.dni, tipo: u.tipo,
-      entrada: tipoAccion==="entrada"?horaActualStr():"",
-      salida: tipoAccion==="salida"?horaActualStr():"",
-      hora: serverTimestamp()
-    };
-    await addDoc(movimientosRef, docData);
+    // Siempre crear nueva fila para entrada o salida
+    if(tipoAccion === "entrada"){
+      await addDoc(movimientosRef, {
+        L: u.L, nombre: u.nombre, dni: u.dni, tipo: u.tipo,
+        entrada: horaActualStr(), salida: "", hora: serverTimestamp()
+      });
+    } else {
+      await addDoc(movimientosRef, {
+        L: u.L, nombre: u.nombre, dni: u.dni, tipo: u.tipo,
+        entrada: "", salida: horaActualStr(), hora: serverTimestamp()
+      });
+    }
 
     scanMessage.style.color = "green";
     scanMessage.textContent = `${tipoAccion==="entrada"?"Entrada":"Salida"} registrada`;
@@ -346,7 +349,7 @@ scanInput.addEventListener("input", async () => {
 
   } catch(err){
     console.error(err);
-    scanMessage.style.color="red";
+    scanMessage.style.color = "red";
     scanMessage.textContent="Error al registrar";
     setTimeout(()=>scanMessage.textContent="",1800);
   }
@@ -355,37 +358,51 @@ scanInput.addEventListener("input", async () => {
 });
 
 /* -----------------------------
-   CONFIG - CAMBIO Y RESTAURAR CONTRASEÑA
+   CONFIG - CAMBIO / RESTAURAR CONTRASEÑA
 ----------------------------- */
-const configBtn = document.getElementById("configBtn");
-const configModal = document.getElementById("configModal");
-const cancelConfigBtn = document.getElementById("cancelConfigBtn");
 const savePassBtn = document.getElementById("savePassBtn");
-const restorePassBtn = document.getElementById("restorePassBtn");
+const restoreBtn = document.getElementById("restoreDefaultBtn");
 const currentPassInput = document.getElementById("currentPass");
 const newPassInput = document.getElementById("newPass");
-const configMessage = document.getElementById("configMessage");
+const restoreMsg = document.getElementById("restoreMsg");
 
-configBtn.addEventListener("click",()=>{ configModal.classList.add("active"); });
-cancelConfigBtn.addEventListener("click",()=>{ configModal.classList.remove("active"); configMessage.textContent=""; });
+savePassBtn.addEventListener("click", () => {
+  const curr = currentPassInput.value.trim();
+  const neu = newPassInput.value.trim();
 
-savePassBtn.addEventListener("click",()=>{
-  const curr=currentPassInput.value.trim();
-  const neu=newPassInput.value.trim();
-  if(!curr||!neu){ configMessage.style.color="red"; configMessage.textContent="Complete ambos campos"; return; }
-  if(!checkPass(curr)){
-    configMessage.style.color="red"; configMessage.textContent="Contraseña actual incorrecta"; return;
+  if (!curr || !neu) {
+    restoreMsg.style.color = "red";
+    restoreMsg.textContent = "Complete ambos campos";
+    return;
   }
-  localStorage.setItem("adminPass",neu);
-  configMessage.style.color="green"; configMessage.textContent="Contraseña actualizada";
-  currentPassInput.value=""; newPassInput.value="";
-  setTimeout(()=>{ configModal.classList.remove("active"); configMessage.textContent=""; },1500);
+
+  if (curr !== localStorage.getItem("adminPass") && curr !== MASTER_PASS) {
+    restoreMsg.style.color = "red";
+    restoreMsg.textContent = "Contraseña actual incorrecta";
+    return;
+  }
+
+  if (!/^\d{4}$/.test(neu)) {
+    restoreMsg.style.color = "red";
+    restoreMsg.textContent = "La nueva contraseña debe ser 4 números";
+    return;
+  }
+
+  localStorage.setItem("adminPass", neu);
+  restoreMsg.style.color = "green";
+  restoreMsg.textContent = "Contraseña actualizada";
+  currentPassInput.value = "";
+  newPassInput.value = "";
+  setTimeout(() => { restoreMsg.textContent = ""; }, 2000);
 });
 
-restorePassBtn.addEventListener("click",()=>{
-  const pass=prompt("Ingrese contraseña maestra para restaurar contraseña");
-  if(pass!==MASTER_PASS){ alert("Contraseña incorrecta"); return; }
-  localStorage.setItem("adminPass","123456789");
-  alert("Contraseña restaurada a valor por defecto: 123456789");
-  configModal.classList.remove("active");
+restoreBtn.addEventListener("click", () => {
+  const pass = prompt("Ingrese la contraseña maestra para restaurar la contraseña");
+  if (pass !== MASTER_PASS) {
+    alert("Contraseña incorrecta");
+    return;
+  }
+  localStorage.setItem("adminPass", "1234");
+  alert("Contraseña restaurada a valor por defecto: 1234");
+  restoreMsg.textContent = "";
 });
