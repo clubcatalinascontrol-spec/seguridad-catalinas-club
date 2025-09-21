@@ -24,7 +24,6 @@ const db = getFirestore(app);
 ----------------------------- */
 const usuariosRef = collection(db, "usuarios");
 const movimientosRef = collection(db, "movimientos");
-const expiredRef = collection(db, "expiredCodes");
 
 /* -----------------------------
    Contraseñas
@@ -120,53 +119,27 @@ onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
       </td>
     `;
     usersTableBody.appendChild(tr);
+  });
+});
 
-    // EDITAR
-    tr.querySelector(".edit-btn").addEventListener("click",()=>{
-      const id=docSnap.id;
-      const pass=prompt("Ingrese contraseña de administración para continuar");
-      if(!checkPass(pass)){ alert("Contraseña incorrecta"); return; }
-      document.getElementById("editUserModal").classList.add("active");
-      editUserL.value=u.L;
-      document.getElementById("editUserNombre").value=u.nombre;
-      document.getElementById("editUserDni").value=u.dni;
-      document.getElementById("editUserTipo").value=u.tipo;
-
-      const finalizeBtn=document.getElementById("finalizeEditBtn");
-      const cancelBtn=document.getElementById("cancelEditBtn");
-      const msgSpan=document.getElementById("editUserMsg");
-
-      finalizeBtn.onclick=async ()=>{
-        const newL=editUserL.value.trim();
-        const newNombre=document.getElementById("editUserNombre").value.trim();
-        const newDni=document.getElementById("editUserDni").value.trim();
-        const newTipo=document.getElementById("editUserTipo").value;
-        if(!newL||!newNombre||!newDni||!newTipo){ msgSpan.textContent="Faltan datos, por favor complete todos los campos"; return; }
-        if(!/^\d{3}$/.test(newL)){ msgSpan.textContent="#L debe ser 3 dígitos"; return; }
-        if(!/^\d{8}$/.test(newDni)){ msgSpan.textContent="DNI debe tener 8 dígitos"; return; }
-        try{ await updateDoc(doc(usuariosRef,id),{L:newL,nombre:newNombre,dni:newDni,tipo:newTipo}); msgSpan.textContent="Usuario editado"; setTimeout(()=>document.getElementById("editUserModal").classList.remove("active"),1500); } catch(err){ console.error(err); msgSpan.textContent="Error"; }
-      };
-      cancelBtn.onclick=()=>document.getElementById("editUserModal").classList.remove("active");
-    });
-
-    // ELIMINAR
-    tr.querySelector(".del-btn").addEventListener("click",async ()=>{
-      const pass=prompt("Ingrese contraseña de administración para eliminar usuario");
-      if(!checkPass(pass)){ alert("Contraseña incorrecta"); return; }
-      if(confirm("¿Desea eliminar este usuario?")) await deleteDoc(doc(usuariosRef,docSnap.id));
-    });
-
-    // IMPRIMIR TARJETA
-    tr.querySelector(".print-btn").addEventListener("click",()=>{
-      const pass=prompt("Ingrese contraseña para imprimir tarjeta");
-      if(!checkPass(pass)){ alert("Contraseña incorrecta"); return; }
-      const tarjeta=window.open("","_blank","width=320,height=200");
-      tarjeta.document.write(`<h3>${u.nombre}</h3><p>#L: ${u.L}</p><p>DNI: ${u.dni}</p><svg id="barcode"></svg>`);
-      tarjeta.document.close();
-      JsBarcode(tarjeta.document.getElementById("barcode"), u.codigoIngreso, {format:"CODE128"});
-      tarjeta.focus();
-      tarjeta.print();
-    });
+/* -----------------------------
+   MOVIMIENTOS (render en tiempo real)
+----------------------------- */
+const movimientosTableBody=document.querySelector("#movimientosTable tbody");
+onSnapshot(query(movimientosRef, orderBy("entrada","desc")), snapshot=>{
+  movimientosTableBody.innerHTML="";
+  snapshot.docs.forEach(docSnap=>{
+    const m=docSnap.data();
+    const tr=document.createElement("tr");
+    tr.innerHTML=`
+      <td>${m.L}</td>
+      <td>${m.nombre}</td>
+      <td>${m.dni}</td>
+      <td>${m.entrada||""}</td>
+      <td>${m.salida||""}</td>
+      <td>${m.tipo}</td>
+    `;
+    movimientosTableBody.appendChild(tr);
   });
 });
 
@@ -178,21 +151,24 @@ const scanInput=document.getElementById("scanInput");
 const cancelScanBtn=document.getElementById("cancelScanBtn");
 const scanBtn=document.getElementById("scanBtn");
 const scanOk=document.getElementById("scanOk");
+const scanMessage=document.getElementById("scanMessage");
 
 scanBtn.onclick=()=>{ scanModal.classList.add("active"); scanInput.focus(); };
 cancelScanBtn.onclick=()=>{ scanModal.classList.remove("active"); scanInput.value=""; };
-scanInput.addEventListener("keydown",async e=>{
-  if(e.key==="Enter"){
-    const code=scanInput.value.trim();
-    if(!code){ alert("Ingrese código"); return; }
+
+scanInput.addEventListener("input",async ()=>{
+  const code=scanInput.value.trim();
+  if(code.length===8){
     const q=query(usuariosRef,where("codigoIngreso","==",code));
     const snap=await getDocs(q);
     if(!snap.empty){
       const u=snap.docs[0].data();
       await addDoc(movimientosRef,{L:u.L,nombre:u.nombre,dni:u.dni,entrada:horaActualStr(),salida:"",tipo:u.tipo});
       scanOk.style.display="inline"; setTimeout(()=>scanOk.style.display="none",2000);
-      scanInput.value=""; scanModal.classList.remove("active");
-    } else { document.getElementById("scanMessage").textContent="Código no válido"; }
+      scanInput.value=""; scanModal.classList.remove("active"); scanMessage.textContent="";
+    } else {
+      scanMessage.textContent="Código no válido";
+    }
   }
 });
 
@@ -209,7 +185,7 @@ document.getElementById("printPageBtn").onclick=()=>{
 };
 
 /* -----------------------------
-   Cambiar contraseña
+   Cambiar/restaurar contraseña
 ----------------------------- */
 document.getElementById("savePassBtn").onclick=()=>{
   const cur=document.getElementById("currentPass").value;
@@ -219,8 +195,12 @@ document.getElementById("savePassBtn").onclick=()=>{
   localStorage.setItem("adminPass",neu);
   alert("Contraseña cambiada");
 };
+
 document.getElementById("restoreDefaultBtn").onclick=()=>{
-  localStorage.setItem("adminPass","123456789");
-  document.getElementById("restoreMsg").textContent="Contraseña restaurada a 123456789";
-  setTimeout(()=>document.getElementById("restoreMsg").textContent="",2000);
+  const master=prompt("Ingrese contraseña maestra para continuar");
+  if(master!==MASTER_PASS){ alert("Contraseña maestra incorrecta"); return; }
+  localStorage.setItem("adminPass","1234");
+  const msg=document.getElementById("restoreMsg");
+  msg.textContent="Ahora la contraseña nueva es 1234";
+  setTimeout(()=>msg.textContent="",3000);
 };
