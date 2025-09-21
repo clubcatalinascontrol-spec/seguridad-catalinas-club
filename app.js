@@ -219,7 +219,7 @@ onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
 });
 
 /* -----------------------------
-   MOVIMIENTOS (ordenados por hora desc — más recientes arriba)
+   MOVIMIENTOS
 ----------------------------- */
 const movimientosTableBody=document.querySelector("#movimientosTable tbody");
 const paginationDiv=document.getElementById("pagination");
@@ -250,7 +250,6 @@ function renderMovsPage(){
       </td>`;
     movimientosTableBody.appendChild(tr);
 
-    // Eliminar movimiento (requiere contraseña maestra o admin)
     tr.querySelector(".delMov").addEventListener("click",async e=>{
       const pass=prompt("Ingrese contraseña de administración para continuar");
       if(!checkPass(pass)){ alert("Contraseña incorrecta"); return; }
@@ -261,7 +260,6 @@ function renderMovsPage(){
   renderPagination(movimientosCache.length);
 }
 
-// Escuchar movimientos ordenados por hora descendente (más recientes arriba)
 onSnapshot(query(movimientosRef, orderBy("hora","desc")),snapshot=>{
   movimientosCache=snapshot.docs.map(d=>({__id:d.id,...d.data()}));
   const totalPages=Math.max(1,Math.ceil(movimientosCache.length/MOV_LIMIT));
@@ -284,7 +282,7 @@ document.getElementById("printPageBtn").addEventListener("click",()=>{
 });
 
 /* -----------------------------
-   ESCANEAR CÓDIGOS AUTOMÁTICO (sin Enter)
+   ESCANEAR CÓDIGOS (CORRECCIÓN APLICADA)
 ----------------------------- */
 const scanBtn = document.getElementById("scanBtn");
 const scanModal = document.getElementById("scanModal");
@@ -342,14 +340,12 @@ scanInput.addEventListener("input", async () => {
         entrada: horaActualStr(), salida: "", hora: serverTimestamp()
       });
     } else {
-      // CORRECCIÓN: Registro de salida funciona aunque no haya entrada
       const movQ = query(movimientosRef, where("L","==",u.L), where("salida","==",""), orderBy("hora","desc"), limit(1));
       const movSnap = await getDocs(movQ);
       if(!movSnap.empty){
         const lastMov = movSnap.docs[0];
         await updateDoc(doc(db,"movimientos",lastMov.id), { salida: horaActualStr() });
       } else {
-        // Si no hay movimiento abierto, se crea uno solo con salida
         await addDoc(movimientosRef, {
           L: u.L, nombre: u.nombre, dni: u.dni, tipo: u.tipo,
           entrada: "", salida: horaActualStr(), hora: serverTimestamp()
@@ -357,16 +353,16 @@ scanInput.addEventListener("input", async () => {
       }
     }
 
-    scanMessage.style.color = "green";
-    scanMessage.textContent = `Registrado ${tipoAccion} de ${u.nombre}`;
-    scanOk.play?.();
-    setTimeout(()=>{ scanMessage.textContent=""; scanInput.value=""; scanProcessing=false; }, 1800);
-
-  } catch(err){
+    scanOk.style.display = "inline-block";
+    setTimeout(()=>scanOk.style.display = "none", 900);
+    scanModal.classList.remove("active");
+    scanInput.value = "";
+  } catch (err) {
     console.error(err);
     scanMessage.style.color = "red";
     scanMessage.textContent = "Error al registrar";
+    setTimeout(()=>{ scanMessage.textContent=""; },1800);
+  } finally {
     scanProcessing = false;
-    setTimeout(()=>{ scanMessage.textContent=""; scanInput.value=""; },1800);
   }
 });
