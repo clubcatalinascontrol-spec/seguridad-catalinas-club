@@ -1,90 +1,113 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control de Accesos</title>
-  <link rel="stylesheet" href="styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control de Acceso</title>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="container">
-    <h1>Control de Accesos</h1>
 
-    <div class="menu">
-      <button id="usuariosBtn">USUARIOS</button>
-      <button id="movimientosBtn">MOVIMIENTOS</button>
+<header>
+  <h1>Control de Acceso</h1>
+  <nav>
+    <button class="nav-btn active" data-section="usuariosSection">Usuarios</button>
+    <button class="nav-btn" data-section="movimientosSection">Movimientos</button>
+    <button class="nav-btn" data-section="scanSection">Escanear</button>
+  </nav>
+</header>
+
+<main>
+  <!-- USUARIOS -->
+  <section id="usuariosSection" class="page active">
+    <h2>Agregar Usuario</h2>
+    <div class="form-group">
+      <label>#L:</label>
+      <select id="userL"></select>
     </div>
+    <div class="form-group">
+      <label>Nombre:</label>
+      <input type="text" id="userNombre">
+    </div>
+    <div class="form-group">
+      <label>DNI:</label>
+      <input type="text" id="userDni">
+    </div>
+    <div class="form-group">
+      <label>Tipo:</label>
+      <select id="userTipo">
+        <option value="">Seleccione</option>
+        <option value="propietario">Propietario</option>
+        <option value="administracion">Administración</option>
+        <option value="empleado">Empleado</option>
+        <option value="obrero">Obrero</option>
+        <option value="invitado">Invitado</option>
+        <option value="guardia">Guardia</option>
+      </select>
+    </div>
+    <button id="addUserBtn">Agregar Usuario</button>
+    <span id="userMessage"></span>
 
-    <!-- Sección Usuarios -->
-    <section id="usuariosSection" class="hidden">
-      <h2>Usuarios</h2>
-      <form id="usuarioForm">
-        <input type="hidden" id="usuarioId">
-        <label>#L:</label>
-        <input type="text" id="usuarioL" required>
-        <label>Nombre Completo:</label>
-        <input type="text" id="usuarioNombre" required>
-        <label>DNI:</label>
-        <input type="text" id="usuarioDni" required>
-        <label>Tipo:</label>
-        <select id="usuarioTipo" required>
-          <option value="">Seleccionar</option>
-          <option value="propietario">propietario</option>
-          <option value="administración">administración</option>
-          <option value="empleado">empleado</option>
-          <option value="obrero">obrero</option>
-          <option value="invitado">invitado</option>
-          <option value="guardia">guardia</option>
-          <option value="otro">otro</option>
-        </select>
-        <button type="submit">Guardar</button>
-      </form>
+    <h2>Usuarios Registrados</h2>
+    <table id="usersTable">
+      <thead>
+        <tr><th>#L</th><th>Nombre</th><th>DNI</th><th>Tipo</th><th>Acciones</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
 
-      <table id="usuariosTable">
-        <thead>
-          <tr>
-            <th>#L</th>
-            <th>Nombre</th>
-            <th>DNI</th>
-            <th>Tipo</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </section>
+  <!-- MOVIMIENTOS -->
+  <section id="movimientosSection" class="page">
+    <h2>Movimientos</h2>
+    <table id="movimientosTable">
+      <thead>
+        <tr><th>#L</th><th>Nombre</th><th>DNI</th><th>Entrada</th><th>Salida</th><th>Tipo</th><th>Acciones</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div id="pagination"></div>
+    <button id="printPageBtn">Imprimir Movimientos</button>
+  </section>
 
-    <!-- Sección Movimientos -->
-    <section id="movimientosSection" class="hidden">
-      <h2>Movimientos</h2>
-      <div class="scanner">
-        <input type="text" id="scannerInput" placeholder="Escanea o escribe código aquí">
-        <p id="scanMsg"></p>
+  <!-- ESCANEAR -->
+  <section id="scanSection" class="page">
+    <h2>Escanear Código</h2>
+    <button id="scanBtn">Iniciar Escaneo</button>
+
+    <div id="scanModal" class="modal">
+      <div class="modal-content">
+        <label>Ingrese código:</label>
+        <input type="text" id="scanInput" autofocus>
+        <span id="scanMessage"></span>
+        <span id="scanOk">✔</span>
+        <button id="cancelScanBtn">Cancelar</button>
       </div>
+    </div>
+  </section>
+</main>
 
-      <table id="movimientosTable">
-        <thead>
-          <tr>
-            <th>#L</th>
-            <th>Nombre</th>
-            <th>DNI</th>
-            <th>Tipo</th>
-            <th>Entrada</th>
-            <th>Salida</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-      <div class="paginacion">
-        <button id="prevPage">Anterior</button>
-        <span id="pageInfo"></span>
-        <button id="nextPage">Siguiente</button>
-      </div>
-      <button id="imprimirMovimientosBtn">Imprimir Movimientos</button>
-    </section>
+<!-- Edit Modal -->
+<div id="editUserModal" class="modal">
+  <div class="modal-content">
+    <h3>Editar Usuario</h3>
+    <label>#L:</label><select id="editUserL"></select>
+    <label>Nombre:</label><input type="text" id="editUserNombre">
+    <label>DNI:</label><input type="text" id="editUserDni">
+    <label>Tipo:</label><select id="editUserTipo">
+      <option value="propietario">Propietario</option>
+      <option value="administracion">Administración</option>
+      <option value="empleado">Empleado</option>
+      <option value="obrero">Obrero</option>
+      <option value="invitado">Invitado</option>
+      <option value="guardia">Guardia</option>
+    </select>
+    <span id="editUserMsg"></span>
+    <button id="finalizeEditBtn">Guardar</button>
+    <button id="cancelEditBtn">Cancelar</button>
   </div>
+</div>
 
-  <script type="module" src="app.js"></script>
+<script type="module" src="app.js"></script>
 </body>
 </html>
