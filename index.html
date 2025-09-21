@@ -1,128 +1,125 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Catalinas Country — Control de Ingreso</title>
-  <link rel="stylesheet" href="styles.css" />
-  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <meta charset="UTF-8">
+  <title>Panel de Accesos</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header class="topbar">
-  <div class="nav">
-    <div class="nav-center">
-      <button class="nav-btn active" data-section="panel">PANEL</button>
-      <button class="nav-btn" data-section="usuarios">USUARIOS</button>
-      <button class="nav-btn" data-section="config">CONFIG</button>
-    </div>
-  </div>
-</header>
+  <header>
+    <h1>Panel de Accesos</h1>
+    <nav>
+      <button id="btn-movimientos">Movimientos</button>
+      <button id="btn-usuarios">Usuarios</button>
+      <button id="btn-config">Config</button>
+      <button id="btn-escanear">Escanear</button>
+    </nav>
+  </header>
 
-<main class="container">
-  <!-- PANEL -->
-  <section id="panel" class="page active">
-    <h2 class="title-centered">Control de acceso y egreso de Catalinas Country</h2>
-    <div class="controls">
-      <button id="scanBtn">ESCANEAR</button>
-      <button id="printPageBtn">Imprimir movimientos</button>
-      <span id="scanOk" class="okmsg" style="display:none;font-weight:700;">OK</span>
-    </div>
-    <div class="table-wrap">
-      <table id="movimientosTable" class="sheet">
+  <main>
+    <!-- Movimientos -->
+    <section id="seccion-movimientos" class="seccion activa">
+      <h2>Movimientos</h2>
+      <button id="btn-imprimir-movimientos">Imprimir Movimientos</button>
+      <table>
         <thead>
           <tr>
-            <th>#L</th><th>Nombre</th><th>DNI</th><th>H. Entrada</th><th>H. Salida</th><th>Tipo</th><th>Acción</th>
+            <th>#L</th>
+            <th>Nombre</th>
+            <th>DNI</th>
+            <th>Tipo</th>
+            <th>Acción</th>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Acciones</th>
           </tr>
         </thead>
-        <tbody></tbody>
+        <tbody id="tabla-movimientos"></tbody>
       </table>
-    </div>
-    <div id="pagination" class="pagination"></div>
-  </section>
+      <div id="paginacion"></div>
+    </section>
 
-  <!-- USUARIOS -->
-  <section id="usuarios" class="page">
-    <h2 class="title-centered">Gestión de Usuarios</h2>
-    <div class="form-row">
-      <select id="userL"></select>
-      <input id="userNombre" placeholder="Nombre Completo (25 letras)" maxlength="25" />
-      <input id="userDni" placeholder="DNI (max 8 dígitos)" maxlength="8" inputmode="numeric" />
-      <select id="userTipo">
-        <option value="">Tipo</option>
-        <option value="propietario">propietario</option>
-        <option value="administracion">administración</option>
-        <option value="empleado">empleado</option>
-        <option value="obrero">obrero</option>
-        <option value="invitado">invitado</option>
-        <option value="guardia">guardia</option>
-        <option value="otro">otro</option>
-      </select>
-      <button id="addUserBtn">Agregar Usuario</button>
-      <span id="userMessage" class="okmsg"></span>
-    </div>
-    <div class="table-wrap">
-      <table id="usersTable" class="sheet">
+    <!-- Usuarios -->
+    <section id="seccion-usuarios" class="seccion">
+      <h2>Usuarios</h2>
+      <form id="form-usuario">
+        <input type="text" id="numeroLote" placeholder="#L" maxlength="3" required>
+        <input type="text" id="nombreCompleto" placeholder="Nombre completo" maxlength="25" required>
+        <input type="text" id="dni" placeholder="DNI" maxlength="8" required>
+        <select id="tipoUsuario" required>
+          <option value="">Tipo</option>
+          <option value="propietario">propietario</option>
+          <option value="administración">administración</option>
+          <option value="empleado">empleado</option>
+          <option value="obrero">obrero</option>
+          <option value="invitado">invitado</option>
+          <option value="guardia">guardia</option>
+          <option value="otro">otro</option>
+        </select>
+        <button type="submit">Agregar Usuario</button>
+      </form>
+      <table>
         <thead>
-          <tr><th>#L</th><th>Nombre</th><th>DNI</th><th>Tipo</th><th>Acciones</th></tr>
+          <tr>
+            <th>#L</th>
+            <th>Nombre</th>
+            <th>DNI</th>
+            <th>Tipo</th>
+            <th>Acciones</th>
+          </tr>
         </thead>
-        <tbody></tbody>
+        <tbody id="tabla-usuarios"></tbody>
       </table>
-    </div>
-  </section>
+    </section>
 
-  <!-- CONFIG -->
-  <section id="config" class="page">
-    <h2 class="title-centered">Cambiar Contraseña</h2>
-    <div class="form-row">
-      <input id="currentPass" type="password" placeholder="Contraseña actual (4 dígitos)" maxlength="4" inputmode="numeric" />
-      <input id="newPass" type="password" placeholder="Nueva contraseña (4 dígitos)" maxlength="4" inputmode="numeric" />
-      <button id="savePassBtn">Cambiar Contraseña</button>
-    </div>
-    <div class="form-row">
-      <button id="restoreDefaultBtn">Restaurar Contraseña</button>
-      <span id="restoreMsg" class="okmsg"></span>
-    </div>
-    <p class="muted">La contraseña debe estar compuesta únicamente por 4 números. Se usará para editar/eliminar usuarios y movimientos en el panel y para imprimir las tarjetas de cada usuario</p>
-  </section>
-</main>
+    <!-- Config -->
+    <section id="seccion-config" class="seccion">
+      <h2>Configuración</h2>
+      <label>
+        Cambiar contraseña:
+        <input type="password" id="nuevaPassword">
+        <button id="btn-cambiar-password">Guardar</button>
+      </label>
+      <p>Restaurar contraseña por defecto: Si restaura la contraseña por defecto volverá a ser "1234"</p>
+      <button id="btn-restaurar-password">Restaurar</button>
+    </section>
+  </main>
 
-<!-- MODAL ESCANEO -->
-<div id="scanModal" class="scanner-overlay">
-  <div class="scanner-box" role="dialog" aria-modal="true" aria-labelledby="scan-title">
-    <h3 id="scan-title">Escanear código</h3>
-    <input id="scanInput" maxlength="32" placeholder="Pegue/teclee 8 caracteres" inputmode="text" />
-    <div style="margin-top:10px;display:flex;gap:8px;justify-content:center;align-items:center;">
-      <button id="cancelScanBtn">Cancelar</button>
+  <!-- Modal Escanear -->
+  <div id="modal-escanear" class="modal">
+    <div class="modal-contenido">
+      <h2>Escanear código</h2>
+      <input type="text" id="input-codigo" maxlength="20" autofocus>
+      <div id="mensaje-escanear"></div>
+      <button id="btn-cancelar-escanear">Cancelar</button>
     </div>
-    <div id="scanMessage" style="margin-top:10px;font-weight:700;"></div>
   </div>
-</div>
 
-<!-- MODAL EDITAR USUARIO -->
-<div id="editUserModal" class="scanner-overlay">
-  <div class="scanner-box">
-    <h3>Editar Usuario</h3>
-    <select id="editUserL"></select>
-    <input id="editUserNombre" placeholder="Nombre completo (max 25)" maxlength="25"/>
-    <input id="editUserDni" placeholder="DNI (8 dígitos)" maxlength="8" inputmode="numeric"/>
-    <select id="editUserTipo">
-      <option value="">Tipo</option>
-      <option value="propietario">propietario</option>
-      <option value="administracion">administración</option>
-      <option value="empleado">empleado</option>
-      <option value="obrero">obrero</option>
-      <option value="invitado">invitado</option>
-      <option value="guardia">guardia</option>
-      <option value="otro">otro</option>
-    </select>
-    <div class="form-row">
-      <button id="cancelEditBtn">Cancelar</button>
-      <button id="finalizeEditBtn">Finalizar</button>
+  <!-- Modal Editar Usuario -->
+  <div id="modal-editar" class="modal">
+    <div class="modal-contenido">
+      <h2>Editar Usuario</h2>
+      <form id="form-editar-usuario">
+        <input type="text" id="editarLote" maxlength="3" required>
+        <input type="text" id="editarNombre" maxlength="25" required>
+        <input type="text" id="editarDni" maxlength="8" required>
+        <select id="editarTipo" required>
+          <option value="">Tipo</option>
+          <option value="propietario">propietario</option>
+          <option value="administración">administración</option>
+          <option value="empleado">empleado</option>
+          <option value="obrero">obrero</option>
+          <option value="invitado">invitado</option>
+          <option value="guardia">guardia</option>
+          <option value="otro">otro</option>
+        </select>
+        <button type="submit">Finalizar</button>
+        <button type="button" id="btn-cancelar-editar">Cancelar</button>
+      </form>
+      <div id="mensaje-editar"></div>
     </div>
-    <span id="editUserMsg" class="okmsg"></span>
   </div>
-</div>
 
-<script type="module" src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
