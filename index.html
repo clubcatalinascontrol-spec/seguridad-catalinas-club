@@ -105,7 +105,16 @@
     <select id="editUserL"></select>
     <input id="editUserNombre" placeholder="Nombre completo (max 25)" maxlength="25"/>
     <input id="editUserDni" placeholder="DNI (8 dígitos)" maxlength="8" inputmode="numeric"/>
-    <input id="editUserTipo" readonly/>
+    <select id="editUserTipo" disabled>
+      <option value="">Tipo</option>
+      <option value="propietario">propietario</option>
+      <option value="administracion">administración</option>
+      <option value="empleado">empleado</option>
+      <option value="obrero">obrero</option>
+      <option value="invitado">invitado</option>
+      <option value="guardia">guardia</option>
+      <option value="otro">otro</option>
+    </select>
     <div class="form-row">
       <button id="cancelEditBtn">Cancelar</button>
       <button id="finalizeEditBtn">Finalizar</button>
