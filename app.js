@@ -103,6 +103,7 @@ addUserBtn.addEventListener("click",async ()=>{
       setTimeout(()=>{ userMessage.textContent=""; userMessage.style.color=""; }, 2500);
       return;
     }
+
     await addDoc(usuariosRef,{L,nombre,dni,tipo,codigoIngreso:generarCodigo(),codigoSalida:generarCodigo()});
     userMessage.style.color = "green";
     userMessage.textContent="Usuario agregado";
@@ -111,7 +112,7 @@ addUserBtn.addEventListener("click",async ()=>{
   }catch(err){ console.error(err); userMessage.textContent="Error"; }
 });
 
-// Render usuarios en tiempo real
+// Render usuarios en tiempo real (orden por L)
 onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
   usersTableBody.innerHTML="";
   snapshot.docs.forEach(docSnap=>{
@@ -216,7 +217,7 @@ onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
 });
 
 /* -----------------------------
-   MOVIMIENTOS
+   MOVIMIENTOS (ordenados por hora desc — más recientes arriba)
 ----------------------------- */
 const movimientosTableBody=document.querySelector("#movimientosTable tbody");
 const paginationDiv=document.getElementById("pagination");
@@ -278,7 +279,7 @@ document.getElementById("printPageBtn").addEventListener("click",()=>{
 });
 
 /* -----------------------------
-   ESCANEAR CÓDIGOS
+   ESCANEAR CÓDIGOS AUTOMÁTICO
 ----------------------------- */
 const scanBtn = document.getElementById("scanBtn");
 const scanModal = document.getElementById("scanModal");
@@ -313,9 +314,8 @@ scanInput.addEventListener("input", async () => {
 
     const qIngreso = query(usuariosRef, where("codigoIngreso", "==", code));
     const snap = await getDocs(qIngreso);
-    if(!snap.empty){
-      userDoc = snap.docs[0];
-    } else {
+    if(!snap.empty){ userDoc = snap.docs[0]; }
+    else{
       const qSalida = query(usuariosRef, where("codigoSalida", "==", code));
       const snap2 = await getDocs(qSalida);
       if(!snap2.empty){ userDoc = snap2.docs[0]; tipoAccion="salida"; }
@@ -336,21 +336,13 @@ scanInput.addEventListener("input", async () => {
         entrada: horaActualStr(), salida: "", hora: serverTimestamp()
       });
     } else {
-      // --- CORRECCIÓN: actualizar último movimiento abierto correctamente ---
-      const movQ = query(movimientosRef, where("L","==",u.L), orderBy("hora","desc"), limit(1));
-      const movSnap = await getDocs(movQ);
+      const movSnap = await getDocs(query(movimientosRef, where("L","==",u.L), where("salida","==","")));
       if(!movSnap.empty){
-        const lastMov = movSnap.docs[0];
-        const lastData = lastMov.data();
-        if(!lastData.salida){ // si está abierto, actualizar salida
-          await updateDoc(doc(db,"movimientos",lastMov.id), { salida: horaActualStr() });
-        } else { // si no hay movimiento abierto, crear uno nuevo con salida
-          await addDoc(movimientosRef, {
-            L: u.L, nombre: u.nombre, dni: u.dni, tipo: u.tipo,
-            entrada: "", salida: horaActualStr(), hora: serverTimestamp()
-          });
-        }
-      } else { // si no hay movimientos previos, crear uno con salida
+        let lastMov = movSnap.docs.reduce((a,b)=>{
+          return (!a || a.data().hora.toMillis() < b.data().hora.toMillis()) ? b : a;
+        }, null);
+        await updateDoc(doc(db,"movimientos",lastMov.id), { salida: horaActualStr() });
+      } else {
         await addDoc(movimientosRef, {
           L: u.L, nombre: u.nombre, dni: u.dni, tipo: u.tipo,
           entrada: "", salida: horaActualStr(), hora: serverTimestamp()
@@ -366,32 +358,7 @@ scanInput.addEventListener("input", async () => {
     console.error(err);
     scanMessage.style.color = "red";
     scanMessage.textContent = "Error al registrar";
-    setTimeout(()=>{ scanMessage.textContent=""; },1800);
-  } finally {
-    scanProcessing = false;
+    setTimeout(()=>{ scanMessage.textContent = ""; }, 1800);
   }
-});
-
-/* -----------------------------
-   CONFIGURACIÓN CONTRASEÑA
------------------------------ */
-document.getElementById("savePassBtn").addEventListener("click", ()=>{
-  const cur=document.getElementById("currentPass").value.trim();
-  const nue=document.getElementById("newPass").value.trim();
-  if(!checkPass(cur)){ alert("Contraseña actual incorrecta"); return; }
-  if(!/^\d{4}$/.test(nue)){ alert("Nueva contraseña debe ser 4 dígitos"); return; }
-  localStorage.setItem("adminPass", nue);
-  alert("Contraseña cambiada correctamente");
-  document.getElementById("currentPass").value="";
-  document.getElementById("newPass").value="";
-});
-
-document.getElementById("restoreDefaultBtn").addEventListener("click", ()=>{
-  const p = prompt("Ingrese contraseña maestra para restaurar la contraseña por defecto");
-  if(p !== MASTER_PASS){ alert("Contraseña maestra incorrecta"); return; }
-  localStorage.setItem("adminPass","1234");
-  const restoreMsg=document.getElementById("restoreMsg");
-  restoreMsg.style.color="green";
-  restoreMsg.textContent="Ahora la contraseña nueva es 1234";
-  setTimeout(()=>restoreMsg.textContent="",2500);
+  scanProcessing = false;
 });
