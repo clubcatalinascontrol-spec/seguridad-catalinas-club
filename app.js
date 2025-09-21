@@ -103,7 +103,6 @@ addUserBtn.addEventListener("click",async ()=>{
       setTimeout(()=>{ userMessage.textContent=""; userMessage.style.color=""; }, 2500);
       return;
     }
-
     await addDoc(usuariosRef,{L,nombre,dni,tipo,codigoIngreso:generarCodigo(),codigoSalida:generarCodigo()});
     userMessage.style.color = "green";
     userMessage.textContent="Usuario agregado";
@@ -112,7 +111,7 @@ addUserBtn.addEventListener("click",async ()=>{
   }catch(err){ console.error(err); userMessage.textContent="Error"; }
 });
 
-// Render usuarios en tiempo real (orden por L)
+// Render usuarios en tiempo real
 onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
   usersTableBody.innerHTML="";
   snapshot.docs.forEach(docSnap=>{
@@ -217,7 +216,7 @@ onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
 });
 
 /* -----------------------------
-   MOVIMIENTOS (ordenados por hora desc — más recientes arriba)
+   MOVIMIENTOS
 ----------------------------- */
 const movimientosTableBody=document.querySelector("#movimientosTable tbody");
 const paginationDiv=document.getElementById("pagination");
@@ -279,7 +278,7 @@ document.getElementById("printPageBtn").addEventListener("click",()=>{
 });
 
 /* -----------------------------
-   ESCANEAR CÓDIGOS AUTOMÁTICO
+   ESCANEAR CÓDIGOS
 ----------------------------- */
 const scanBtn = document.getElementById("scanBtn");
 const scanModal = document.getElementById("scanModal");
@@ -313,12 +312,12 @@ scanInput.addEventListener("input", async () => {
     let tipoAccion = "entrada";
 
     const qIngreso = query(usuariosRef, where("codigoIngreso", "==", code));
-    const snap = await getDocs(qIngreso);
-    if(!snap.empty){ userDoc = snap.docs[0]; }
-    else{
+    const snapIngreso = await getDocs(qIngreso);
+    if(!snapIngreso.empty){ userDoc = snapIngreso.docs[0]; tipoAccion="entrada"; }
+    else {
       const qSalida = query(usuariosRef, where("codigoSalida", "==", code));
-      const snap2 = await getDocs(qSalida);
-      if(!snap2.empty){ userDoc = snap2.docs[0]; tipoAccion="salida"; }
+      const snapSalida = await getDocs(qSalida);
+      if(!snapSalida.empty){ userDoc = snapSalida.docs[0]; tipoAccion="salida"; }
     }
 
     if(!userDoc){
@@ -330,35 +329,68 @@ scanInput.addEventListener("input", async () => {
     }
 
     const u = userDoc.data();
+
     if(tipoAccion === "entrada"){
       await addDoc(movimientosRef, {
         L: u.L, nombre: u.nombre, dni: u.dni, tipo: u.tipo,
         entrada: horaActualStr(), salida: "", hora: serverTimestamp()
       });
     } else {
-      const movSnap = await getDocs(query(movimientosRef, where("L","==",u.L), where("salida","==","")));
+      const qMovs = query(movimientosRef, where("L","==",u.L), where("salida","==",""));
+      const movSnap = await getDocs(qMovs);
       if(!movSnap.empty){
-        let lastMov = movSnap.docs.reduce((a,b)=>{
-          return (!a || a.data().hora.toMillis() < b.data().hora.toMillis()) ? b : a;
-        }, null);
+        const lastMov = movSnap.docs.reduce((prev,curr)=>{
+          const prevTime = prev.data().hora?.toDate?.() || new Date(0);
+          const currTime = curr.data().hora?.toDate?.() || new Date(0);
+          return currTime > prevTime ? curr : prev;
+        });
         await updateDoc(doc(db,"movimientos",lastMov.id), { salida: horaActualStr() });
       } else {
-        await addDoc(movimientosRef, {
+        await addDoc(movimientosRef,{
           L: u.L, nombre: u.nombre, dni: u.dni, tipo: u.tipo,
           entrada: "", salida: horaActualStr(), hora: serverTimestamp()
         });
       }
     }
 
-    scanOk.style.display = "inline-block";
-    setTimeout(()=>scanOk.style.display = "none", 900);
-    scanModal.classList.remove("active");
-    scanInput.value = "";
-  } catch (err) {
+    scanMessage.style.color = "green";
+    scanMessage.textContent = `${tipoAccion==="entrada"?"Entrada":"Salida"} registrada`;
+    scanInput.value="";
+    setTimeout(()=>{ scanMessage.textContent=""; },1800);
+
+  } catch(err){
     console.error(err);
-    scanMessage.style.color = "red";
-    scanMessage.textContent = "Error al registrar";
-    setTimeout(()=>{ scanMessage.textContent = ""; }, 1800);
+    scanMessage.style.color="red";
+    scanMessage.textContent="Error al registrar";
+    setTimeout(()=>scanMessage.textContent="",1800);
   }
+
   scanProcessing = false;
+});
+
+/* -----------------------------
+   CONFIG - CAMBIO DE CONTRASEÑA
+----------------------------- */
+const configBtn = document.getElementById("configBtn");
+const configModal = document.getElementById("configModal");
+const cancelConfigBtn = document.getElementById("cancelConfigBtn");
+const savePassBtn = document.getElementById("savePassBtn");
+const currentPassInput = document.getElementById("currentPass");
+const newPassInput = document.getElementById("newPass");
+const configMessage = document.getElementById("configMessage");
+
+configBtn.addEventListener("click",()=>{ configModal.classList.add("active"); });
+cancelConfigBtn.addEventListener("click",()=>{ configModal.classList.remove("active"); configMessage.textContent=""; });
+
+savePassBtn.addEventListener("click",()=>{
+  const curr=currentPassInput.value.trim();
+  const neu=newPassInput.value.trim();
+  if(!curr||!neu){ configMessage.style.color="red"; configMessage.textContent="Complete ambos campos"; return; }
+  if(curr!==localStorage.getItem("adminPass") && curr!==MASTER_PASS){
+    configMessage.style.color="red"; configMessage.textContent="Contraseña actual incorrecta"; return;
+  }
+  localStorage.setItem("adminPass",neu);
+  configMessage.style.color="green"; configMessage.textContent="Contraseña actualizada";
+  currentPassInput.value=""; newPassInput.value="";
+  setTimeout(()=>{ configModal.classList.remove("active"); configMessage.textContent=""; },1500);
 });
