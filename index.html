@@ -7,13 +7,15 @@
   <link rel="stylesheet" href="styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 </head>
-<body>
+<body class="modo-dia">
 <header class="topbar">
   <div class="nav">
     <div class="nav-center">
       <button class="nav-btn active" data-section="panel">PANEL</button>
       <button class="nav-btn" data-section="usuarios">USUARIOS</button>
       <button class="nav-btn" data-section="config">CONFIG</button>
+      <button class="nav-btn" id="modoDiaBtn">DÍA</button>
+      <button class="nav-btn" id="modoNocheBtn">NOCHE</button>
     </div>
   </div>
 </header>
@@ -142,5 +144,17 @@
 </div>
 
 <script type="module" src="app.js"></script>
+<script>
+  // Alternar modos sin JS externo complicado
+  const body = document.body;
+  document.getElementById('modoDiaBtn').addEventListener('click', () => {
+    body.classList.remove('modo-noche');
+    body.classList.add('modo-dia');
+  });
+  document.getElementById('modoNocheBtn').addEventListener('click', () => {
+    body.classList.remove('modo-dia');
+    body.classList.add('modo-noche');
+  });
+</script>
 </body>
 </html>
