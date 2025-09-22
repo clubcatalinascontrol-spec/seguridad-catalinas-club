@@ -1,116 +1,65 @@
-:root{
-  --bg:#f5f5f5;
-  --panel:#ffffff;
-  --accent:#f4cf19;
-  --muted:#666666;
-  --text:#111111;
-  --white:#ffffff;
-  --blur-bg:rgba(0,0,0,0.35);
-  --btn-del:#c0392b;
-  --btn-edit:#2d88ff;
-  --btn-primary:#333;
-  --tab-text:#000000; /* botones de panel en negro como pediste */
-}
+/* Reset y tipografía */
+* { margin:0; padding:0; box-sizing:border-box; font-family: "Poppins", sans-serif; }
+body { line-height:1.4; transition: background 0.3s, color 0.3s; }
 
-/* reset y base */
-*{box-sizing:border-box}
-html,body{height:100%}
-body{
-  margin:0;
-  font-family:"Inter",Arial,sans-serif;
-  background:var(--bg);
-  color:var(--text);
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
-}
+/* Modo Día (por defecto) */
+body.modo-dia { background: #f5f5f5; color: #1f2634; }
+body.modo-day { background: #f5f5f5; color: #1f2634; }
 
-/* top nav centrado */
-.topbar{ padding:18px 8px; display:flex; justify-content:center; position:sticky; top:0; background:var(--panel); z-index:50; box-shadow:0 2px 8px rgba(0,0,0,0.06);}
-.nav-center{ display:flex; gap:12px; align-items:center; flex-wrap:wrap;}
-.nav-btn{
-  background:var(--panel);
-  color:var(--tab-text);
-  padding:10px 14px;
-  border-radius:8px;
-  border:2px solid transparent;
-  font-weight:700;
-  cursor:pointer;
-}
-.nav-btn.active{ background:var(--accent); color:#111; border-color:var(--accent); }
-.nav-btn:hover{ opacity:0.95; transform:translateY(-2px); }
+/* Topbar / Nav */
+.topbar { padding:8px 0; box-shadow:0 2px 4px rgba(0,0,0,0.1); position:sticky; top:0; z-index:100; }
+.nav-center { display:flex; gap:6px; justify-content:center; flex-wrap:wrap; }
+.nav-btn { padding:6px 12px; border-radius:6px; cursor:pointer; transition:all 0.3s; border:none; font-weight:600; background:#e0e0e0; color:#1f2634; }
+.nav-btn.active { background:#f4cf19; color:#111; }
+.nav-btn.static-day { background:transparent; font-weight:700; color:#111; pointer-events:none; }
 
-/* layout */
-.container{ max-width:1100px; margin:18px auto; padding:0 16px; }
-.page{ display:none; background:var(--panel); padding:18px; border-radius:12px; box-shadow:0 6px 22px rgba(0,0,0,0.08); }
-.page.active{ display:block; }
-.title-centered{text-align:center; margin-bottom:12px;}
+/* Controls / Tabs */
+.filters-group { padding:8px; border-radius:8px; } /* wrapper for category buttons */
 
-/* controls */
-.controls{ display:flex; gap:10px; justify-content:center; margin-bottom:12px; align-items:center;}
-.primary-action{ background:transparent; color:var(--tab-text); border:2px solid var(--tab-text); padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:700; }
-.primary-action:hover{ background:var(--tab-text); color:#fff; }
+.tab-btn { padding:6px 10px; border-radius:6px; cursor:pointer; border:none; font-weight:500; transition:0.3s; background:#e8e8e8; color:#111; }
+.tab-btn.active { background:#f4cf19; color:#111; }
+.tab-btn:hover { transform:translateY(-1px); }
 
-/* tabs wrap */
-.tabs-wrap{ display:flex; justify-content:center; }
-.tabs-inner{ display:flex; gap:8px; padding:8px; border-radius:10px; background:rgba(0,0,0,0.02); }
-.tab-btn{ background:transparent; color:var(--tab-text); padding:8px 10px; border-radius:6px; cursor:pointer; border:1px solid transparent; font-weight:600; }
-.tab-btn.active{ background:var(--panel); border-color:rgba(0,0,0,0.06); }
+/* Container general */
+.container { max-width:1200px; margin:20px auto; padding:0 12px; }
+.page { display:none; animation:fadeIn 0.3s ease; }
+.page.active { display:block; }
 
-/* forms */
-.legend{ text-align:center; color:var(--muted); font-size:13px; margin-bottom:8px;}
-.form-row{ display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
-input, select, textarea{
-  background:#fafafa; color:var(--text);
-  border:1px solid #ccc; padding:8px 10px; border-radius:8px; min-width:140px;
-}
-textarea{ resize:vertical; }
-input::placeholder{ color:#999; }
+/* Titles */
+.title-centered { text-align:center; margin-bottom:20px; font-weight:700; }
 
-/* tabla */
-.table-wrap{ overflow:auto; margin-top:10px; }
-.sheet{ width:100%; border-collapse:collapse; background:#fff; color:#000; border-radius:8px; overflow:hidden;}
-.sheet thead th{
-  background:#f4f4f4; font-weight:700; padding:10px 8px; text-align:center;
-}
-.sheet th, .sheet td{
-  border-bottom:1px solid #eee; padding:10px 6px; font-size:14px; text-align:center;
-}
-.sheet tbody tr:nth-child(even){ background: #fbfbfb; }
+/* Tables */
+.sheet { width:100%; border-collapse:collapse; margin-top:12px; border-radius:8px; overflow:hidden; }
+.sheet th, .sheet td { padding:8px 6px; text-align:center; font-size:0.95rem; }
+.sheet th { background:#f4cf19; color:#111; }
+.sheet tr:nth-child(even) { background:rgba(0,0,0,0.03); }
 
-/* botones dentro de tabla */
-.sheet td button{ padding:6px 8px; border-radius:6px; cursor:pointer; border:none; }
-.sheet td .del-btn{ background:var(--btn-del); color:#fff; }
-.sheet td .edit-btn{ background:var(--btn-edit); color:#fff; margin-right:6px; }
-.sheet td .print-btn{ background:#333; color:#fff; margin-left:6px; }
-.sheet td .ficha-btn{ background:#7b61ff; color:#fff; margin-right:6px; }
+/* Table-wrap */
+.table-wrap { margin-top:12px; border-radius:10px; overflow:hidden; background:#fff; padding:8px; }
 
-/* pagination */
-.pagination{ margin-top:12px; display:flex; gap:6px; justify-content:center; flex-wrap:wrap; }
+/* Formularios y botones */
+.form-row { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-bottom:12px; }
+input, select, button, textarea { padding:6px 8px; border-radius:6px; font-size:0.95rem; cursor:pointer; transition:0.3s; border:1px solid #ccc; background:#fff; color:#111; }
+textarea { resize:vertical; }
+.okmsg { margin-left:8px; color:#0a0; font-weight:700; }
 
-/* mensajes */
-.okmsg{ color:#0a0; font-weight:700; margin-left:8px; }
-.muted{ color:var(--muted); font-size:13px; }
+/* Botones de acción consistentes */
+.action-delete { background:#ff4d4f; color:#fff; border:none; padding:6px 8px; border-radius:6px; cursor:pointer; }
+.action-edit { background:#2b7cff; color:#fff; border:none; padding:6px 8px; border-radius:6px; cursor:pointer; }
 
-/* scanner modal y edit modal */
-.scanner-overlay{ display:none; position:fixed; inset:0; justify-content:center; align-items:center; background:var(--blur-bg); backdrop-filter:blur(4px); z-index:2000; }
-.scanner-overlay.active{ display:flex; }
-.scanner-box{ background:var(--panel); padding:20px; border-radius:12px; text-align:center; box-shadow:0 10px 40px rgba(0,0,0,0.12); }
-.scanner-box input, .scanner-box select, .scanner-box textarea{ width:240px; padding:8px 10px; border-radius:8px; border:1px solid #ccc; font-size:16px; text-align:center; margin:4px 0; }
+/* Modales */
+.scanner-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:200; }
+.scanner-overlay.active { display:flex; }
+.scanner-box { padding:20px; border-radius:10px; width:90%; max-width:480px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.3); background:#fff; color:#111; }
 
-/* botones estilo coherente */
-button#cancelFichaBtn, #cancelEditBtn, #cancelScanBtn{ background:transparent; color:var(--tab-text); border:1px solid rgba(0,0,0,0.08); padding:8px 10px; border-radius:8px; }
-button#finalizeEditBtn, button#addUserBtn, button#printActiveBtn, button#saveNovedadBtn{ background:var(--btn-edit); color:#fff; border:none; padding:8px 10px; border-radius:8px; cursor:pointer; }
+/* Animaciones */
+@keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
 
-/* novedades action colors (edit same as users edit, delete same as users delete) */
-.novedad-edit{ background:var(--btn-edit); color:#fff; padding:6px 8px; border-radius:6px; border:none; cursor:pointer; }
-.novedad-delete{ background:var(--btn-del); color:#fff; padding:6px 8px; border-radius:6px; border:none; cursor:pointer; }
+/* Paginación */
+.pagination { margin-top:10px; text-align:center; }
+.pagination button { padding:4px 8px; margin:2px; border:none; border-radius:4px; cursor:pointer; }
 
-/* visual highlight recent */
-.sheet tr.recent { background: rgba(0,200,200,0.12); animation:fadeToNormal 4s forwards; }
-@keyframes fadeToNormal { from { background: rgba(0,200,200,0.18); } to { background: transparent; } }
+/* Estética extra */
+.muted { font-size:0.9rem; color:#666; margin-top:8px; }
 
-/* small screens */
-@media (max-width:800px){
-  .form-row{ flex-direction:column; align-items:center; }
-  .scanner-box input, .scanner-box select{ width:90%; }
-}
+/* Hacer que botones de PANEL tengan texto negro (ya aplicado en .tab-btn) */
