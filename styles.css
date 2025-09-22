@@ -1,282 +1,116 @@
-/* Reset y tipografía */
-* {
+:root{
+  --bg:#f5f5f5;
+  --panel:#ffffff;
+  --accent:#f4cf19;
+  --muted:#666666;
+  --text:#111111;
+  --white:#ffffff;
+  --blur-bg:rgba(0,0,0,0.35);
+  --btn-del:#c0392b;
+  --btn-edit:#2d88ff;
+  --btn-primary:#333;
+  --tab-text:#000000; /* botones de panel en negro como pediste */
+}
+
+/* reset y base */
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
   margin:0;
-  padding:0;
-  box-sizing:border-box;
-  font-family: "Poppins", sans-serif;
-}
-body {
-  line-height:1.4;
-  transition: background 0.3s, color 0.3s;
+  font-family:"Inter",Arial,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
 }
 
-/* Modo Día (por defecto) */
-body.modo-dia {
-  background: #f5f5f5;
-  color: #1f2634;
-}
-body.modo-dia .topbar {
-  background:#ffffff;
-}
-body.modo-dia .nav-btn {
-  background:#e0e0e0;
-  color:#1f2634;
-}
-body.modo-dia .nav-btn.active {
-  background:#f4cf19;
-  color:#1f2634;
-}
-body.modo-dia .tab-btn {
-  background:#e8e8e8;
-  color:#1f2634;
-}
-body.modo-dia .tab-btn.active {
-  background:#f4cf19;
-  color:#1f2634;
-}
-body.modo-dia .sheet {
-  background:#ffffff;
-  color:#1f2634;
-  border:1px solid #ccc;
-}
-body.modo-dia .table-wrap {
-  background:#ffffff;
-  border-radius:10px;
-  padding:10px;
-  box-shadow:0 0 8px rgba(0,0,0,0.05);
-}
-body.modo-dia .scanner-box, .modal-content {
-  background:#ffffff;
-  color:#1f2634;
-}
-body.modo-dia input, body.modo-dia select, body.modo-dia button {
-  background:#fff;
-  color:#1f2634;
-  border:1px solid #ccc;
-}
-body.modo-dia input:focus, body.modo-dia select:focus {
-  outline:2px solid #f4cf19;
-}
-
-/* Modo Noche */
-body.modo-noche {
-  background: #1f2634;
-  color: #f5f5f5;
-}
-body.modo-noche .topbar {
-  background:#111827;
-}
-body.modo-noche .nav-btn {
-  background:#2c3346;
-  color:#f5f5f5;
-}
-body.modo-noche .nav-btn.active {
-  background:#f4cf19;
-  color:#1f2634;
-}
-body.modo-noche .tab-btn {
-  background:#2c3346;
-  color:#f5f5f5;
-}
-body.modo-noche .tab-btn.active {
-  background:#f4cf19;
-  color:#1f2634;
-}
-body.modo-noche .sheet {
-  background:#111827;
-  color:#f5f5f5;
-  border:1px solid #444;
-}
-body.modo-noche .table-wrap {
-  background:#1f2634;
-  border-radius:10px;
-  padding:10px;
-  box-shadow:0 0 12px rgba(0,0,0,0.3);
-}
-body.modo-noche .scanner-box, .modal-content {
-  background:#2c3346;
-  color:#f5f5f5;
-}
-body.modo-noche input, body.modo-noche select, body.modo-noche button {
-  background:#2c3346;
-  color:#f5f5f5;
-  border:1px solid #555;
-}
-body.modo-noche input:focus, body.modo-noche select:focus {
-  outline:2px solid #f4cf19;
-}
-
-/* Topbar y navegación */
-.topbar {
-  padding:8px 0;
-  box-shadow:0 2px 4px rgba(0,0,0,0.1);
-  position:sticky;
-  top:0;
-  z-index:100;
-}
-.nav-center {
-  display:flex;
-  gap:6px;
-  justify-content:center;
-  flex-wrap:wrap;
-}
-.nav-btn {
-  padding:6px 12px;
-  border-radius:6px;
-  cursor:pointer;
-  transition:all 0.3s;
-  border:none;
-  font-weight:600;
-  color:black; /* Letras negras para PANEL buttons */
-}
-.nav-btn:hover {
-  transform:translateY(-2px);
-}
-
-/* Controles de pestañas */
-.tab-btn {
-  padding:6px 10px;
-  border-radius:6px;
-  cursor:pointer;
-  border:none;
-  font-weight:500;
-  transition:0.3s;
-  color:black; /* Letras negras para PANEL tabs */
-}
-.tab-btn:hover {
-  transform:translateY(-1px);
-}
-
-/* Contenedor general */
-.container {
-  max-width:1200px;
-  margin:20px auto;
-  padding:0 12px;
-}
-.page {
-  display:none;
-  animation:fadeIn 0.3s ease;
-}
-.page.active {
-  display:block;
-}
-
-/* Títulos */
-.title-centered {
-  text-align:center;
-  margin-bottom:20px;
-  font-weight:700;
-}
-
-/* Tablas */
-.sheet {
-  width:100%;
-  border-collapse:collapse;
-  margin-top:12px;
+/* top nav centrado */
+.topbar{ padding:18px 8px; display:flex; justify-content:center; position:sticky; top:0; background:var(--panel); z-index:50; box-shadow:0 2px 8px rgba(0,0,0,0.06);}
+.nav-center{ display:flex; gap:12px; align-items:center; flex-wrap:wrap;}
+.nav-btn{
+  background:var(--panel);
+  color:var(--tab-text);
+  padding:10px 14px;
   border-radius:8px;
-  overflow:hidden;
-}
-.sheet th, .sheet td {
-  padding:8px 6px;
-  text-align:center;
-  font-size:0.95rem;
-}
-.sheet th {
-  background:#f4cf19;
-  color:#1f2634;
-}
-.sheet tr:nth-child(even) {
-  background:rgba(0,0,0,0.03);
-}
-.sheet tr.highlight {
-  background:cyan;
-  transition:4s background;
-}
-
-/* Table-wrap */
-.table-wrap {
-  margin-top:12px;
-  border-radius:10px;
-  overflow:hidden;
-}
-
-/* Formularios y botones */
-.form-row {
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap;
-  justify-content:center;
-  margin-bottom:12px;
-}
-input, select, button {
-  padding:6px 8px;
-  border-radius:6px;
-  font-size:0.95rem;
-  cursor:pointer;
-  transition:0.3s;
-}
-button:hover {
-  transform:translateY(-1px);
-}
-
-/* Botones de ACCIÓN uniformes */
-.btn-eliminar {
-  background:#f44336;
-  color:#fff;
-  border:none;
-  padding:4px 8px;
-  border-radius:4px;
+  border:2px solid transparent;
+  font-weight:700;
   cursor:pointer;
 }
-.btn-editar {
-  background:#2196f3;
-  color:#fff;
-  border:none;
-  padding:4px 8px;
-  border-radius:4px;
-  cursor:pointer;
-}
-.btn-eliminar:hover, .btn-editar:hover {
-  opacity:0.85;
-}
+.nav-btn.active{ background:var(--accent); color:#111; border-color:var(--accent); }
+.nav-btn:hover{ opacity:0.95; transform:translateY(-2px); }
 
-/* Modales */
-.modal, .scanner-overlay {
-  display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,0.5);
-  justify-content:center;
-  align-items:center;
-  z-index:200;
-}
-.modal.active, .scanner-overlay.active {
-  display:flex;
-}
-.modal-content, .scanner-box {
-  padding:20px;
-  border-radius:10px;
-  width:90%;
-  max-width:400px;
-  text-align:center;
-  box-shadow:0 4px 12px rgba(0,0,0,0.3);
-}
+/* layout */
+.container{ max-width:1100px; margin:18px auto; padding:0 16px; }
+.page{ display:none; background:var(--panel); padding:18px; border-radius:12px; box-shadow:0 6px 22px rgba(0,0,0,0.08); }
+.page.active{ display:block; }
+.title-centered{text-align:center; margin-bottom:12px;}
 
-/* Animaciones */
-@keyframes fadeIn {
-  from {opacity:0;}
-  to {opacity:1;}
-}
+/* controls */
+.controls{ display:flex; gap:10px; justify-content:center; margin-bottom:12px; align-items:center;}
+.primary-action{ background:transparent; color:var(--tab-text); border:2px solid var(--tab-text); padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:700; }
+.primary-action:hover{ background:var(--tab-text); color:#fff; }
 
-/* Paginación */
-.pagination {
-  margin-top:10px;
-  text-align:center;
+/* tabs wrap */
+.tabs-wrap{ display:flex; justify-content:center; }
+.tabs-inner{ display:flex; gap:8px; padding:8px; border-radius:10px; background:rgba(0,0,0,0.02); }
+.tab-btn{ background:transparent; color:var(--tab-text); padding:8px 10px; border-radius:6px; cursor:pointer; border:1px solid transparent; font-weight:600; }
+.tab-btn.active{ background:var(--panel); border-color:rgba(0,0,0,0.06); }
+
+/* forms */
+.legend{ text-align:center; color:var(--muted); font-size:13px; margin-bottom:8px;}
+.form-row{ display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
+input, select, textarea{
+  background:#fafafa; color:var(--text);
+  border:1px solid #ccc; padding:8px 10px; border-radius:8px; min-width:140px;
 }
-.pagination button {
-  padding:4px 8px;
-  margin:2px;
-  border:none;
-  border-radius:4px;
-  cursor:pointer;
+textarea{ resize:vertical; }
+input::placeholder{ color:#999; }
+
+/* tabla */
+.table-wrap{ overflow:auto; margin-top:10px; }
+.sheet{ width:100%; border-collapse:collapse; background:#fff; color:#000; border-radius:8px; overflow:hidden;}
+.sheet thead th{
+  background:#f4f4f4; font-weight:700; padding:10px 8px; text-align:center;
+}
+.sheet th, .sheet td{
+  border-bottom:1px solid #eee; padding:10px 6px; font-size:14px; text-align:center;
+}
+.sheet tbody tr:nth-child(even){ background: #fbfbfb; }
+
+/* botones dentro de tabla */
+.sheet td button{ padding:6px 8px; border-radius:6px; cursor:pointer; border:none; }
+.sheet td .del-btn{ background:var(--btn-del); color:#fff; }
+.sheet td .edit-btn{ background:var(--btn-edit); color:#fff; margin-right:6px; }
+.sheet td .print-btn{ background:#333; color:#fff; margin-left:6px; }
+.sheet td .ficha-btn{ background:#7b61ff; color:#fff; margin-right:6px; }
+
+/* pagination */
+.pagination{ margin-top:12px; display:flex; gap:6px; justify-content:center; flex-wrap:wrap; }
+
+/* mensajes */
+.okmsg{ color:#0a0; font-weight:700; margin-left:8px; }
+.muted{ color:var(--muted); font-size:13px; }
+
+/* scanner modal y edit modal */
+.scanner-overlay{ display:none; position:fixed; inset:0; justify-content:center; align-items:center; background:var(--blur-bg); backdrop-filter:blur(4px); z-index:2000; }
+.scanner-overlay.active{ display:flex; }
+.scanner-box{ background:var(--panel); padding:20px; border-radius:12px; text-align:center; box-shadow:0 10px 40px rgba(0,0,0,0.12); }
+.scanner-box input, .scanner-box select, .scanner-box textarea{ width:240px; padding:8px 10px; border-radius:8px; border:1px solid #ccc; font-size:16px; text-align:center; margin:4px 0; }
+
+/* botones estilo coherente */
+button#cancelFichaBtn, #cancelEditBtn, #cancelScanBtn{ background:transparent; color:var(--tab-text); border:1px solid rgba(0,0,0,0.08); padding:8px 10px; border-radius:8px; }
+button#finalizeEditBtn, button#addUserBtn, button#printActiveBtn, button#saveNovedadBtn{ background:var(--btn-edit); color:#fff; border:none; padding:8px 10px; border-radius:8px; cursor:pointer; }
+
+/* novedades action colors (edit same as users edit, delete same as users delete) */
+.novedad-edit{ background:var(--btn-edit); color:#fff; padding:6px 8px; border-radius:6px; border:none; cursor:pointer; }
+.novedad-delete{ background:var(--btn-del); color:#fff; padding:6px 8px; border-radius:6px; border:none; cursor:pointer; }
+
+/* visual highlight recent */
+.sheet tr.recent { background: rgba(0,200,200,0.12); animation:fadeToNormal 4s forwards; }
+@keyframes fadeToNormal { from { background: rgba(0,200,200,0.18); } to { background: transparent; } }
+
+/* small screens */
+@media (max-width:800px){
+  .form-row{ flex-direction:column; align-items:center; }
+  .scanner-box input, .scanner-box select{ width:90%; }
 }
