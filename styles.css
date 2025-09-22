@@ -1,268 +1,80 @@
-/* ================================================
-   BASE
-   ================================================ */
-body {
-  margin: 0;
-  font-family: 'Poppins', sans-serif;
-  background-color: #18191a; /* fondo dark */
-  color: #e4e6eb;
+/* Reset y tipografía */
+* { margin:0; padding:0; box-sizing:border-box; font-family: "Poppins", sans-serif; }
+body { line-height:1.4; transition: background 0.3s, color 0.3s; }
+
+/* Modo Día (por defecto) */
+body.modo-dia {
+  background: #f5f5f5;
+  color: #1f2634;
 }
+body.modo-dia .topbar { background:#ffffff; }
+body.modo-dia .nav-btn { background:#e0e0e0; color:#1f2634; }
+body.modo-dia .nav-btn.active { background:#f4cf19; color:#1f2634; }
+body.modo-dia .tab-btn { background:#e8e8e8; color:#1f2634; }
+body.modo-dia .tab-btn.active { background:#f4cf19; color:#1f2634; }
+body.modo-dia .sheet { background:#ffffff; color:#1f2634; border:1px solid #ccc; }
+body.modo-dia .table-wrap { background:#ffffff; border-radius:10px; padding:10px; box-shadow:0 0 8px rgba(0,0,0,0.05);}
+body.modo-dia .scanner-box { background:#ffffff; color:#1f2634; }
+body.modo-dia input, body.modo-dia select, body.modo-dia button { background:#fff; color:#1f2634; border:1px solid #ccc; }
+body.modo-dia input:focus, body.modo-dia select:focus { outline:2px solid #f4cf19; }
 
-h2.title-centered {
-  text-align: center;
-  margin-bottom: 16px;
-  color: #f4cf19;
+/* Modo Noche */
+body.modo-noche {
+  background: #1f2634;
+  color: #f5f5f5;
 }
+body.modo-noche .topbar { background:#111827; }
+body.modo-noche .nav-btn { background:#2c3346; color:#f5f5f5; }
+body.modo-noche .nav-btn.active { background:#f4cf19; color:#1f2634; }
+body.modo-noche .tab-btn { background:#2c3346; color:#f5f5f5; }
+body.modo-noche .tab-btn.active { background:#f4cf19; color:#1f2634; }
+body.modo-noche .sheet { background:#111827; color:#f5f5f5; border:1px solid #444; }
+body.modo-noche .table-wrap { background:#1f2634; border-radius:10px; padding:10px; box-shadow:0 0 12px rgba(0,0,0,0.3);}
+body.modo-noche .scanner-box { background:#2c3346; color:#f5f5f5; }
+body.modo-noche input, body.modo-noche select, body.modo-noche button { background:#2c3346; color:#f5f5f5; border:1px solid #555; }
+body.modo-noche input:focus, body.modo-noche select:focus { outline:2px solid #f4cf19; }
 
-/* ================================================
-   NAV TOP
-   ================================================ */
-.topbar {
-  background: #242526;
-  padding: 12px 0;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.7);
-}
+/* Topbar y navegación */
+.topbar { padding:8px 0; box-shadow:0 2px 4px rgba(0,0,0,0.1); position:sticky; top:0; z-index:100; }
+.nav-center { display:flex; gap:6px; justify-content:center; flex-wrap:wrap; }
+.nav-btn { padding:6px 12px; border-radius:6px; cursor:pointer; transition:all 0.3s; border:none; font-weight:600; }
+.nav-btn:hover { transform:translateY(-2px); }
 
-.nav-center {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-}
+/* Controles de pestañas */
+.tab-btn { padding:6px 10px; border-radius:6px; cursor:pointer; border:none; font-weight:500; transition:0.3s; }
+.tab-btn:hover { transform:translateY(-1px); }
 
-.nav-btn {
-  background: #3a3b3c;
-  border: none;
-  color: #e4e6eb;
-  font-weight: 600;
-  padding: 10px 18px;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
+/* Contenedor general */
+.container { max-width:1200px; margin:20px auto; padding:0 12px; }
+.page { display:none; animation:fadeIn 0.3s ease; }
+.page.active { display:block; }
 
-.nav-btn.active,
-.nav-btn:hover {
-  background: #f4cf19;
-  color: #000;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 213, 0, 0.6);
-}
+/* Títulos */
+.title-centered { text-align:center; margin-bottom:20px; font-weight:700; }
 
-/* ================================================
-   CONTENEDORES PRINCIPALES
-   ================================================ */
-.container {
-  padding: 20px;
-}
+/* Tablas */
+.sheet { width:100%; border-collapse:collapse; margin-top:12px; border-radius:8px; overflow:hidden; }
+.sheet th, .sheet td { padding:8px 6px; text-align:center; font-size:0.95rem; }
+.sheet th { background:#f4cf19; color:#1f2634; }
+.sheet tr:nth-child(even) { background:rgba(0,0,0,0.03); }
+.sheet tr.highlight { background:cyan; transition:4s background; }
 
-.page {
-  background: #242526;
-  border-radius: 14px;
-  padding: 20px;
-  margin: 20px auto;
-  max-width: 1200px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.6);
-}
+/* Table-wrap */
+.table-wrap { margin-top:12px; border-radius:10px; overflow:hidden; }
 
-.page h2 {
-  margin-top: 0;
-  color: #f4cf19;
-  font-size: 20px;
-}
+/* Formularios y botones */
+.form-row { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-bottom:12px; }
+input, select, button { padding:6px 8px; border-radius:6px; font-size:0.95rem; cursor:pointer; transition:0.3s; }
+button:hover { transform:translateY(-1px); }
 
-/* Separadores */
-hr {
-  border: none;
-  height: 1px;
-  margin: 16px 0;
-  background: linear-gradient(to right, transparent, #3a3b3c, transparent);
-}
+/* Modales */
+.scanner-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:200; }
+.scanner-overlay.active { display:flex; }
+.scanner-box { padding:20px; border-radius:10px; width:90%; max-width:380px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.3); }
 
-/* ================================================
-   BOTONES
-   ================================================ */
-button {
-  background: #f4cf19;
-  border: none;
-  color: #000;
-  font-weight: 600;
-  padding: 10px 18px;
-  margin: 6px 4px;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
+/* Animaciones */
+@keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
 
-button:hover {
-  background: #ffd500;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 213, 0, 0.6);
-}
-
-button.danger {
-  background: #e74c3c;
-  color: #fff;
-}
-
-button.danger:hover {
-  background: #ff6b5a;
-  box-shadow: 0 4px 12px rgba(255, 107, 90, 0.6);
-}
-
-/* ================================================
-   TABLAS
-   ================================================ */
-.table-wrap {
-  overflow-x: auto;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 15px 0;
-  background: #18191a;
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-th, td {
-  padding: 12px;
-  text-align: center;
-  border-bottom: 1px solid #3a3b3c;
-}
-
-th {
-  background: #3a3b3c;
-  color: #f4cf19;
-  font-size: 14px;
-  text-transform: uppercase;
-}
-
-tr:nth-child(even) {
-  background: #242526;
-}
-
-tr:nth-child(odd) {
-  background: #1c1e21;
-}
-
-tr:hover {
-  background: #3a3b3c;
-  transition: 0.3s;
-}
-
-/* Efecto fila nueva */
-tr.highlight {
-  background-color: rgba(0, 255, 255, 0.3) !important;
-  animation: fadeBack 4s forwards;
-}
-
-@keyframes fadeBack {
-  from { background-color: rgba(0, 255, 255, 0.3); }
-  to   { background-color: transparent; }
-}
-
-/* ================================================
-   FORMULARIOS
-   ================================================ */
-input, select {
-  padding: 10px;
-  margin: 6px 0;
-  border: 1px solid #3a3b3c;
-  border-radius: 8px;
-  background: #242526;
-  color: #e4e6eb;
-  font-size: 14px;
-  width: 100%;
-  transition: all 0.3s ease;
-}
-
-input:focus, select:focus {
-  border-color: #f4cf19;
-  outline: none;
-  box-shadow: 0 0 6px rgba(244, 207, 25, 0.7);
-}
-
-/* ================================================
-   PAGINACIÓN
-   ================================================ */
-.pagination {
-  display: flex;
-  justify-content: center;
-  margin-top: 15px;
-}
-
-.pagination button {
-  margin: 0 3px;
-  padding: 8px 14px;
-  border-radius: 8px;
-}
-
-/* ================================================
-   MODALES
-   ================================================ */
-.scanner-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.85);
-  display: none;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.scanner-overlay.active {
-  display: flex;
-}
-
-.scanner-box {
-  background: #242526;
-  padding: 25px;
-  border-radius: 15px;
-  max-width: 500px;
-  width: 90%;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.9);
-}
-
-/* ================================================
-   MENSAJES
-   ================================================ */
-.okmsg {
-  color: #00ffcc;
-  font-weight: 600;
-}
-
-.muted {
-  font-size: 13px;
-  color: #aaa;
-}
-
-/* ================================================
-   IMPRESIÓN
-   ================================================ */
-@media print {
-  table {
-    font-size: 12px !important;
-  }
-  th, td {
-    font-size: 12px !important;
-    padding: 4px 6px !important;
-  }
-
-  @page {
-    size: A4 portrait;
-    margin: 10mm;
-  }
-
-  nav, .pagination, .no-print, button, .nav, .topbar {
-    display: none !important;
-  }
-
-  body {
-    -webkit-print-color-adjust: exact;
-    color-adjust: exact;
-  }
-}
+/* Paginación */
+.pagination { margin-top:10px; text-align:center; }
+.pagination button { padding:4px 8px; margin:2px; border:none; border-radius:4px; cursor:pointer; }
