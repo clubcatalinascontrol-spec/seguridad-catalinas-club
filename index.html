@@ -2,26 +2,23 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Control de Ingresos</title>
+  <title>Control de Ingreso</title>
   <link rel="stylesheet" href="styles.css">
-  <script type="module" src="app.js" defer></script>
+  <script defer src="app.js"></script>
 </head>
 <body>
-  <header>
-    <h1>📋 Control de Ingresos</h1>
-    <nav>
-      <button onclick="showSection('panel')">PANEL</button>
-      <button onclick="showSection('usuarios')">USUARIOS</button>
-      <button onclick="showSection('config')">CONFIG</button>
-      <button onclick="showSection('novedades')">NOVEDADES</button>
-      <button onclick="showSection('expirados')">EXPIRADOS</button>
-    </nav>
-  </header>
+  <div class="navbar">
+    <button onclick="showSection('panel')">Panel</button>
+    <button onclick="showSection('usuarios')">Usuarios</button>
+    <button onclick="showSection('novedades')">Novedades</button>
+    <button onclick="showSection('expirados')">Expirados</button>
+    <button onclick="showSection('config')">Config</button>
+  </div>
 
   <!-- PANEL -->
-  <section id="panel" class="active">
-    <h2>Movimientos</h2>
-    <div class="filters">
+  <section id="panel" class="section active">
+    <h2>Panel de Ingresos</h2>
+    <div class="filter-buttons">
       <button onclick="filterPanel('todos')">TODOS</button>
       <button onclick="filterPanel('propietario')">PROPIETARIOS</button>
       <button onclick="filterPanel('admin')">ADMIN</button>
@@ -30,8 +27,8 @@
       <button onclick="filterPanel('invitado')">INVITADOS</button>
       <button onclick="filterPanel('guardia')">GUARDIAS</button>
       <button onclick="filterPanel('otro')">OTROS</button>
-      <button onclick="openScan()">ESCANEAR</button>
-      <button onclick="printTable('panelTable')">IMPRIMIR</button>
+      <button onclick="openScanner()">ESCANEAR</button>
+      <button onclick="printTickets()">IMPRIMIR</button>
     </div>
     <table id="panelTable">
       <thead>
@@ -39,49 +36,33 @@
           <th>ID</th>
           <th>Lote</th>
           <th>Nombre</th>
-          <!-- DNI eliminado visualmente -->
           <th>Tipo</th>
-          <th>Fecha</th>
-          <th>Hora</th>
+          <th>Entrada</th>
+          <th>Salida</th>
           <th>Acción</th>
-          <th>Opciones</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
   </section>
 
-    <!-- Ficha de usuario -->
-  <div id="fichaModal" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeFicha()">&times;</span>
-      <h3>Ficha del Usuario</h3>
-      <p><b>Lote:</b> <span id="fichaLote"></span></p>
-      <p><b>Nombre:</b> <span id="fichaNombre"></span></p>
-      <p><b>DNI:</b> <span id="fichaDni"></span></p>
-      <p><b>Celular:</b> <span id="fichaCelular"></span></p>
-      <p><b>Autorizante:</b> <span id="fichaAutorizante"></span></p>
-      <p><b>Fecha Expedición:</b> <span id="fichaFecha"></span></p>
-      <p><b>Tipo:</b> <span id="fichaTipo"></span></p>
-    </div>
-  </div>
-
   <!-- USUARIOS -->
-  <section id="usuarios">
+  <section id="usuarios" class="section">
     <h2>Gestión de Usuarios</h2>
     <form id="userForm">
       <label>Lote</label>
-      <input type="text" id="lote" placeholder="Ej: #L23" required>
+      <input type="text" id="lote" placeholder="Ej: 23B" required>
       <label>Nombre Completo</label>
-      <input type="text" id="nombre" placeholder="Nombre y Apellido" required>
+      <input type="text" id="nombre" placeholder="Ej: Juan Pérez" required>
       <label>DNI</label>
-      <input type="text" id="dni" placeholder="Documento" required>
+      <input type="text" id="dni" placeholder="Ej: 12345678" required>
       <label>Celular</label>
-      <input type="text" id="celular" placeholder="10 dígitos" pattern="\d{10}" required>
+      <input type="text" id="celular" placeholder="Ej: 3794567890" maxlength="10" pattern="[0-9]{10}" required>
       <label>Autorizante</label>
-      <input type="text" id="autorizante" placeholder="Máx 15 letras" pattern="[A-Za-z ]{1,15}" required>
+      <input type="text" id="autorizante" placeholder="Máx 15 letras" maxlength="15" pattern="[A-Za-z ]{1,15}" required>
       <label>Tipo</label>
-      <select id="tipo">
+      <select id="tipo" required>
+        <option value="">Seleccione...</option>
         <option value="propietario">Propietario</option>
         <option value="admin">Admin</option>
         <option value="empleado">Empleado</option>
@@ -90,55 +71,196 @@
         <option value="guardia">Guardia</option>
         <option value="otro">Otro</option>
       </select>
-      <button type="submit">Guardar Usuario</button>
+      <button type="submit">Agregar Usuario</button>
     </form>
     <table id="usuariosTable">
       <thead>
         <tr>
-          <th>Lote</th><th>Nombre</th><th>DNI</th><th>Tipo</th><th>Acción</th>
+          <th>ID</th>
+          <th>Lote</th>
+          <th>Nombre</th>
+          <th>DNI</th>
+          <th>Celular</th>
+          <th>Autorizante</th>
+          <th>Tipo</th>
+          <th>Acciones</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
   </section>
+      <table id="tabla-admin" class="hidden">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Lote</th>
+            <th>Celular</th>
+            <th>Autorizante</th>
+            <th>Tipo</th>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
 
-  <!-- NOVEDADES -->
-  <section id="novedades">
-    <h2>Cargar Novedad</h2>
-    <form id="novedadForm">
-      <input type="text" id="novedadDesc" placeholder="Descripción" required>
-      <input type="date" id="novedadFecha" required>
-      <input type="time" id="novedadHora" required>
-      <button type="submit">Cargar</button>
-    </form>
-    <table id="novedadesTable">
-      <thead>
-        <tr>
-          <th>Descripción</th><th>Fecha</th><th>Hora</th><th>Acción</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </section>
+      <table id="tabla-empleado" class="hidden">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Lote</th>
+            <th>Celular</th>
+            <th>Autorizante</th>
+            <th>Tipo</th>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
 
-  <!-- CONFIG -->
-  <section id="config">
-    <h2>Configuración</h2>
-    <button onclick="resetPassword()">Restaurar Contraseña</button>
-  </section>
+      <table id="tabla-obrero" class="hidden">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Lote</th>
+            <th>Celular</th>
+            <th>Autorizante</th>
+            <th>Tipo</th>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
 
-  <!-- EXPIRADOS -->
-  <section id="expirados">
-    <h2>Usuarios Expirados</h2>
-    <table id="expiradosTable">
-      <thead>
-        <tr>
-          <th>Lote</th><th>Nombre</th><th>DNI</th><th>Celular</th>
-          <th>Autorizante</th><th>Tipo</th><th>F. Eliminación</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </section>
-</body>
+      <table id="tabla-invitado" class="hidden">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Lote</th>
+            <th>Celular</th>
+            <th>Autorizante</th>
+            <th>Tipo</th>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <table id="tabla-guardia" class="hidden">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Lote</th>
+            <th>Celular</th>
+            <th>Autorizante</th>
+            <th>Tipo</th>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <table id="tabla-otro" class="hidden">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Lote</th>
+            <th>Celular</th>
+            <th>Autorizante</th>
+            <th>Tipo</th>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <!-- Modal Ficha Usuario -->
+    <div id="modal-ficha" class="modal hidden">
+      <div class="modal-content">
+        <h3>Ficha Usuario</h3>
+        <p><strong>Lote:</strong> <span id="ficha-lote"></span></p>
+        <p><strong>Nombre:</strong> <span id="ficha-nombre"></span></p>
+        <p><strong>DNI:</strong> <span id="ficha-dni"></span></p>
+        <p><strong>Celular:</strong> <span id="ficha-celular"></span></p>
+        <p><strong>Autorizante:</strong> <span id="ficha-autorizante"></span></p>
+        <p><strong>Tipo:</strong> <span id="ficha-tipo"></span></p>
+        <p><strong>Fecha de expedición:</strong> <span id="ficha-fecha"></span></p>
+        <div class="modal-buttons">
+          <button id="cerrar-ficha">CERRAR</button>
+        </div>
+      </div>
+    </div>
+    <!-- Modal Cargar Novedad -->
+    <div id="modal-novedad" class="modal hidden">
+      <div class="modal-content">
+        <h3>Cargar Novedad</h3>
+        <form id="form-novedad">
+          <label for="novedad-lote">Lote - Nombre Completo - DNI - Celular - Autorizante - Tipo</label>
+          <select id="novedad-lote" required></select>
+
+          <label for="novedad-accion">Acción</label>
+          <select id="novedad-accion" required>
+            <option value="editar">Editar</option>
+            <option value="eliminar">Eliminar</option>
+          </select>
+
+          <label for="novedad-fecha">Fecha</label>
+          <input type="date" id="novedad-fecha" required>
+
+          <label for="novedad-hora">Hora (24h)</label>
+          <input type="time" id="novedad-hora" required>
+
+          <div class="modal-buttons">
+            <button type="submit">GUARDAR</button>
+            <button type="button" id="cerrar-novedad">CERRAR</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal Expirados -->
+    <div id="modal-expirados" class="modal hidden">
+      <div class="modal-content">
+        <h3>Expirados</h3>
+        <table id="tabla-expirados">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nombre</th>
+              <th>Lote</th>
+              <th>Celular</th>
+              <th>Autorizante</th>
+              <th>Tipo</th>
+              <th>F. Eliminación</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <div class="modal-buttons">
+          <button id="cerrar-expirados">CERRAR</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+  </body>
 </html>
