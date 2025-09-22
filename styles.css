@@ -12,7 +12,7 @@ body {
 /* ================================================
    CONTENEDORES (CARDS)
    ================================================ */
-.section {
+.page {
   background: #242526; /* un tono más claro que el fondo */
   border-radius: 14px;
   padding: 20px;
@@ -21,7 +21,7 @@ body {
   box-shadow: 0 2px 8px rgba(0,0,0,0.6);
 }
 
-.section h2 {
+.page h2 {
   margin-top: 0;
   color: #f4cf19;
   font-size: 20px;
@@ -246,3 +246,4 @@ input:focus, select:focus {
     color-adjust: exact;
   }
     }
+
