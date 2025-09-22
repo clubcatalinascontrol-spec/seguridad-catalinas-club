@@ -1,246 +1,225 @@
-// =======================
-// Firebase Configuración
-// =======================
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-import {
-  getFirestore, collection, addDoc, getDocs, doc,
-  setDoc, updateDoc, deleteDoc, onSnapshot, query,
-  orderBy, serverTimestamp
-} from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+// app.js (módulo) - Firebase 9.22
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+import { 
+  getFirestore, collection, addDoc, getDocs, doc, onSnapshot, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp 
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
+/* ----------------------------- Firebase config ----------------------------- */
 const firebaseConfig = {
-  apiKey: "AIzaSyB8fQJsN0tqpuz48Om30m6u6jhEcSfKYEw",
-  authDomain: "supermercadox-107f6.firebaseapp.com",
-  projectId: "supermercadox-107f6",
-  storageBucket: "supermercadox-107f6.firebasestorage.app",
-  messagingSenderId: "504958637825",
-  appId: "1:504958637825:web:6ae5e2cde43206b3052d00"
+  apiKey: "AIzaSyBmgexrB3aDlx5XARYqigaPoFsWX5vDz_4",
+  authDomain: "seguridad-catalinas-club.firebaseapp.com",
+  projectId: "seguridad-catalinas-club",
+  storageBucket: "seguridad-catalinas-club.firebasestorage.app",
+  messagingSenderId: "980866194296",
+  appId: "1:980866194296:web:3fefc2a107d0ec6052468d"
 };
-
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// =======================
-// Mostrar/Ocultar Secciones
-// =======================
-function showSection(id) {
-  document.querySelectorAll("section").forEach(sec => sec.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
-}
-window.showSection = showSection;
+/* ----------------------------- Colecciones ----------------------------- */
+const usuariosRef = collection(db, "usuarios");
+const movimientosRef = collection(db, "movimientos");
+const expiredRef = collection(db, "expiredCodes");
+const novedadesRef = collection(db, "novedades");
 
-// =======================
-// Funciones Utilitarias
-// =======================
-function getFecha() {
-  const hoy = new Date();
-  const yyyy = hoy.getFullYear();
-  const mm = String(hoy.getMonth() + 1).padStart(2, "0");
-  const dd = String(hoy.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
+/* ----------------------------- Contraseñas ----------------------------- */
+const MASTER_PASS = "9999";
+if (!localStorage.getItem("adminPass")) localStorage.setItem("adminPass", "1234");
+
+function checkPass(pass) {
+  return pass === MASTER_PASS || pass === localStorage.getItem("adminPass");
 }
 
-function getHora() {
-  const hoy = new Date();
-  const hh = String(hoy.getHours()).padStart(2, "0");
-  const mi = String(hoy.getMinutes()).padStart(2, "0");
-  return `${hh}:${mi}`;
+/* ----------------------------- Helpers ----------------------------- */
+function generarCodigo() {
+  return Math.random().toString(36).substring(2, 10).toUpperCase();
 }
-// =======================
-// Usuarios
-// =======================
-const userForm = document.getElementById("userForm");
-const usuariosTable = document.getElementById("usuariosTable").querySelector("tbody");
-const expiradosTable = document.getElementById("expiradosTable").querySelector("tbody");
 
-userForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const lote = document.getElementById("lote").value.trim();
-  const nombre = document.getElementById("nombre").value.trim();
-  const dni = document.getElementById("dni").value.trim();
-  const celular = document.getElementById("celular").value.trim();
-  const autorizante = document.getElementById("autorizante").value.trim();
-  const tipo = document.getElementById("tipo").value;
+function horaActualStr() {
+  const d = new Date();
+  const hh = d.getHours().toString().padStart(2, "0");
+  const mm = d.getMinutes().toString().padStart(2, "0");
+  const dd = d.getDate().toString().padStart(2, "0");
+  const mo = (d.getMonth() + 1).toString().padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${hh}:${mm} (${dd}/${mo}/${yyyy})`;
+}
 
-  await addDoc(collection(db, "usuarios"), {
-    lote, nombre, dni, celular, autorizante, tipo,
-    fechaExpedicion: getFecha(),
-    createdAt: serverTimestamp()
+/* ----------------------------- Navegación SPA ----------------------------- */
+const navBtns = document.querySelectorAll(".nav-btn");
+const pages = document.querySelectorAll(".page");
+
+navBtns.forEach(btn => btn.addEventListener("click", () => {
+  const target = btn.dataset.section;
+  pages.forEach(p => p.classList.remove("active"));
+  document.getElementById(target).classList.add("active");
+  navBtns.forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+}));
+/* ----------------------------- Gestión de USUARIOS ----------------------------- */
+const formNuevoUsuario = document.getElementById("formNuevoUsuario");
+const listaUsuarios = document.getElementById("listaUsuarios");
+
+// Placeholder guía: "Lote - Nombre Completo - DNI - Celular - Autorizante - Tipo"
+function generarPlaceholders() {
+  document.getElementById("inputLote").placeholder = "Lote - Nombre Completo - DNI - Celular - Autorizante - Tipo";
+  document.getElementById("inputTipo").placeholder = "Tipo: Propietario, Admin, Empleado...";
+  document.getElementById("inputNombre").placeholder = "Nombre Completo";
+  document.getElementById("inputDNI").placeholder = "DNI";
+  document.getElementById("inputCelular").placeholder = "Celular";
+  document.getElementById("inputAutorizante").placeholder = "Autorizante";
+}
+
+generarPlaceholders();
+
+// Cargar todos los usuarios
+async function cargarUsuarios() {
+  listaUsuarios.innerHTML = "";
+  const snapshot = await getDocs(usuariosRef);
+  snapshot.forEach(docu => {
+    const u = docu.data();
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${u.lote || ""}</td>
+      <td>${u.nombre || ""}</td>
+      <td>${u.dni || ""}</td>
+      <td>${u.celular || ""}</td>
+      <td>${u.autorizante || ""}</td>
+      <td>${u.tipo || ""}</td>
+      <td>
+        <button class="editarUsuario">Editar</button>
+        <button class="eliminarUsuario" style="background-color:#ff4d4f;">Eliminar</button>
+      </td>`;
+    listaUsuarios.appendChild(tr);
+
+    // Editar
+    tr.querySelector(".editarUsuario").addEventListener("click", () => {
+      document.getElementById("inputLote").value = u.lote || "";
+      document.getElementById("inputNombre").value = u.nombre || "";
+      document.getElementById("inputDNI").value = u.dni || "";
+      document.getElementById("inputCelular").value = u.celular || "";
+      document.getElementById("inputAutorizante").value = u.autorizante || "";
+      document.getElementById("inputTipo").value = u.tipo || "";
+      formNuevoUsuario.dataset.id = docu.id;
+    });
+
+    // Eliminar
+    tr.querySelector(".eliminarUsuario").addEventListener("click", async () => {
+      await deleteDoc(doc(db, "usuarios", docu.id));
+      cargarUsuarios();
+    });
   });
+}
 
-  userForm.reset();
+// Guardar o actualizar usuario
+formNuevoUsuario.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const data = {
+    lote: document.getElementById("inputLote").value.trim(),
+    nombre: document.getElementById("inputNombre").value.trim(),
+    dni: document.getElementById("inputDNI").value.trim(),
+    celular: document.getElementById("inputCelular").value.trim(),
+    autorizante: document.getElementById("inputAutorizante").value.trim(),
+    tipo: document.getElementById("inputTipo").value.trim()
+  };
+  const id = formNuevoUsuario.dataset.id;
+  if (id) {
+    await updateDoc(doc(db, "usuarios", id), data);
+    delete formNuevoUsuario.dataset.id;
+  } else {
+    await addDoc(usuariosRef, data);
+  }
+  formNuevoUsuario.reset();
+  cargarUsuarios();
 });
 
-async function loadUsuarios() {
-  const q = query(collection(db, "usuarios"), orderBy("createdAt", "desc"));
-  onSnapshot(q, (snap) => {
-    usuariosTable.innerHTML = "";
-    snap.forEach((docu) => {
-      const data = docu.data();
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${data.lote}</td>
-        <td>${data.nombre}</td>
-        <td>${data.dni}</td>
-        <td>${data.tipo}</td>
-        <td>
-          <button class="edit" onclick="openFicha('${docu.id}')">Ficha</button>
-          <button class="delete" onclick="deleteUsuario('${docu.id}')">Eliminar</button>
-        </td>
-      `;
-      usuariosTable.appendChild(tr);
+cargarUsuarios();
+/* ----------------------------- Gestión de NOVEDADES ----------------------------- */
+const formNovedad = document.getElementById("formNovedad");
+const listaNovedades = document.getElementById("listaNovedades");
+
+// Cargar novedades
+async function cargarNovedades() {
+  listaNovedades.innerHTML = "";
+  const snapshot = await getDocs(novedadesRef);
+  snapshot.forEach(docu => {
+    const n = docu.data();
+    const tr = document.createElement("tr");
+    const fechaHora = n.fecha ? new Date(n.fecha.seconds * 1000) : new Date();
+    const fechaStr = fechaHora.toLocaleDateString();
+    const horaStr = fechaHora.getHours().toString().padStart(2,'0') + ":" + fechaHora.getMinutes().toString().padStart(2,'0');
+
+    tr.innerHTML = `
+      <td>${n.usuario || ""}</td>
+      <td>${n.accion || ""}</td>
+      <td>${fechaStr} ${horaStr}</td>
+      <td>
+        <button class="editarNovedad" style="background-color:#1890ff;">Editar</button>
+        <button class="eliminarNovedad" style="background-color:#ff4d4f;">Eliminar</button>
+      </td>`;
+    listaNovedades.appendChild(tr);
+
+    tr.querySelector(".editarNovedad").addEventListener("click", () => {
+      document.getElementById("inputUsuario").value = n.usuario || "";
+      document.getElementById("inputAccion").value = n.accion || "";
+      formNovedad.dataset.id = docu.id;
+    });
+
+    tr.querySelector(".eliminarNovedad").addEventListener("click", async () => {
+      await deleteDoc(doc(db, "novedades", docu.id));
+      cargarNovedades();
     });
   });
 }
-loadUsuarios();
 
-// Eliminar Usuario → pasa a expirados
-window.deleteUsuario = async (id) => {
-  const ref = doc(db, "usuarios", id);
-  const snap = await getDocs(collection(db, "usuarios"));
-  let data;
-  snap.forEach(d => { if (d.id === id) data = d.data(); });
-
-  if (data) {
-    await addDoc(collection(db, "expirados"), {
-      ...data,
-      eliminadoEn: getFecha() + " " + getHora()
-    });
-    await deleteDoc(ref);
-  }
-};
-
-// =======================
-// Expirados
-// =======================
-function loadExpirados() {
-  const q = query(collection(db, "expirados"), orderBy("eliminadoEn", "desc"));
-  onSnapshot(q, (snap) => {
-    expiradosTable.innerHTML = "";
-    snap.forEach((docu) => {
-      const data = docu.data();
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${data.lote}</td>
-        <td>${data.nombre}</td>
-        <td>${data.dni}</td>
-        <td>${data.celular}</td>
-        <td>${data.autorizante}</td>
-        <td>${data.tipo}</td>
-        <td>${data.eliminadoEn}</td>
-      `;
-      expiradosTable.appendChild(tr);
-    });
-  });
-}
-loadExpirados();
-// =======================
-// Panel
-// =======================
-const panelTable = document.getElementById("panelTable").querySelector("tbody");
-
-function addMovimiento(usuario, accion) {
-  const tr = document.createElement("tr");
-  tr.classList.add("highlight");
-  tr.innerHTML = `
-    <td>${Math.floor(Math.random()*9999)}</td>
-    <td>${usuario.lote}</td>
-    <td>${usuario.nombre}</td>
-    <td>${usuario.tipo}</td>
-    <td>${getFecha()}</td>
-    <td>${getHora()}</td>
-    <td>${accion}</td>
-    <td>
-      <button class="edit" onclick="openFicha('${usuario.id}')">Ficha</button>
-      <button class="delete" onclick="deleteUsuario('${usuario.id}')">Eliminar</button>
-    </td>
-  `;
-  panelTable.prepend(tr);
-  setTimeout(() => tr.classList.remove("highlight"), 4000);
-}
-
-window.filterPanel = (tipo) => {
-  // futuro: filtrar por tipo
-};
-
-window.openScan = () => {
-  alert("Escaneo simulado - asignar flujo real con lector de códigos");
-};
-
-// =======================
-// Ficha
-// =======================
-const fichaModal = document.getElementById("fichaModal");
-window.openFicha = async (id) => {
-  const ref = doc(db, "usuarios", id);
-  const snap = await getDocs(collection(db, "usuarios"));
-  snap.forEach(d => {
-    if (d.id === id) {
-      const u = d.data();
-      document.getElementById("fichaLote").innerText = u.lote;
-      document.getElementById("fichaNombre").innerText = u.nombre;
-      document.getElementById("fichaDni").innerText = u.dni;
-      document.getElementById("fichaCelular").innerText = u.celular;
-      document.getElementById("fichaAutorizante").innerText = u.autorizante;
-      document.getElementById("fichaFecha").innerText = u.fechaExpedicion;
-      document.getElementById("fichaTipo").innerText = u.tipo;
-    }
-  });
-  fichaModal.style.display = "block";
-};
-window.closeFicha = () => fichaModal.style.display = "none";
-
-// =======================
-// Novedades
-// =======================
-const novedadForm = document.getElementById("novedadForm");
-const novedadesTable = document.getElementById("novedadesTable").querySelector("tbody");
-
-novedadForm.addEventListener("submit", async (e) => {
+formNovedad.addEventListener("submit", async (e) => {
   e.preventDefault();
-  const desc = document.getElementById("novedadDesc").value.trim();
-  const fecha = document.getElementById("novedadFecha").value;
-  const hora = document.getElementById("novedadHora").value;
-
-  await addDoc(collection(db, "novedades"), { desc, fecha, hora, createdAt: serverTimestamp() });
-  novedadForm.reset();
+  const data = {
+    usuario: document.getElementById("inputUsuario").value.trim(),
+    accion: document.getElementById("inputAccion").value.trim(),
+    fecha: new Date()
+  };
+  const id = formNovedad.dataset.id;
+  if (id) {
+    await updateDoc(doc(db, "novedades", id), data);
+    delete formNovedad.dataset.id;
+  } else {
+    await addDoc(novedadesRef, data);
+  }
+  formNovedad.reset();
+  cargarNovedades();
 });
 
-function loadNovedades() {
-  const q = query(collection(db, "novedades"), orderBy("createdAt", "desc"));
-  onSnapshot(q, (snap) => {
-    novedadesTable.innerHTML = "";
-    snap.forEach((docu) => {
-      const data = docu.data();
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${data.desc}</td>
-        <td>${data.fecha}</td>
-        <td>${data.hora}</td>
-        <td>
-          <button class="edit" onclick="editNovedad('${docu.id}')">Editar</button>
-          <button class="delete" onclick="deleteNovedad('${docu.id}')">Eliminar</button>
-        </td>
-      `;
-      novedadesTable.appendChild(tr);
-    });
+cargarNovedades();
+
+/* ----------------------------- Expirados ----------------------------- */
+const listaExpirados = document.getElementById("listaExpirados");
+
+async function cargarExpirados() {
+  listaExpirados.innerHTML = "";
+  const snapshot = await getDocs(expiradosRef);
+  snapshot.forEach(docu => {
+    const e = docu.data();
+    const fechaElim = e.fechaEliminacion ? new Date(e.fechaEliminacion.seconds * 1000) : "";
+    const fechaStr = fechaElim ? fechaElim.toLocaleDateString() : "";
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${e.usuario || ""}</td>
+      <td>${fechaStr}</td>`;
+    listaExpirados.appendChild(tr);
   });
 }
-loadNovedades();
 
-window.deleteNovedad = async (id) => {
-  await deleteDoc(doc(db, "novedades", id));
-};
-window.editNovedad = async (id) => {
-  const nuevo = prompt("Editar novedad:");
-  if (nuevo) {
-    await updateDoc(doc(db, "novedades", id), { desc: nuevo });
+cargarExpirados();
+
+/* ----------------------------- PANEL ----------------------------- */
+const botonesPanel = document.querySelectorAll("#panelBotones button");
+botonesPanel.forEach(btn => {
+  if(btn.textContent === "ESCANEAR" || btn.textContent === "IMPRIMIR"){
+    // mantener amarillo para resaltar
+    btn.style.color = "#f4cf19";
+  } else {
+    // botones negros
+    btn.style.color = "#000";
   }
-};
-
-// =======================
-// Configuración
-// =======================
-window.resetPassword = () => {
-  alert("Contraseña restaurada a: 123456789");
-};
+});
