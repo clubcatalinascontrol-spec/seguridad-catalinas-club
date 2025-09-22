@@ -1,19 +1,62 @@
 /* ================================================
-   ESTILOS BASE
-   Inspirado en modo nocturno FB
+   BASE
    ================================================ */
 body {
   margin: 0;
   font-family: 'Poppins', sans-serif;
-  background-color: #18191a; /* gris oscuro profundo */
-  color: #e4e6eb; /* texto claro */
+  background-color: #18191a; /* fondo dark */
+  color: #e4e6eb;
+}
+
+h2.title-centered {
+  text-align: center;
+  margin-bottom: 16px;
+  color: #f4cf19;
 }
 
 /* ================================================
-   CONTENEDORES (CARDS)
+   NAV TOP
    ================================================ */
+.topbar {
+  background: #242526;
+  padding: 12px 0;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.7);
+}
+
+.nav-center {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.nav-btn {
+  background: #3a3b3c;
+  border: none;
+  color: #e4e6eb;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.nav-btn.active,
+.nav-btn:hover {
+  background: #f4cf19;
+  color: #000;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 213, 0, 0.6);
+}
+
+/* ================================================
+   CONTENEDORES PRINCIPALES
+   ================================================ */
+.container {
+  padding: 20px;
+}
+
 .page {
-  background: #242526; /* un tono más claro que el fondo */
+  background: #242526;
   border-radius: 14px;
   padding: 20px;
   margin: 20px auto;
@@ -27,7 +70,7 @@ body {
   font-size: 20px;
 }
 
-/* Separadores elegantes */
+/* Separadores */
 hr {
   border: none;
   height: 1px;
@@ -36,46 +79,43 @@ hr {
 }
 
 /* ================================================
-   NAVEGACIÓN
+   BOTONES
    ================================================ */
-nav {
-  display: flex;
-  justify-content: center;
-  background: #242526;
-  padding: 12px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.7);
-}
-
-nav button {
+button {
   background: #f4cf19;
   border: none;
   color: #000;
   font-weight: 600;
   padding: 10px 18px;
-  margin: 0 6px;
+  margin: 6px 4px;
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
-nav button:hover {
+button:hover {
   background: #ffd500;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(255, 213, 0, 0.6);
 }
 
-.page {
-  display: none;
-  padding: 20px;
+button.danger {
+  background: #e74c3c;
+  color: #fff;
 }
 
-.page.active {
-  display: block;
+button.danger:hover {
+  background: #ff6b5a;
+  box-shadow: 0 4px 12px rgba(255, 107, 90, 0.6);
 }
 
 /* ================================================
    TABLAS
    ================================================ */
+.table-wrap {
+  overflow-x: auto;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -111,9 +151,7 @@ tr:hover {
   transition: 0.3s;
 }
 
-/* ================================================
-   EFECTO NUEVO MOVIMIENTO
-   ================================================ */
+/* Efecto fila nueva */
 tr.highlight {
   background-color: rgba(0, 255, 255, 0.3) !important;
   animation: fadeBack 4s forwards;
@@ -122,37 +160,6 @@ tr.highlight {
 @keyframes fadeBack {
   from { background-color: rgba(0, 255, 255, 0.3); }
   to   { background-color: transparent; }
-}
-
-/* ================================================
-   BOTONES
-   ================================================ */
-button {
-  background: #f4cf19;
-  border: none;
-  color: #000;
-  font-weight: 600;
-  padding: 10px 18px;
-  margin: 6px 4px;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-button:hover {
-  background: #ffd500;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 213, 0, 0.6);
-}
-
-button.danger {
-  background: #e74c3c;
-  color: #fff;
-}
-
-button.danger:hover {
-  background: #ff6b5a;
-  box-shadow: 0 4px 12px rgba(255, 107, 90, 0.6);
 }
 
 /* ================================================
@@ -177,35 +184,6 @@ input:focus, select:focus {
 }
 
 /* ================================================
-   MODALES
-   ================================================ */
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.85);
-  display: none;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal.active {
-  display: flex;
-}
-
-.modal-content {
-  background: #242526;
-  padding: 25px;
-  border-radius: 15px;
-  max-width: 600px;
-  width: 90%;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.9);
-}
-
-/* ================================================
    PAGINACIÓN
    ================================================ */
 .pagination {
@@ -218,6 +196,48 @@ input:focus, select:focus {
   margin: 0 3px;
   padding: 8px 14px;
   border-radius: 8px;
+}
+
+/* ================================================
+   MODALES
+   ================================================ */
+.scanner-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.85);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.scanner-overlay.active {
+  display: flex;
+}
+
+.scanner-box {
+  background: #242526;
+  padding: 25px;
+  border-radius: 15px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.9);
+}
+
+/* ================================================
+   MENSAJES
+   ================================================ */
+.okmsg {
+  color: #00ffcc;
+  font-weight: 600;
+}
+
+.muted {
+  font-size: 13px;
+  color: #aaa;
 }
 
 /* ================================================
@@ -237,7 +257,7 @@ input:focus, select:focus {
     margin: 10mm;
   }
 
-  nav, .pagination, .no-print, button {
+  nav, .pagination, .no-print, button, .nav, .topbar {
     display: none !important;
   }
 
@@ -245,5 +265,4 @@ input:focus, select:focus {
     -webkit-print-color-adjust: exact;
     color-adjust: exact;
   }
-    }
-
+}
