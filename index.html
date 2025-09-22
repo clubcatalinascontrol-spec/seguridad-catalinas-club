@@ -13,8 +13,8 @@
     <div class="nav-center">
       <button class="nav-btn active" data-section="panel">PANEL</button>
       <button class="nav-btn" data-section="usuarios">USUARIOS</button>
-      <button class="nav-btn" data-section="expirados">EXPIRADOS</button>
       <button class="nav-btn" data-section="novedades">NOVEDADES</button>
+      <button class="nav-btn" data-section="expirados">EXPIRADOS</button>
       <button class="nav-btn" data-section="config">CONFIG</button>
     </div>
   </div>
@@ -25,9 +25,9 @@
   <section id="panel" class="page active">
     <h2 class="title-centered">Control de acceso y egreso de Catalinas Country</h2>
 
-    <!-- Tabs por tipo (dentro de div para diferenciarlos) -->
+    <!-- Tabs por tipo -->
     <div class="controls" style="flex-direction:column;gap:12px;">
-      <div class="tabs-wrap" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
         <button class="tab-btn active" data-tipo="todos">TODOS</button>
         <button class="tab-btn" data-tipo="propietario">PROPIETARIOS</button>
         <button class="tab-btn" data-tipo="administracion">ADMIN</button>
@@ -40,13 +40,13 @@
 
       <div style="display:flex;gap:10px;justify-content:center;align-items:center;">
         <button id="scanBtn">ESCANEAR</button>
-        <button id="printActiveBtn">IMPRIMIR</button>
+        <button id="printActiveBtn">Imprimir movimientos (Pestaña)</button>
+        <button id="printPageBtn">Imprimir todos (global)</button>
         <span id="scanOk" class="okmsg" style="display:none;font-weight:700;">OK</span>
       </div>
     </div>
 
     <div class="table-wrap">
-      <!-- Tabla de movimientos: DNI NO se muestra aquí -->
       <table id="movimientosTable" class="sheet">
         <thead>
           <tr>
@@ -63,13 +63,19 @@
   <section id="usuarios" class="page">
     <h2 class="title-centered">Gestión de Usuarios</h2>
     <div class="form-row">
+      <label for="userL">Lote</label>
       <select id="userL"></select>
-      <input id="userNombre" placeholder="Nombre Completo (25 letras)" maxlength="25" />
-      <input id="userDni" placeholder="DNI (8 dígitos) opcional" maxlength="8" inputmode="numeric" />
-      <input id="userCelular" placeholder="Celular (10 dígitos) opcional" maxlength="10" inputmode="numeric" />
-      <input id="userAutorizante" placeholder="Autorizante (letras, max 12) opcional" maxlength="12" />
+      <label for="userNombre">Nombre Completo</label>
+      <input id="userNombre" placeholder="Ej: Juan Pérez" maxlength="25" />
+      <label for="userDni">DNI</label>
+      <input id="userDni" placeholder="Ej: 12345678" maxlength="8" inputmode="numeric" />
+      <label for="userCelular">Celular</label>
+      <input id="userCelular" placeholder="Ej: 3794123456" maxlength="10" inputmode="numeric" />
+      <label for="userAutorizante">Autorizante</label>
+      <input id="userAutorizante" placeholder="Ej: Carlos López" maxlength="15" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" />
+      <label for="userTipo">Tipo</label>
       <select id="userTipo">
-        <option value="NN">NN</option>
+        <option value="">Tipo</option>
         <option value="propietario">propietario</option>
         <option value="administracion">administración</option>
         <option value="empleado">empleado</option>
@@ -84,24 +90,7 @@
     <div class="table-wrap">
       <table id="usersTable" class="sheet">
         <thead>
-          <tr>
-            <th>#L</th><th>Nombre</th><th>DNI</th><th>Celular</th><th>Autorizante</th><th>F. Expedición</th><th>Tipo</th><th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </section>
-
-  <!-- EXPIRADOS -->
-  <section id="expirados" class="page">
-    <h2 class="title-centered">Usuarios Expirados / Eliminados</h2>
-    <div class="table-wrap">
-      <table id="expiredTable" class="sheet">
-        <thead>
-          <tr>
-            <th>#L</th><th>Nombre</th><th>DNI</th><th>Código Ingreso</th><th>Código Salida</th><th>Tipo</th><th>When</th>
-          </tr>
+          <tr><th>#L</th><th>Nombre</th><th>DNI</th><th>Celular</th><th>Autorizante</th><th>Tipo</th><th>Acciones</th></tr>
         </thead>
         <tbody></tbody>
       </table>
@@ -110,18 +99,32 @@
 
   <!-- NOVEDADES -->
   <section id="novedades" class="page">
-    <h2 class="title-centered">NOVEDADES</h2>
-    <div class="form-row" style="flex-direction:column;align-items:center;">
-      <textarea id="novedadTexto" placeholder="Escriba la novedad..." style="min-width:80%;min-height:90px;padding:8px;border-radius:8px;border:1px solid #ccc;"></textarea>
-      <div style="margin-top:8px;">
-        <button id="guardarNovedadBtn">OK</button>
-        <span id="novedadMsg" class="okmsg"></span>
-      </div>
+    <h2 class="title-centered">Cargar Novedades</h2>
+    <div class="form-row">
+      <input id="novedadTitulo" placeholder="Título (max 30)" maxlength="30" />
+      <textarea id="novedadDescripcion" placeholder="Descripción (max 200)" maxlength="200"></textarea>
+      <input id="novedadFecha" type="date" />
+      <input id="novedadHora" type="time" />
+      <button id="addNovedadBtn">Agregar Novedad</button>
+      <span id="novedadMsg" class="okmsg"></span>
     </div>
     <div class="table-wrap">
       <table id="novedadesTable" class="sheet">
         <thead>
-          <tr><th>Hora</th><th>Novedad</th><th>Acción</th></tr>
+          <tr><th>Título</th><th>Descripción</th><th>Fecha</th><th>Hora</th><th>Acción</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- EXPIRADOS -->
+  <section id="expirados" class="page">
+    <h2 class="title-centered">Usuarios Eliminados</h2>
+    <div class="table-wrap">
+      <table id="expiradosTable" class="sheet">
+        <thead>
+          <tr><th>#L</th><th>Nombre</th><th>DNI</th><th>Celular</th><th>Autorizante</th><th>Tipo</th><th>F. Eliminación</th></tr>
         </thead>
         <tbody></tbody>
       </table>
@@ -140,7 +143,7 @@
       <button id="restoreDefaultBtn">Restaurar Contraseña</button>
       <span id="restoreMsg" class="okmsg"></span>
     </div>
-    <p class="muted">La contraseña debe estar compuesta únicamente por 4 números. Se usará para editar/eliminar usuarios y movimientos en el panel y para imprimir las tarjetas de cada usuario</p>
+    <p class="muted">La contraseña debe estar compuesta únicamente por 4 números.</p>
   </section>
 </main>
 
@@ -156,6 +159,17 @@
   </div>
 </div>
 
+<!-- MODAL FICHA -->
+<div id="fichaModal" class="scanner-overlay">
+  <div class="scanner-box">
+    <h3>Ficha de Usuario</h3>
+    <div id="fichaContent"></div>
+    <div class="form-row">
+      <button id="closeFichaBtn">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL EDITAR USUARIO -->
 <div id="editUserModal" class="scanner-overlay">
   <div class="scanner-box">
@@ -163,10 +177,10 @@
     <select id="editUserL"></select>
     <input id="editUserNombre" placeholder="Nombre completo (max 25)" maxlength="25"/>
     <input id="editUserDni" placeholder="DNI (8 dígitos)" maxlength="8" inputmode="numeric"/>
-    <input id="editUserCelular" placeholder="Celular (10 dígitos) opcional" maxlength="10" inputmode="numeric"/>
-    <input id="editUserAutorizante" placeholder="Autorizante (letras, max 12) opcional" maxlength="12"/>
+    <input id="editUserCelular" placeholder="Celular (10 dígitos)" maxlength="10" inputmode="numeric"/>
+    <input id="editUserAutorizante" placeholder="Autorizante (max 15 letras)" maxlength="15"/>
     <select id="editUserTipo">
-      <option value="NN">NN</option>
+      <option value="">Tipo</option>
       <option value="propietario">propietario</option>
       <option value="administracion">administración</option>
       <option value="empleado">empleado</option>
@@ -180,25 +194,6 @@
       <button id="finalizeEditBtn">Finalizar</button>
     </div>
     <span id="editUserMsg" class="okmsg"></span>
-  </div>
-</div>
-
-<!-- MODAL FICHA (solo lectura) -->
-<div id="fichaModal" class="scanner-overlay">
-  <div class="scanner-box" role="dialog" aria-modal="true" aria-labelledby="ficha-title">
-    <h3 id="ficha-title">Ficha de Usuario</h3>
-    <div style="text-align:left; max-width:340px; margin:0 auto;">
-      <p><strong>#L:</strong> <span id="fichaL"></span></p>
-      <p><strong>Nombre:</strong> <span id="fichaNombre"></span></p>
-      <p><strong>DNI:</strong> <span id="fichaDni"></span></p>
-      <p><strong>Celular:</strong> <span id="fichaCelular"></span></p>
-      <p><strong>Autorizante:</strong> <span id="fichaAutorizante"></span></p>
-      <p><strong>Fecha de expedición:</strong> <span id="fichaFechaExp"></span></p>
-      <p><strong>Tipo:</strong> <span id="fichaTipo"></span></p>
-    </div>
-    <div style="margin-top:12px;display:flex;justify-content:center;">
-      <button id="closeFichaBtn">Cancelar</button>
-    </div>
   </div>
 </div>
 
