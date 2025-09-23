@@ -351,12 +351,22 @@ onSnapshot(query(novedadesRef, orderBy("when","desc")), snapshot=>{
   snapshot.docs.forEach(d=>{
     const n = d.data();
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td style="white-space:nowrap">${n.when ? fechaDDMMYYYY(n.when) : ""}</td>
+
+    let horaFecha = "";
+    if (n.when) {
+      const date = n.when.toDate ? n.when.toDate() : new Date(n.when);
+      const hora = date.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+      const fecha = date.toLocaleDateString("es-AR");
+      horaFecha = `${hora}<br><small>${fecha}</small>`;
+    }
+
+    tr.innerHTML = `<td style="white-space:nowrap">${horaFecha}</td>
       <td style="text-align:left; padding-left:8px;">${n.texto || ""}</td>
       <td>
         <button class="edit-nov" data-id="${d.id}">Editar</button>
         <button class="del-nov" data-id="${d.id}">Eliminar</button>
       </td>`;
+
     novedadesTableBody.appendChild(tr);
 
     tr.querySelector(".edit-nov").addEventListener("click", ()=>{
@@ -607,3 +617,4 @@ document.getElementById("closeFichaBtn").addEventListener("click", ()=>{ documen
 document.getElementById("cancelEditBtn").addEventListener("click", ()=>{ document.getElementById("editUserModal").classList.remove("active"); });
 
 /* Nota final: se quitaron funciones y prompts de cambio/restore de contraseña y la sección CONFIG por pedido del usuario. */
+
