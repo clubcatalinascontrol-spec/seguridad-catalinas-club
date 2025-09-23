@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Control de Ingreso - Catalinas Country</title>
-<link rel="stylesheet" href="styles.css">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Catalinas Country — Control de Ingreso</title>
+<link rel="stylesheet" href="styles.css" />
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 </head>
 <body>
@@ -20,124 +20,162 @@
 </header>
 
 <main class="container">
+  <!-- PANEL -->
+  <section id="panel" class="page active">
+    <h2 class="title-centered">Control de acceso y egreso de Catalinas Country</h2>
+    <!-- Tabs tipo -->
+    <div class="controls" style="flex-direction:column;gap:12px;">
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;" id="panelTabs">
+        <button class="tab-btn active" data-tipo="todos">TODOS</button>
+        <button class="tab-btn" data-tipo="propietario">PROPIETARIOS</button>
+        <button class="tab-btn" data-tipo="administracion">ADMIN</button>
+        <button class="tab-btn" data-tipo="empleado">EMPLEADOS</button>
+        <button class="tab-btn" data-tipo="obrero">OBREROS</button>
+        <button class="tab-btn" data-tipo="invitado">INVITADOS</button>
+        <button class="tab-btn" data-tipo="guardia">GUARDIAS</button>
+        <button class="tab-btn" data-tipo="otro">OTROS</button>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center;align-items:center;">
+        <button id="scanBtn">ESCANEAR</button>
+        <button id="printActiveBtn">IMPRIMIR</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table id="movimientosTable" class="sheet">
+        <thead>
+          <tr>
+            <th>#L</th>
+            <th>Nombre</th>
+            <th>H. Entrada</th>
+            <th>H. Salida</th>
+            <th>Tipo</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div id="pagination" class="pagination"></div>
+  </section>
 
-<section id="panel" class="page active">
-<h2 class="title-centered">Control de Ingreso y Egreso</h2>
+  <!-- USUARIOS -->
+  <section id="usuarios" class="page">
+    <h2 class="title-centered">Gestión de Usuarios</h2>
+    <div class="form-row">
+      <select id="userL"></select>
+      <input id="userNombre" placeholder="Nombre Completo" maxlength="25"/>
+      <input id="userDni" placeholder="DNI" maxlength="8" inputmode="numeric"/>
+      <input id="userCelular" placeholder="Celular (10 dígitos)" maxlength="10"/>
+      <input id="userAutorizante" placeholder="Autorizante (solo letras)" maxlength="12"/>
+      <select id="userTipo">
+        <option value="">Tipo</option>
+        <option value="propietario">propietario</option>
+        <option value="administracion">administración</option>
+        <option value="empleado">empleado</option>
+        <option value="obrero">obrero</option>
+        <option value="invitado">invitado</option>
+        <option value="guardia">guardia</option>
+        <option value="otro">otro</option>
+      </select>
+      <button id="addUserBtn">Agregar Usuario</button>
+      <span id="userMessage" class="okmsg"></span>
+    </div>
+    <div class="table-wrap">
+      <table id="usersTable" class="sheet">
+        <thead>
+          <tr>
+            <th>#L</th>
+            <th>Nombre</th>
+            <th>DNI</th>
+            <th>Celular</th>
+            <th>Autorizante</th>
+            <th>Tipo</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
 
-<div class="controls">
-  <div class="tipo-btns">
-    <button class="tab-btn active" data-tipo="todos">TODOS</button>
-    <button class="tab-btn" data-tipo="propietario">PROPIETARIOS</button>
-    <button class="tab-btn" data-tipo="administracion">ADMIN</button>
-    <button class="tab-btn" data-tipo="empleado">EMPLEADOS</button>
-    <button class="tab-btn" data-tipo="obrero">OBREROS</button>
-    <button class="tab-btn" data-tipo="invitado">INVITADOS</button>
-    <button class="tab-btn" data-tipo="guardia">GUARDIAS</button>
-    <button class="tab-btn" data-tipo="otro">OTROS</button>
-  </div>
-  <div class="accion-btns">
-    <button id="scanBtn">ESCANEAR</button>
-    <button id="printActiveBtn">IMPRIMIR</button>
-  </div>
-</div>
+  <!-- EXPIRADOS -->
+  <section id="expirados" class="page">
+    <h2 class="title-centered">Usuarios Expirados</h2>
+    <div class="table-wrap">
+      <table id="expiredTable" class="sheet">
+        <thead>
+          <tr>
+            <th>#L</th>
+            <th>Nombre</th>
+            <th>F. Eliminación</th>
+            <th>Tipo</th>
+            <th>Código de Ingreso</th>
+            <th>Código de Salida</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
 
-<div class="table-wrap">
-  <table id="movimientosTable" class="sheet">
-    <thead>
-      <tr>
-        <th>#L</th>
-        <th>Nombre</th>
-        <th>Tipo</th>
-        <th>H. Entrada</th>
-        <th>H. Salida</th>
-        <th>Acción</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
-<div id="pagination" class="pagination"></div>
-</section>
+  <!-- NOVEDADES -->
+  <section id="novedades" class="page">
+    <h2 class="title-centered">Novedades</h2>
+    <div class="form-row">
+      <input type="text" id="novedadText" placeholder="Escriba la novedad aquí"/>
+      <button id="saveNovedadBtn">OK</button>
+    </div>
+    <div class="table-wrap">
+      <table id="novedadesTable" class="sheet">
+        <thead>
+          <tr>
+            <th>Hora</th>
+            <th>Novedad</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+</main>
 
-<section id="usuarios" class="page">
-<h2 class="title-centered">Gestión de Usuarios</h2>
-<div class="form-row">
-  <input id="userNombre" placeholder="Nombre completo (max 25)" maxlength="25">
-  <input id="userDni" placeholder="DNI (8 dígitos)" maxlength="8" inputmode="numeric">
-  <input id="userCelular" placeholder="Celular (10 dígitos)" maxlength="10" inputmode="numeric">
-  <input id="userAutorizante" placeholder="Autorizante (max 12)" maxlength="12">
-  <select id="userTipo">
-    <option value="">Tipo</option>
-    <option value="propietario">propietario</option>
-    <option value="administracion">administración</option>
-    <option value="empleado">empleado</option>
-    <option value="obrero">obrero</option>
-    <option value="invitado">invitado</option>
-    <option value="guardia">guardia</option>
-    <option value="otro">otro</option>
-  </select>
-  <button id="addUserBtn">Agregar Usuario</button>
-  <span id="userMessage" class="okmsg"></span>
-</div>
-<div class="table-wrap">
-  <table id="usersTable" class="sheet">
-    <thead>
-      <tr>
-        <th>#L</th>
-        <th>Nombre</th>
-        <th>DNI</th>
-        <th>Tipo</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
-</section>
-
-<section id="expirados" class="page">
-<h2 class="title-centered">Usuarios Expirados</h2>
-<div class="table-wrap">
-  <table id="expiredTable" class="sheet">
-    <thead>
-      <tr>
-        <th>#L</th>
-        <th>Nombre</th>
-        <th>Tipo</th>
-        <th>F. Eliminación</th>
-        <th>Código Ingreso</th>
-        <th>Código Salida</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
-</section>
-
-<section id="novedades" class="page">
-<h2 class="title-centered">Novedades</h2>
-<div class="form-row">
-  <input id="novedadInput" placeholder="Escribe la novedad aquí...">
-  <button id="addNovedadBtn">OK</button>
-</div>
-<div class="table-wrap">
-  <table id="novedadesTable" class="sheet">
-    <thead>
-      <tr><th>Hora</th><th>Novedad</th><th>Acción</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
-</section>
-
+<!-- MODAL ESCANEO -->
 <div id="scanModal" class="scanner-overlay">
   <div class="scanner-box">
     <h3>Escanear código</h3>
-    <input id="scanInput" maxlength="32" placeholder="Pegue/teclee 8 caracteres">
-    <div class="form-row">
+    <input id="scanInput" maxlength="32" placeholder="Pegue/teclee 8 caracteres"/>
+    <div style="margin-top:10px;display:flex;gap:8px;justify-content:center;">
       <button id="cancelScanBtn">Cancelar</button>
     </div>
-    <div id="scanMessage" class="okmsg"></div>
+    <div id="scanMessage" style="margin-top:10px;font-weight:700;"></div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR USUARIO -->
+<div id="editUserModal" class="scanner-overlay">
+  <div class="scanner-box">
+    <h3>Editar Usuario</h3>
+    <select id="editUserL"></select>
+    <input id="editUserNombre" placeholder="Nombre completo" maxlength="25"/>
+    <input id="editUserDni" placeholder="DNI" maxlength="8"/>
+    <input id="editUserCelular" placeholder="Celular" maxlength="10"/>
+    <input id="editUserAutorizante" placeholder="Autorizante" maxlength="12"/>
+    <select id="editUserTipo">
+      <option value="">Tipo</option>
+      <option value="propietario">propietario</option>
+      <option value="administracion">administración</option>
+      <option value="empleado">empleado</option>
+      <option value="obrero">obrero</option>
+      <option value="invitado">invitado</option>
+      <option value="guardia">guardia</option>
+      <option value="otro">otro</option>
+    </select>
+    <div class="form-row">
+      <button id="cancelEditBtn">Cancelar</button>
+      <button id="finalizeEditBtn">Finalizar</button>
+    </div>
+    <span id="editUserMsg" class="okmsg"></span>
   </div>
 </div>
 
