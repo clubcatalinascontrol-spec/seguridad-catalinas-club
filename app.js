@@ -1,76 +1,150 @@
-// Variables globales
-let users = [];
-let movements = [];
-let expiredUsers = [];
+// ===== Variables y selectores =====
+const pages = document.querySelectorAll('.page');
+const navBtns = document.querySelectorAll('.nav-btn');
+const tabBtns = document.querySelectorAll('.tab-btn');
+const movimientosTableBody = document.querySelector('#movimientosTable tbody');
+const usersTableBody = document.querySelector('#usersTable tbody');
+const expiredTableBody = document.querySelector('#expiredTable tbody');
+const novedadesTableBody = document.querySelector('#novedadesTable tbody');
+
+const scanModal = document.getElementById('scanModal');
+const scanInput = document.getElementById('scanInput');
+const scanMessage = document.getElementById('scanMessage');
+
+const editUserModal = document.getElementById('editUserModal');
+const editUserMsg = document.getElementById('editUserMsg');
+
+// ===== Datos locales =====
+let usuarios = [];
+let movimientos = [];
+let expirados = [];
 let novedades = [];
-let currentTipo = 'todos';
 
-// Helpers
-function $(id){ return document.getElementById(id); }
-function createRow(table, data, index, acciones=true){
-  const tr = document.createElement('tr');
-  Object.values(data).forEach((val,i)=>{
-    const td=document.createElement('td'); td.textContent=val; tr.appendChild(td);
+// ===== Funciones =====
+function showPage(pageId) {
+  pages.forEach(p=>p.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+  navBtns.forEach(b=>b.classList.remove('active'));
+  document.querySelector(`.nav-btn[data-section="${pageId}"]`).classList.add('active');
+}
+
+navBtns.forEach(btn=>{
+  btn.addEventListener('click',()=>showPage(btn.dataset.section));
+});
+
+function updateTables() {
+  movimientosTableBody.innerHTML = '';
+  usuarios.forEach((u,i)=>{
+    let entrada = movimientos.find(m=>m.userId===u.id)?.entrada || '';
+    let salida = movimientos.find(m=>m.userId===u.id)?.salida || '';
+    let tr = `<tr>
+      <td>${i+1}</td>
+      <td>${u.nombre}</td>
+      <td>${entrada}</td>
+      <td>${salida}</td>
+      <td>${u.tipo}</td>
+      <td><button onclick="editarUsuario('${u.id}')">Editar</button></td>
+    </tr>`;
+    movimientosTableBody.innerHTML += tr;
   });
-  if(acciones){
-    const td = document.createElement('td');
-    const fichaBtn = document.createElement('button'); fichaBtn.textContent='FICHA';
-    fichaBtn.onclick = ()=>showFicha(data);
-    td.appendChild(fichaBtn);
-    tr.appendChild(td);
+
+  usersTableBody.innerHTML = '';
+  usuarios.forEach((u,i)=>{
+    usersTableBody.innerHTML += `<tr>
+      <td>${i+1}</td>
+      <td>${u.nombre}</td>
+      <td>${u.dni}</td>
+      <td>${u.celular}</td>
+      <td>${u.autorizante}</td>
+      <td>${u.tipo}</td>
+      <td><button onclick="editarUsuario('${u.id}')">Editar</button></td>
+    </tr>`;
+  });
+
+  expiredTableBody.innerHTML = '';
+  expirados.forEach((u,i)=>{
+    expiredTableBody.innerHTML += `<tr>
+      <td>${i+1}</td>
+      <td>${u.nombre}</td>
+      <td>${u.fecha}</td>
+      <td>${u.tipo}</td>
+      <td>${u.codigoEntrada || ''}</td>
+      <td>${u.codigoSalida || ''}</td>
+    </tr>`;
+  });
+
+  novedadesTableBody.innerHTML = '';
+  novedades.forEach(n=>{
+    novedadesTableBody.innerHTML += `<tr>
+      <td>${n.hora}</td>
+      <td>${n.texto}</td>
+      <td><button onclick="eliminarNovedad('${n.id}')">Eliminar</button></td>
+    </tr>`;
+  });
+}
+
+// ===== Agregar usuario =====
+document.getElementById('addUserBtn').addEventListener('click',()=>{
+  const nombre = document.getElementById('userNombre').value.trim();
+  if(!nombre) return alert('Ingrese nombre');
+  const dni = document.getElementById('userDni').value.trim();
+  const celular = document.getElementById('userCelular').value.trim();
+  const autorizante = document.getElementById('userAutorizante').value.trim();
+  const tipo = document.getElementById('userTipo').value.trim();
+  const id = Date.now().toString();
+  usuarios.push({id,nombre,dni,celular,autorizante,tipo});
+  updateTables();
+  document.getElementById('userMessage').textContent='Usuario agregado';
+});
+
+// ===== Editar usuario =====
+function editarUsuario(id){
+  const u = usuarios.find(x=>x.id===id);
+  if(!u) return;
+  editUserModal.classList.add('active');
+  document.getElementById('editUserNombre').value=u.nombre;
+  document.getElementById('editUserDni').value=u.dni;
+  document.getElementById('editUserCelular').value=u.celular;
+  document.getElementById('editUserAutorizante').value=u.autorizante;
+  document.getElementById('editUserTipo').value=u.tipo;
+  document.getElementById('finalizeEditBtn').onclick=()=>{
+    u.nombre=document.getElementById('editUserNombre').value.trim();
+    u.dni=document.getElementById('editUserDni').value.trim();
+    u.celular=document.getElementById('editUserCelular').value.trim();
+    u.autorizante=document.getElementById('editUserAutorizante').value.trim();
+    u.tipo=document.getElementById('editUserTipo').value.trim();
+    updateTables();
+    editUserModal.classList.remove('active');
+  };
+  document.getElementById('cancelEditBtn').onclick=()=>editUserModal.classList.remove('active');
+}
+
+// ===== Escaneo de códigos =====
+document.getElementById('scanBtn').addEventListener('click',()=>scanModal.classList.add('active'));
+document.getElementById('cancelScanBtn').addEventListener('click',()=>scanModal.classList.remove('active'));
+scanInput.addEventListener('keypress',e=>{
+  if(e.key==='Enter'){
+    const val=scanInput.value.trim();
+    if(val.length!==8){scanMessage.textContent='Código inválido';return;}
+    const user = usuarios.find(u=>u.id.slice(-8)===val);
+    if(!user){scanMessage.textContent='Usuario no encontrado';return;}
+    let m = movimientos.find(x=>x.userId===user.id);
+    if(!m){movimientos.push({userId:user.id,entrada:new Date().toLocaleTimeString(),salida:''});}
+    else{m.salida=new Date().toLocaleTimeString();}
+    scanMessage.textContent='Registrado correctamente';
+    updateTables();
+    scanInput.value='';
   }
-  table.querySelector('tbody').appendChild(tr);
-  return tr;
-}
-
-// Render usuarios
-function renderUsers(){
-  const tbody = $('usersTable').querySelector('tbody');
-  tbody.innerHTML='';
-  users.forEach((u,i)=>{
-    createRow($('usersTable'), { "#L":i+1, Nombre:u.nombre, DNI:u.dni, Tipo:u.tipo });
-  });
-}
-
-// Ficha
-function showFicha(user){
-  $('fichaContent').innerHTML = `
-    <p><b>Nombre:</b> ${user.nombre}</p>
-    <p><b>DNI:</b> ${user.dni}</p>
-    <p><b>Celular:</b> ${user.celular || ''}</p>
-    <p><b>Autorizante:</b> ${user.autorizante || ''}</p>
-    <p><b>Tipo:</b> ${user.tipo}</p>
-  `;
-  $('fichaModal').classList.add('active');
-}
-
-// Navegación
-document.querySelectorAll('.nav-btn').forEach(btn=>{
-  btn.addEventListener('click', e=>{
-    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-    $(btn.dataset.section).classList.add('active');
-  });
 });
 
-// Agregar usuario
-$('addUserBtn').addEventListener('click', ()=>{
-  const nombre=$('userNombre').value.trim().toUpperCase();
-  const dni=$('userDni').value.trim();
-  const celular=$('userCelular').value.trim();
-  const autorizante=$('userAutorizante').value.trim();
-  const tipo=$('userTipo').value;
-
-  if(!nombre || !dni || !tipo){ $('userMessage').textContent='Faltan campos'; return; }
-  if(dni.length!==8 || isNaN(dni)){ $('userMessage').textContent='DNI inválido'; return; }
-  if(celular && (celular.length!==10 || isNaN(celular))){ $('userMessage').textContent='Celular inválido'; return; }
-
-  users.push({ nombre,dni,tipo,celular,autorizante });
-  $('userMessage').textContent='Usuario agregado';
-  renderUsers();
-  $('userNombre').value=''; $('userDni').value=''; $('userCelular').value=''; $('userAutorizante').value=''; $('userTipo').value='';
+// ===== Novedades =====
+document.getElementById('saveNovedadBtn').addEventListener('click',()=>{
+  const texto=document.getElementById('novedadText').value.trim();
+  if(!texto) return;
+  novedades.push({id:Date.now().toString(),hora:new Date().toLocaleTimeString(),texto});
+  updateTables();
+  document.getElementById('novedadText').value='';
 });
 
-// Modal Ficha
-$('closeFichaBtn').addEventListener('click', ()=>$('fichaModal').classList.remove('active'));
+// ===== Inicialización =====
+updateTables();
