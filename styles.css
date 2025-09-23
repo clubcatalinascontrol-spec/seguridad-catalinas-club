@@ -1,186 +1,143 @@
-/* ESTILOS GENERALES */
+/* styles.css */
 body {
   margin: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: Arial, sans-serif;
   background-color: #1f2634;
   color: #f4cf19;
 }
-
-h2.title-centered {
-  text-align: center;
-  margin-bottom: 16px;
-}
-
-.container {
-  padding: 20px;
-}
-
 .topbar {
   position: fixed;
   top: 0;
-  left: 0;
   width: 100%;
-  background-color: #1f2634;
+  background-color: #000000;
   border-bottom: 2px solid #f4cf19;
   box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-  z-index: 999;
+  z-index: 1000;
 }
-
 .nav {
   display: flex;
   justify-content: center;
-  align-items: center;
-  padding: 12px 0;
 }
-
+.nav-center {
+  display: flex;
+}
 .nav-btn {
-  background: #1f2634;
+  background: none;
+  border: none;
   color: #f4cf19;
-  border: 2px solid #f4cf19;
-  margin: 0 6px;
-  padding: 6px 12px;
-  border-radius: 8px;
+  padding: 12px 20px;
   cursor: pointer;
   font-weight: bold;
-  transition: all 0.2s ease;
 }
-
-.nav-btn:hover {
-  background: #f4cf19;
-  color: #1f2634;
+.nav-btn:hover, .nav-btn.active {
+  background-color: #f4cf19;
+  color: #000;
+  border-radius: 6px;
 }
-
-.nav-btn.active {
-  background: #f4cf19;
-  color: #1f2634;
+.container {
+  padding-top: 80px;
+  padding-bottom: 40px;
+  max-width: 1200px;
+  margin: auto;
 }
-
 .page {
   display: none;
-  margin-top: 80px;
 }
-
 .page.active {
   display: block;
 }
-
+.title-centered {
+  text-align: center;
+  margin-bottom: 16px;
+}
 .controls {
   display: flex;
   justify-content: center;
-  align-items: center;
-  gap: 10px;
   margin-bottom: 12px;
+  gap: 10px;
 }
-
 input, select, textarea {
-  padding: 6px 8px;
+  padding: 6px 10px;
   border-radius: 6px;
   border: 1px solid #ccc;
-  font-size: 14px;
+  background-color: #1f2634;
+  color: #f4cf19;
 }
-
 button {
-  cursor: pointer;
-  border: none;
-  border-radius: 6px;
   padding: 6px 12px;
-  background-color: #f4cf19;
-  color: #1f2634;
+  border-radius: 6px;
+  border: 1px solid #f4cf19;
+  background-color: #000;
+  color: #f4cf19;
+  cursor: pointer;
   font-weight: bold;
-  transition: 0.2s;
 }
-
 button:hover {
-  background-color: #e0b914;
+  background-color: #f4cf19;
+  color: #000;
 }
-
-.okmsg {
-  color: #0f0;
-  font-weight: bold;
-}
-
-/* TABLAS */
 .table-wrap {
   overflow-x: auto;
   margin-top: 12px;
 }
-
 .sheet {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 12px;
 }
-
 .sheet th, .sheet td {
   border: 1px solid #f4cf19;
-  padding: 6px;
-  text-align: center;
+  padding: 6px 8px;
+  text-align: left;
 }
-
 .sheet th {
-  background-color: #1f2634;
+  background-color: #000000;
 }
-
-.sheet td {
-  background-color: #2a3145;
+.okmsg {
+  color: #00ff00;
+  font-weight: bold;
 }
-
-.sheet tr:nth-child(even) td {
-  background-color: #232a3b;
-}
-
-.pagination {
-  text-align: center;
-  margin-top: 6px;
-}
-
-.pagination button {
-  margin: 0 2px;
-}
-
-/* MODALES Y OVERLAYS */
-.scanner-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(31,38,52,0.95);
-  display: none;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.scanner-box {
-  background-color: #1f2634;
-  border: 2px solid #f4cf19;
-  padding: 16px;
-  border-radius: 12px;
-  text-align: center;
-  min-width: 320px;
-}
-
 .password-banner {
   position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background-color: rgba(31,38,52,0.97);
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background: rgba(0,0,0,0.9);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 2000;
 }
-
 .password-inner {
-  background-color: #1f2634;
-  border: 2px solid #f4cf19;
+  background-color: #000;
+  color: #f4cf19;
+  padding: 20px;
   border-radius: 12px;
-  padding: 24px;
   text-align: center;
 }
-
-.muted {
-  color: #ccc;
-  font-size: 12px;
+.scanner-overlay {
+  position: fixed;
+  top:0; left:0; width:100%; height:100%;
+  background: rgba(0,0,0,0.9);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+.scanner-box {
+  background-color: #000;
+  color: #f4cf19;
+  padding: 20px;
+  border-radius: 12px;
+  min-width: 300px;
+}
+.pagination {
+  margin-top: 8px;
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+}
+.pagination button {
+  font-size: 0.85em;
+  padding: 4px 8px;
 }
