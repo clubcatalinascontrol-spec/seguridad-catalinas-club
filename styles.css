@@ -119,6 +119,7 @@ input::placeholder{ color:#999; }
 .sheet td small {
   display: block;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 9px;
   margin-top: 2px;
 }
+
