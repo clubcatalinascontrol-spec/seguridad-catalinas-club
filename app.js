@@ -560,7 +560,7 @@ scanBtn.addEventListener("click", () => {
   scanMessage.textContent = "";
   scanInput.focus();
 });
-cancelScanBtn.addEventListener("click", () => { scanModal.classList.remove("active"); scanMessage.textContent = ""; scanInput.value = ""; });
+cancelScanBtn.addEventListener("click", () => { scanMessage.textContent = ""; scanInput.value = ""; });
 
 let scanProcessing = false;
 scanInput.addEventListener("input", async () => {
@@ -639,5 +639,6 @@ document.getElementById("closeFichaBtn").addEventListener("click", ()=>{ documen
 document.getElementById("cancelEditBtn").addEventListener("click", ()=>{ document.getElementById("editUserModal").classList.remove("active"); });
 
 /* Nota final: se quitaron funciones y prompts de cambio/restore de contraseña y la sección CONFIG por pedido del usuario. */
+
 
 
