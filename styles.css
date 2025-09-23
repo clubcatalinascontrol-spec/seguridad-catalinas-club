@@ -114,3 +114,11 @@ input::placeholder{ color:#999; }
 .autorizante-hidden td.autorizante-td {
   display: none;
 }
+
+/* fecha debajo de la hora en tabla novedades */
+.sheet td small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 2px;
+}
