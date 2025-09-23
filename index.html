@@ -1,134 +1,60 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control de Usuarios</title>
-    <link rel="stylesheet" href="styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control de Acceso</title>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <header>
-        <h1>Panel de Control</h1>
-    </header>
+<header>
+  <h1>Control de Acceso</h1>
+</header>
 
-    <main>
-        <section id="panel-section">
-            <h2>PANEL</h2>
-            <div class="panel-controls">
-                <input type="text" id="scan-input" placeholder="Escanear código aquí..." autofocus>
-                <select id="panel-filter">
-                    <option value="todos">Todos</option>
-                    <option value="propietarios">Propietarios</option>
-                    <option value="visitantes">Visitantes</option>
-                    <option value="expirados">Expirados</option>
-                </select>
-                <button id="print-btn">IMPRIMIR</button>
-            </div>
-            <div class="tables">
-                <table id="table-todos" class="panel-table" data-type="todos">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nombre</th>
-                            <th>F. Eliminación</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
+<main>
+  <section id="panel">
+    <h2>PANEL</h2>
+    <input type="text" id="codigoInput" placeholder="Escanea el código..." autofocus>
+    <select id="panelSelect">
+      <option value="todos">TODOS</option>
+      <option value="propietarios">PROPIETARIOS</option>
+      <option value="otros">OTROS</option>
+    </select>
+    <button id="imprimirBtn">IMPRIMIR</button>
+    <div id="panelTables">
+      <table id="todosTable">
+        <!-- Contenido generado dinámicamente -->
+      </table>
+      <table id="propietariosTable" style="display:none;">
+        <!-- Contenido generado dinámicamente -->
+      </table>
+      <table id="otrosTable" style="display:none;">
+        <!-- Contenido generado dinámicamente -->
+      </table>
+    </div>
+  </section>
 
-                <table id="table-propietarios" class="panel-table" data-type="propietarios">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nombre</th>
-                            <th>F. Eliminación</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
+  <section id="usuarios">
+    <h2>USUARIOS</h2>
+    <select id="usuariosSelect">
+      <option value="todos">TODOS</option>
+      <option value="propietarios">PROPIETARIOS</option>
+      <option value="otros">OTROS</option>
+    </select>
+    <div id="usuariosTables">
+      <table id="usuariosTodosTable">
+        <!-- Contenido generado dinámicamente -->
+      </table>
+      <table id="usuariosPropietariosTable" style="display:none;">
+        <!-- Contenido generado dinámicamente -->
+      </table>
+      <table id="usuariosOtrosTable" style="display:none;">
+        <!-- Contenido generado dinámicamente -->
+      </table>
+    </div>
+  </section>
+</main>
 
-                <table id="table-visitantes" class="panel-table" data-type="visitantes">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nombre</th>
-                            <th>F. Eliminación</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-
-                <table id="table-expirados" class="panel-table" data-type="expirados">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nombre</th>
-                            <th>F. Eliminación</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </section>
-
-        <section id="usuarios-section">
-            <h2>USUARIOS</h2>
-            <div class="usuarios-controls">
-                <select id="user-filter">
-                    <option value="todos">Todos</option>
-                    <option value="propietarios">Propietarios</option>
-                    <option value="visitantes">Visitantes</option>
-                    <option value="expirados">Expirados</option>
-                </select>
-            </div>
-            <div class="users-tables">
-                <table id="users-todos" class="users-table" data-type="todos">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nombre</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-
-                <table id="users-propietarios" class="users-table" data-type="propietarios">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nombre</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-
-                <table id="users-visitantes" class="users-table" data-type="visitantes">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nombre</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-
-                <table id="users-expirados" class="users-table" data-type="expirados">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nombre</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </section>
-    </main>
-
-    <script src="app.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
