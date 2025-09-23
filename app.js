@@ -1,236 +1,180 @@
-// app.js (completo, funcional, compatible con index.html y styles.css)
+// app.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, doc, onSnapshot, updateDoc, deleteDoc, query, where, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-// ------------------- Firebase Config -------------------
+// ---------- FIREBASE ----------
 const firebaseConfig = {
-    apiKey: "AIzaSyBmgexrB3aDlx5XARYqigaPoFsWX5vDz_4",
-    authDomain: "seguridad-catalinas-club.firebaseapp.com",
-    projectId: "seguridad-catalinas-club",
-    storageBucket: "seguridad-catalinas-club.firebasestorage.app",
-    messagingSenderId: "980866194296",
-    appId: "1:980866194296:web:3fefc2a107d0ec6052468d"
+  apiKey: "AIzaSyB8fQJsN0tqpuz48Om30m6u6jhEcSfKYEw",
+  authDomain: "supermercadox-107f6.firebaseapp.com",
+  projectId: "supermercadox-107f6",
+  storageBucket: "supermercadox-107f6.appspot.com",
+  messagingSenderId: "504958637825",
+  appId: "1:504958637825:web:6ae5e2cde43206b3052d00"
 };
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ------------------- Colecciones -------------------
-const usuariosRef = collection(db, "usuarios");
-const movimientosRef = collection(db, "movimientos");
-const expiredRef = collection(db, "expiredCodes");
-const novedadesRef = collection(db, "novedades");
+const usuariosRef = collection(db,"usuarios");
+const movimientosRef = collection(db,"movimientos");
+const expiredRef = collection(db,"expiredCodes");
+const novedadesRef = collection(db,"novedades");
 
-// ------------------- Contraseña -------------------
-const MAIN_PASS = "1409";
-const passwordOverlay = document.getElementById("passwordOverlay");
-const mainPassInput = document.getElementById("mainPassInput");
-const mainPassBtn = document.getElementById("mainPassBtn");
+// ---------- CONTRASEÑA ÚNICA ----------
+const MASTER_PASS="1409";
+const passOverlay = document.getElementById("passOverlay");
+const initInput = document.getElementById("initPassInput");
+const initBtn = document.getElementById("initPassBtn");
+const initMsg = document.getElementById("initPassMsg");
 
-mainPassBtn.addEventListener("click", () => {
-    if(mainPassInput.value.trim() === MAIN_PASS) {
-        passwordOverlay.style.display = "none";
-        initApp();
-    } else {
-        document.querySelector(".passwordMsg").textContent = "Contraseña incorrecta";
+passOverlay.classList.add("active");
+initBtn.onclick = ()=>{
+  if(initInput.value.trim()===MASTER_PASS){
+    passOverlay.classList.remove("active");
+  } else {
+    initMsg.style.color="red";
+    initMsg.textContent="Contraseña incorrecta";
+    setTimeout(()=>initMsg.textContent="",2000);
+    initInput.value="";
+  }
+};
+
+// ---------- NAV ----------
+const navBtns=document.querySelectorAll(".nav-btn");
+const pages=document.querySelectorAll(".page");
+navBtns.forEach(btn=>btn.addEventListener("click", ()=>{
+  navBtns.forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  const target=btn.dataset.section;
+  pages.forEach(p=>p.classList.remove("active"));
+  document.getElementById(target).classList.add("active");
+}));
+
+// ---------- TAB FILTROS PANEL ----------
+const tabBtns=document.querySelectorAll(".tab-btn");
+let tipoFiltro="todos";
+tabBtns.forEach(btn=>btn.addEventListener("click", ()=>{
+  tabBtns.forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  tipoFiltro=btn.dataset.tipo;
+  renderMovimientos();
+}));
+
+// ---------- TAB FILTROS USUARIOS ----------
+const filterBtns=document.querySelectorAll(".filter-btn");
+let userFiltro="todos";
+filterBtns.forEach(btn=>btn.addEventListener("click", ()=>{
+  filterBtns.forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  userFiltro=btn.dataset.tipo;
+  renderUsuarios();
+}));
+
+// ---------- MOVIMIENTOS ----------
+const movimientosTable=document.querySelector("#movimientosTable tbody");
+async function renderMovimientos(){
+  movimientosTable.innerHTML="";
+  const q = query(movimientosRef, orderBy("timestamp","desc"), limit(100));
+  const snapshot = await getDocs(q);
+  let i=1;
+  snapshot.forEach(docSnap=>{
+    const d=docSnap.data();
+    if(tipoFiltro==="todos" || d.tipo===tipoFiltro){
+      const tr=document.createElement("tr");
+      tr.innerHTML=`<td>${i}</td><td>${d.nombre}</td><td>${d.horaEntrada||""}</td><td>${d.horaSalida||""}</td><td>${d.tipo}</td><td></td>`;
+      movimientosTable.appendChild(tr);
+      i++;
     }
-});
-
-// ------------------- Helpers -------------------
-function generarCodigo(){ return Math.random().toString(36).substring(2,10).toUpperCase(); }
-function horaActualStr(){ const d=new Date(); return `${d.getHours().toString().padStart(2,"0")}:${d.getMinutes().toString().padStart(2,"0")}`; }
-function fechaDDMMYYYY(dateIso){ const d = dateIso ? new Date(dateIso) : new Date(); return `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}`; }
-
-// ------------------- App Principal -------------------
-function initApp(){
-
-    // --- Navegación de secciones ---
-    const navBtns = document.querySelectorAll(".nav-btn");
-    const pages = document.querySelectorAll(".page");
-    navBtns.forEach(btn=>{
-        btn.addEventListener("click",()=>{
-            navBtns.forEach(b=>b.classList.remove("active"));
-            btn.classList.add("active");
-            const target = btn.dataset.section;
-            pages.forEach(p=>p.classList.remove("active"));
-            document.getElementById(target).classList.add("active");
-        });
-    });
-
-    // ------------------- USUARIOS -------------------
-    const usersTable = document.querySelector("#usersTable tbody");
-    const userNombre = document.getElementById("userNombre");
-    const userDni = document.getElementById("userDni");
-    const userCelular = document.getElementById("userCelular");
-    const userAutorizante = document.getElementById("userAutorizante");
-    const userTipo = document.getElementById("userTipo");
-    const addUserBtn = document.getElementById("addUserBtn");
-    const userMessage = document.getElementById("userMessage");
-
-    const filterBtns = document.querySelectorAll(".filterUserBtn");
-
-    filterBtns.forEach(btn=>{
-        btn.addEventListener("click",()=>{
-            filterBtns.forEach(b=>b.classList.remove("active"));
-            btn.classList.add("active");
-            renderUsuarios(btn.dataset.tipo);
-        });
-    });
-
-    async function agregarUsuario(){
-        const nombre = userNombre.value.trim();
-        const dni = userDni.value.trim();
-        const celular = userCelular.value.trim();
-        const autorizante = userAutorizante.value.trim();
-        const tipo = userTipo.value;
-
-        if(!nombre || nombre.length<3){ userMessage.textContent="Nombre inválido"; return; }
-
-        await addDoc(usuariosRef,{
-            nombre,dni,celular,autorizante,tipo,fExpedicion:serverTimestamp()
-        });
-
-        userNombre.value = userDni.value = userCelular.value = userAutorizante.value = "";
-        userMessage.textContent="Usuario agregado correctamente";
-    }
-
-    addUserBtn.addEventListener("click", agregarUsuario);
-
-    async function renderUsuarios(tipoFiltro="todos"){
-        usersTable.innerHTML="";
-        const q = tipoFiltro==="todos"? usuariosRef : query(usuariosRef,where("tipo","==",tipoFiltro));
-        const snapshot = await getDocs(q);
-        let i=1;
-        snapshot.forEach(docSnap=>{
-            const u = docSnap.data();
-            const tr = document.createElement("tr");
-            tr.innerHTML = `<td>${i}</td>
-            <td>${u.nombre}</td>
-            <td>${u.dni||""}</td>
-            <td>${u.celular||""}</td>
-            <td>${(u.tipo!=="propietario" && u.tipo!=="administracion")?"":u.autorizante||""}</td>
-            <td>${u.fExpedicion ? fechaDDMMYYYY(u.fExpedicion.toDate()) : ""}</td>
-            <td>${u.tipo}</td>
-            <td>
-                <button class="ficha-btn" data-id="${docSnap.id}">FICHA</button>
-                <button class="del-btn" data-id="${docSnap.id}">ELIMINAR</button>
-            </td>`;
-            usersTable.appendChild(tr);
-
-            tr.querySelector(".del-btn").addEventListener("click", async()=>{
-                await deleteDoc(doc(db,"usuarios",docSnap.id));
-                await addDoc(expiredRef,{...u,codigo:generarCodigo(),fechaElim:serverTimestamp()});
-                renderUsuarios(tipoFiltro);
-            });
-
-            tr.querySelector(".ficha-btn").addEventListener("click", ()=>{
-                alert(`FICHA DE: ${u.nombre}\nDNI: ${u.dni}\nCelular: ${u.celular}\nAutorizante: ${u.autorizante}\nTipo: ${u.tipo}`);
-            });
-
-            i++;
-        });
-    }
-
-    renderUsuarios();
-
-    // ------------------- EXPIRADOS -------------------
-    const expiredTable = document.querySelector("#expiredTable tbody");
-    async function renderExpirados(){
-        expiredTable.innerHTML="";
-        const snapshot = await getDocs(expiredRef);
-        let i=1;
-        snapshot.forEach(docSnap=>{
-            const e = docSnap.data();
-            const tr = document.createElement("tr");
-            tr.innerHTML = `<td>${i}</td>
-            <td>${e.nombre}</td>
-            <td>${e.dni||""}</td>
-            <td>${e.codigo||""}</td>
-            <td>${e.codigoSalida||""}</td>
-            <td>${e.tipo||""}</td>
-            <td>${e.fechaElim ? fechaDDMMYYYY(e.fechaElim.toDate()) : ""}</td>`;
-            expiredTable.appendChild(tr);
-            i++;
-        });
-    }
-
-    renderExpirados();
-
-    // ------------------- NOVEDADES -------------------
-    const novedadTexto = document.getElementById("novedadTexto");
-    const guardarNovedadBtn = document.getElementById("guardarNovedadBtn");
-    const novedadesTable = document.querySelector("#novedadesTable tbody");
-
-    guardarNovedadBtn.addEventListener("click", async()=>{
-        const texto = novedadTexto.value.trim();
-        if(!texto) return;
-        await addDoc(novedadesRef,{texto,fecha:serverTimestamp()});
-        novedadTexto.value="";
-        renderNovedades();
-    });
-
-    async function renderNovedades(){
-        novedadesTable.innerHTML="";
-        const snapshot = await getDocs(query(novedadesRef,orderBy("fecha","desc")));
-        snapshot.forEach(docSnap=>{
-            const n = docSnap.data();
-            const tr = document.createElement("tr");
-            tr.innerHTML = `<td>${n.fecha ? horaActualStr() : ""}</td><td>${n.texto}</td><td><button class="del-btn">ELIMINAR</button></td>`;
-            novedadesTable.appendChild(tr);
-            tr.querySelector(".del-btn").addEventListener("click", async()=>{
-                await deleteDoc(doc(db,"novedades",docSnap.id));
-                renderNovedades();
-            });
-        });
-    }
-    renderNovedades();
-
-    // ------------------- MOVIMIENTOS / PANEL -------------------
-    const movimientosTable = document.querySelector("#movimientosTable tbody");
-    const scanBtn = document.getElementById("scanBtn");
-    const printActiveBtn = document.getElementById("printActiveBtn");
-    let movimientosCache = [];
-
-    async function renderMovimientos(tipoFiltro="todos"){
-        movimientosTable.innerHTML="";
-        const snapshot = await getDocs(movimientosRef);
-        movimientosCache = [];
-        let i=1;
-        snapshot.forEach(docSnap=>{
-            const m = docSnap.data();
-            if(tipoFiltro!=="todos" && m.tipo!==tipoFiltro) return;
-            movimientosCache.push(m);
-            const tr = document.createElement("tr");
-            tr.innerHTML = `<td>${i}</td><td>${m.nombre}</td><td>${m.hEntrada||""}</td><td>${m.hSalida||""}</td><td>${m.tipo}</td>
-            <td>
-                <button class="del-btn" data-id="${docSnap.id}">ELIMINAR</button>
-            </td>`;
-            movimientosTable.appendChild(tr);
-            tr.querySelector(".del-btn").addEventListener("click", async()=>{
-                await deleteDoc(doc(db,"movimientos",docSnap.id));
-                renderMovimientos(tipoFiltro);
-            });
-            i++;
-        });
-        if(movimientosCache.length>0 && movimientosCache.length%25===0){
-            window.print();
-        }
-    }
-
-    scanBtn.addEventListener("click", async()=>{
-        const codigo = prompt("Ingrese código de barra:");
-        if(!codigo) return;
-        // Buscar usuario
-        const snapshot = await getDocs(query(usuariosRef,where("codigo","==",codigo)));
-        if(snapshot.empty){ alert("Código inválido"); return; }
-        snapshot.forEach(async docSnap=>{
-            const u = docSnap.data();
-            const hEntrada = horaActualStr();
-            await addDoc(movimientosRef,{nombre:u.nombre,tipo:u.tipo,hEntrada});
-            renderMovimientos();
-        });
-    });
-
-    printActiveBtn.addEventListener("click", ()=>window.print());
-
-    renderMovimientos();
+  });
 }
+renderMovimientos();
+
+// ---------- USUARIOS ----------
+const usersTable=document.querySelector("#usersTable tbody");
+async function renderUsuarios(){
+  usersTable.innerHTML="";
+  const snapshot=await getDocs(usuariosRef);
+  let i=1;
+  snapshot.forEach(docSnap=>{
+    const u=docSnap.data();
+    if(userFiltro==="todos" || u.tipo===userFiltro){
+      const tr=document.createElement("tr");
+      let fichaBtn=`<button class="ficha-btn" onclick="mostrarFicha('${docSnap.id}')">FICHA</button>`;
+      tr.innerHTML=`<td>${i}</td><td>${u.nombre}</td><td>${u.dni||""}</td><td>${u.celular||""}</td><td>${u.autorizante||""}</td><td>${u.fechaExp||""}</td><td>${u.tipo}</td>
+      <td>${fichaBtn}<button class="edit-btn" onclick="editarUsuario('${docSnap.id}')">EDITAR</button><button class="del-btn" onclick="eliminarUsuario('${docSnap.id}')">ELIMINAR</button></td>`;
+      usersTable.appendChild(tr);
+      i++;
+    }
+  });
+}
+renderUsuarios();
+
+// ---------- FUNCIONES FICHA ----------
+window.mostrarFicha = async function(id){
+  const docSnap = await getDocs(query(usuariosRef, where("__name__","==",id)));
+  docSnap.forEach(d=>{
+    const data=d.data();
+    document.getElementById("fichaL").textContent=id;
+    document.getElementById("fichaNombre").textContent=data.nombre;
+    document.getElementById("fichaDni").textContent=data.dni||"";
+    document.getElementById("fichaCelular").textContent=data.celular||"";
+    document.getElementById("fichaAutorizante").textContent=data.autorizante||"";
+    document.getElementById("fichaFechaExp").textContent=data.fechaExp||"";
+    document.getElementById("fichaTipo").textContent=data.tipo;
+    document.getElementById("fichaModal").classList.add("active");
+  });
+};
+document.getElementById("closeFichaBtn").onclick=()=>document.getElementById("fichaModal").classList.remove("active");
+
+// ---------- ELIMINAR USUARIO ----------
+window.eliminarUsuario = async function(id){
+  if(confirm("¿Desea eliminar este usuario?")){
+    const docRef = doc(db,"usuarios",id);
+    const docSnap = await getDocs(query(usuariosRef, where("__name__","==",id)));
+    docSnap.forEach(d=>{
+      addDoc(expiredRef,{...d.data(),fechaElim:new Date().toLocaleString()});
+    });
+    await deleteDoc(docRef);
+    renderUsuarios();
+  }
+};
+
+// ---------- AGREGAR USUARIO ----------
+document.getElementById("addUserBtn").onclick = async ()=>{
+  const nombre = document.getElementById("userNombre").value.trim();
+  const dni = document.getElementById("userDni").value.trim();
+  const celular = document.getElementById("userCelular").value.trim();
+  const autorizante = document.getElementById("userAutorizante").value.trim();
+  const tipo = document.getElementById("userTipo").value;
+  if(!nombre){ alert("Nombre obligatorio"); return; }
+  await addDoc(usuariosRef,{
+    nombre,dni,celular,autorizante,tipo,fechaExp:new Date().toLocaleDateString()
+  });
+  document.getElementById("userNombre").value="";
+  renderUsuarios();
+};
+
+// ---------- NOVEDADES ----------
+const novedadesTable=document.querySelector("#novedadesTable tbody");
+async function renderNovedades(){
+  novedadesTable.innerHTML="";
+  const snapshot = await getDocs(query(novedadesRef, orderBy("timestamp","desc"), limit(50)));
+  snapshot.forEach(docSnap=>{
+    const n = docSnap.data();
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${n.hora}</td><td>${n.texto}</td><td><button class="del-btn" onclick="eliminarNovedad('${docSnap.id}')">ELIMINAR</button></td>`;
+    novedadesTable.appendChild(tr);
+  });
+}
+renderNovedades();
+
+document.getElementById("guardarNovedadBtn").onclick=async ()=>{
+  const texto = document.getElementById("novedadTexto").value.trim();
+  if(!texto)return;
+  await addDoc(novedadesRef,{texto,hora:new Date().toLocaleTimeString(),timestamp:serverTimestamp()});
+  document.getElementById("novedadTexto").value="";
+  renderNovedades();
+};
+
+window.eliminarNovedad = async function(id){
+  if(confirm("Eliminar novedad?")){ await deleteDoc(doc(db,"novedades",id)); renderNovedades(); }
+};
