@@ -1,3 +1,4 @@
+<!-- index.html -->
 <!doctype html>
 <html lang="es">
 <head>
@@ -8,7 +9,6 @@
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 </head>
 <body>
-
 <!-- PASSWORD OVERLAY -->
 <div id="passwordBanner" class="password-banner" style="display:none;">
   <div class="password-inner">
@@ -37,12 +37,10 @@
   <!-- PANEL -->
   <section id="panel" class="page active">
     <h2 class="title-centered">Control de acceso y egreso de Catalinas Country</h2>
-
-    <div class="controls" style="flex-direction:column;gap:12px;">
-
-      <!-- DESPLEGABLE TIPO -->
-      <div style="display:flex;gap:10px;justify-content:center;align-items:center;">
-        <select id="movimientosTipoSelect">
+    <div class="controls" style="flex-direction:column;gap:12px; align-items:center;">
+      <div style="display:flex;gap:10px;align-items:center;justify-content:center;">
+        <input id="scanInput" maxlength="32" placeholder="Pegue/teclee 8 caracteres" inputmode="text" autofocus />
+        <select id="panelTipoSelect">
           <option value="todos">TODOS</option>
           <option value="propietario">PROPIETARIOS</option>
           <option value="administracion">ADMIN</option>
@@ -52,13 +50,10 @@
           <option value="guardia">GUARDIAS</option>
           <option value="otro">OTROS</option>
         </select>
-        <input id="scanInputPanel" maxlength="32" placeholder="Escanee código aquí" inputmode="text" autofocus />
         <button id="printActiveBtn">IMPRIMIR</button>
         <span id="scanOk" class="okmsg" style="display:none;font-weight:700;">OK</span>
       </div>
-
     </div>
-
     <div class="table-wrap">
       <table id="movimientosTable" class="sheet">
         <thead>
@@ -81,7 +76,6 @@
   <!-- USUARIOS -->
   <section id="usuarios" class="page">
     <h2 class="title-centered">Gestión de Usuarios</h2>
-
     <div class="controls" style="justify-content:center;margin-bottom:12px;">
       <select id="usuariosTipoSelect">
         <option value="todos">TODOS</option>
@@ -94,7 +88,6 @@
         <option value="otro">OTROS</option>
       </select>
     </div>
-
     <div class="form-row">
       <select id="userL"></select>
       <input id="userNombre" placeholder="Nombre Completo (25 letras)" maxlength="25" />
@@ -114,11 +107,12 @@
       <button id="addUserBtn">Agregar Usuario</button>
       <span id="userMessage" class="okmsg"></span>
     </div>
-
     <div class="table-wrap">
       <table id="usersTable" class="sheet">
         <thead>
-          <tr><th>#L</th><th>Nombre</th><th>DNI</th><th>Celular</th><th>Autorizante</th><th>F. Expedición</th><th>Tipo</th><th>Acciones</th></tr>
+          <tr>
+            <th>#L</th><th>Nombre</th><th>DNI</th><th>Celular</th><th>Autorizante</th><th>F. Expedición</th><th>Tipo</th><th>Acciones</th>
+          </tr>
         </thead>
         <tbody></tbody>
       </table>
@@ -132,13 +126,7 @@
       <table id="expiredTable" class="sheet">
         <thead>
           <tr>
-            <th>#L</th>
-            <th>Nombre</th>
-            <th>DNI</th>
-            <th>Código Ingreso</th>
-            <th>Código Salida</th>
-            <th>Tipo</th>
-            <th>F. Eliminación</th>
+            <th>#L</th><th>Nombre</th><th>DNI</th><th>Código Ingreso</th><th>Código Salida</th><th>Tipo</th><th>F. Eliminación</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -167,7 +155,7 @@
     </div>
   </section>
 
-  <!-- MODALS -->
+  <!-- MODALS FICHA y EDITAR (sin cambios significativos) -->
   <div id="editUserModal" class="scanner-overlay">
     <div class="scanner-box">
       <h3>Editar Usuario</h3>
