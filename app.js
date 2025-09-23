@@ -307,10 +307,21 @@ onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
 
 /* ----------------------------- EXPIRADOS - render en tiempo real ----------------------------- */
 const expiredTableBody = document.querySelector("#expiredTable tbody");
+const expiredPaginationDiv = document.getElementById("expiredPagination"); // 👈 agrega este <div> en el HTML
+const EXP_LIMIT = 25;
+let expiredCache = [];
+let currentExpiredPage = 1;
+
 onSnapshot(query(expiredRef, orderBy("when","desc")), snapshot=>{
+  expiredCache = snapshot.docs.map(d => ({ __id:d.id, ...d.data() }));
+  renderExpiredPage();
+});
+
+function renderExpiredPage(){
   expiredTableBody.innerHTML = "";
-  snapshot.docs.forEach(d=>{
-    const e = d.data();
+  const start = (currentExpiredPage-1)*EXP_LIMIT;
+  const page = expiredCache.slice(start, start+EXP_LIMIT);
+  page.forEach(e=>{
     const tr = document.createElement("tr");
     tr.innerHTML = `<td>${e.L || ""}</td>
       <td>${e.nombre || ""}</td>
@@ -321,8 +332,20 @@ onSnapshot(query(expiredRef, orderBy("when","desc")), snapshot=>{
       <td>${e.when ? fechaDDMMYYYY(e.when) : ""}</td>`;
     expiredTableBody.appendChild(tr);
   });
-});
+  renderExpiredPagination();
+}
 
+function renderExpiredPagination(){
+  const totalPages = Math.max(1, Math.ceil(expiredCache.length/EXP_LIMIT));
+  expiredPaginationDiv.innerHTML = "";
+  for(let p=1; p<=totalPages; p++){
+    const btn = document.createElement("button");
+    btn.textContent = p;
+    if(p === currentExpiredPage){ btn.style.background="#d8a800"; btn.style.color="#111"; }
+    btn.addEventListener("click", ()=>{ currentExpiredPage=p; renderExpiredPage(); });
+    expiredPaginationDiv.appendChild(btn);
+  }
+}
 /* ----------------------------- NOVEDADES - agregar/editar/eliminar ----------------------------- */
 const novedadesTableBody = document.querySelector("#novedadesTable tbody");
 const novTxt = document.getElementById("novedadTexto");
@@ -616,4 +639,5 @@ document.getElementById("closeFichaBtn").addEventListener("click", ()=>{ documen
 document.getElementById("cancelEditBtn").addEventListener("click", ()=>{ document.getElementById("editUserModal").classList.remove("active"); });
 
 /* Nota final: se quitaron funciones y prompts de cambio/restore de contraseña y la sección CONFIG por pedido del usuario. */
+
 
