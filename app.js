@@ -1,4 +1,5 @@
 // app.js (parte 1) - Firebase 9.22
+document.addEventListener("DOMContentLoaded", () => {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, doc, onSnapshot, updateDoc, deleteDoc, query, where, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
@@ -490,4 +491,5 @@ function renderPagination(totalItems, container, limit=25, current=1, onClick){
 onSnapshot(query(expiredRef, orderBy("fechaEliminacion","desc")), snapshot=>{
   expiredCache=snapshot.docs.map(d=>({__id:d.id, ...d.data()}));
   renderExpiredPage();
+});
 });
