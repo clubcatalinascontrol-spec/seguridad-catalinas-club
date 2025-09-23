@@ -209,7 +209,7 @@ guardarNovedadBtn.addEventListener("click", async ()=>{
     }
     novTxt.value=""; setTimeout(()=>novMsg.textContent="",2000);
   }catch(err){ console.error(err); novMsg.style.color="red"; novMsg.textContent="Error"; setTimeout(()=>novMsg.textContent="",2000); }
-}
+});
 
 // render novedades
 onSnapshot(query(novedadesRef, orderBy("when","desc")), snapshot=>{
@@ -437,3 +437,4 @@ function filterUsersTable(){
 
 /* ----------------------------- Edit modal cancel ----------------------------- */
 document.getElementById("cancelEditBtn").addEventListener("click", ()=>{ document.getElementById("editUserModal").classList.remove("active"); });
+
