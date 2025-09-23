@@ -106,19 +106,7 @@ input::placeholder{ color:#999; }
 
 /* impresión especial (si se añade desde JS se aplicará en ventana nueva, pero dejo aquí una referencia) */
 @media print {
-  body { 
-    font-size:10px; 
-    margin:0; 
-    display:flex; 
-    justify-content:center; /* centra horizontalmente */
-  }
-
-  .topbar, .controls, .scanner-overlay { display:none; }
-  .container { padding:0; margin:0; width:auto; }
-  .table-wrap { overflow:visible; margin:0 auto; } /* centrado de la tabla */
-  .sheet { margin:0 auto; }
-  .sheet th, .sheet td { padding:2px 2px; font-size:10px; }
-  .sheet td button { display:none; } /* opcional: esconder botones */
+  body { font-size:12px; }
 }
 
 /* clase helper para ocultar columna autorizante (se controla por JS) */
@@ -134,4 +122,3 @@ input::placeholder{ color:#999; }
   font-size: 12px;
   margin-top: 2px;
 }
-
