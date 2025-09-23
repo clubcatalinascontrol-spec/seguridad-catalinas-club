@@ -506,44 +506,85 @@ function renderMovsPage(){
   renderPagination(filtered.length);
 }
 
-/* Escuchar movimientos ordenados por hora descendente */
-onSnapshot(query(movimientosRef, orderBy("hora","desc")),snapshot=>{
-  movimientosCache = snapshot.docs.map(d=>({__id:d.id,...d.data()}));
-  const totalPages=Math.max(1,Math.ceil(movimientosCache.length/MOV_LIMIT));
-  if(currentPage>totalPages) currentPage=totalPages;
-  renderMovsPage();
-  // auto-imprimir propietarios cada múltiplo de 25 (toma los últimos 25)
+// PANEL - onSnapshot con inserción de filas NUEVAS arriba sin sobreescribir
+onSnapshot(query(movimientosRef, orderBy("hora","desc")), snapshot => {
+
+  snapshot.docChanges().forEach(change => {
+    const d = change.doc;
+    const data = { __id: d.id, ...d.data() };
+
+    if(change.type === "added"){
+      // insertar al inicio de la cache
+      movimientosCache.unshift(data);
+      // eliminar duplicados por ID
+      movimientosCache = movimientosCache.filter((v,i,a)=>a.findIndex(x=>x.__id===v.__id)===i);
+
+      // verificar si el movimiento coincide con el filtro activo
+      const matchesFilter = (activeTipo === "todos" || data.tipo === activeTipo);
+
+      if(matchesFilter){
+        // crear fila NUEVA y agregar al inicio del tbody
+        const tr = document.createElement("tr");
+        const autorizText = data.autorizante || "";
+        tr.innerHTML = `<td>${data.L||""}</td><td>${(data.nombre||"").toUpperCase()}</td>
+          <td>${data.entrada||""}</td><td>${data.salida||""}</td><td>${data.tipo||""}</td>
+          <td class="autorizante-td">${autorizText}</td>
+          <td>
+            <button class="ficha-btn" data-L="${data.L}">FICHA</button>
+            <button class="delMov" data-id="${data.__id}">Eliminar</button>
+          </td>`;
+
+        // listeners para FICHA
+        tr.querySelector(".ficha-btn").addEventListener("click", async (e)=>{
+          const L = e.currentTarget.dataset.L;
+          try{
+            const q = query(usuariosRef, where("L","==",L), limit(1));
+            const snap = await getDocs(q);
+            if(!snap.empty){
+              const u = snap.docs[0].data();
+              document.getElementById("fichaL").textContent = u.L||"";
+              document.getElementById("fichaNombre").textContent = (u.nombre||"").toUpperCase();
+              document.getElementById("fichaDni").textContent = u.dni||"";
+              document.getElementById("fichaCelular").textContent = u.celular||"";
+              document.getElementById("fichaAutorizante").textContent = u.autorizante||"";
+              document.getElementById("fichaFechaExp").textContent = u.fechaExpedicion ? fechaDDMMYYYY(u.fechaExpedicion) : "";
+              document.getElementById("fichaTipo").textContent = u.tipo||"";
+              document.getElementById("fichaModal").classList.add("active");
+            } else { alert("No se encontró ficha para ese lote"); }
+          }catch(err){ console.error(err); alert("Error al buscar ficha"); }
+        });
+
+        // listener para ELIMINAR movimiento
+        tr.querySelector(".delMov").addEventListener("click", async e=>{
+          if(!isUnlocked){ alert("Operación no permitida. Introduzca la contraseña de apertura."); return; }
+          if(!confirm("Eliminar movimiento permanentemente?")) return;
+          try{ await deleteDoc(doc(db,"movimientos",e.currentTarget.dataset.id)); } catch(err){ console.error(err); alert("Error eliminando movimiento"); }
+        });
+
+        // insertar al inicio del tbody
+        movimientosTableBody.insertAdjacentElement('afterbegin', tr);
+      }
+
+    } else if(change.type === "modified"){
+      const idx = movimientosCache.findIndex(x=>x.__id===data.__id);
+      if(idx > -1) movimientosCache[idx] = data;
+      renderMovsPage();
+
+    } else if(change.type === "removed"){
+      movimientosCache = movimientosCache.filter(x=>x.__id !== data.__id);
+      const row = movimientosTableBody.querySelector(`.delMov[data-id="${data.__id}"]`)?.closest("tr");
+      if(row) row.remove();
+      renderMovsPage();
+    }
+  });
+
+  // auto-imprimir propietarios cada múltiplo de 25
   const propietariosCount = movimientosCache.filter(m=>m.tipo==="propietario").length;
   if(propietariosCount>0 && propietariosCount % MOV_LIMIT === 0){
-    // impresión automática sin prompt
     printMovimientosPorTipo("propietario", true);
   }
 });
 
-/* Imprimir movimientos por tipo - ahora imprime ÚLTIMOS 25 movimientos (nuevo primero) y con font-size 12px y A4 */
-function printMovimientosPorTipo(tipo, auto=false){
-  if(!auto && !isUnlocked){ alert("Operación no permitida. Introduzca la contraseña de apertura."); return; }
-  const filtered = tipo==="todos" ? movimientosCache : movimientosCache.filter(m=>m.tipo===tipo);
-  const toPrint = filtered.slice(0,25); // últimos 25 (la lista ya viene ordenada por hora desc)
-  const w=window.open("","_blank","width=900,height=600");
-  const title = tipo==="todos" ? "Movimientos - Todos" : `Movimientos - ${tipo}`;
-  let html = `<html><head><title>${title}</title>
-    <style>
-      @page { size: A4; margin: 12mm; }
-      body{font-family:Arial,Helvetica,sans-serif; font-size:12px; }
-      table{width:100%;border-collapse:collapse}
-      th,td{border:1px solid #000;padding:6px;text-align:center;font-size:12px}
-      thead th{background:#f4cf19;font-weight:700}
-    </style>
-    </head><body><h3>${title}</h3><table><thead><tr><th>#L</th><th>Nombre</th><th>DNI</th><th>H. Entrada</th><th>H. Salida</th><th>Tipo</th></tr></thead><tbody>`;
-  toPrint.forEach(m=>{
-    html += `<tr><td>${m.L||""}</td><td>${(m.nombre||"").toUpperCase()}</td><td>${m.dni||""}</td><td>${m.entrada||""}</td><td>${m.salida||""}</td><td>${m.tipo||""}</td></tr>`;
-  });
-  html += `</tbody></table></body></html>`;
-  w.document.write(html);
-  // auto-print for auto flag; if manual print (auto==false) also print but now user already unlocked
-  w.print();
-}
 
 /* ----------------------------- ESCANEAR CÓDIGOS AUTOMÁTICO ----------------------------- */
 const scanBtn = document.getElementById("scanBtn");
@@ -639,6 +680,7 @@ document.getElementById("closeFichaBtn").addEventListener("click", ()=>{ documen
 document.getElementById("cancelEditBtn").addEventListener("click", ()=>{ document.getElementById("editUserModal").classList.remove("active"); });
 
 /* Nota final: se quitaron funciones y prompts de cambio/restore de contraseña y la sección CONFIG por pedido del usuario. */
+
 
 
 
