@@ -1,134 +1,137 @@
 // app.js
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+// Data storage simulada
+let movimientos = [];
+let users = [];
+let expirados = [];
+let novedades = [];
+let currentPanelTipo = 'todos';
+let currentUsuariosTipo = 'todos';
+let expiredPage = 1;
+const itemsPerPage = 25;
 
-// Firebase config
-const firebaseConfig = {
-  apiKey: "AIzaSyB8fQJsN0tqpuz48Om30m6u6jhEcSfKYEw",
-  authDomain: "supermercadox-107f6.firebaseapp.com",
-  projectId: "supermercadox-107f6",
-  storageBucket: "supermercadox-107f6.firebasestorage.app",
-  messagingSenderId: "504958637825",
-  appId: "1:504958637825:web:6ae5e2cde43206b3052d00"
-};
+// SELECTORES
+const pages = document.querySelectorAll('.page');
+const navBtns = document.querySelectorAll('.nav-btn');
+const scanInput = document.getElementById('scanInput');
+const panelTipoSelect = document.getElementById('panelTipoSelect');
+const usuariosTipoSelect = document.getElementById('usuariosTipoSelect');
+const movimientosTable = document.querySelector('#movimientosTable tbody');
+const usersTable = document.querySelector('#usersTable tbody');
+const expiredTable = document.querySelector('#expiredTable tbody');
+const paginationDiv = document.getElementById('pagination');
+const expiredPaginationDiv = document.getElementById('expiredPagination');
+const scanOk = document.getElementById('scanOk');
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-// Elementos
-const codigoInput = document.getElementById("codigoInput");
-const filtroPanel = document.getElementById("filtroPanel");
-const filtroUsuarios = document.getElementById("filtroUsuarios");
-const imprimirBtn = document.getElementById("imprimirBtn");
-
-const tablaTodos = document.getElementById("tablaTodos");
-const tablaPropietarios = document.getElementById("tablaPropietarios");
-const tablaOtros = document.getElementById("tablaOtros");
-const tablaUsuarios = document.getElementById("tablaUsuarios").querySelector("tbody");
-
-// Funciones auxiliares
-function generarID() {
-  return Math.floor(Math.random() * 9999) + 1;
-}
-
-// Cargar datos de Firebase
-async function cargarTickets() {
-  const snapshot = await getDocs(collection(db, "tickets"));
-  const tickets = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  return tickets;
-}
-
-async function cargarUsuarios() {
-  const snapshot = await getDocs(collection(db, "usuarios"));
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-}
-
-// Renderizar tablas PANEL
-async function renderizarPanel() {
-  const tickets = await cargarTickets();
-  const tipo = filtroPanel.value;
-
-  // Vaciar tablas
-  [tablaTodos, tablaPropietarios, tablaOtros].forEach(t => t.querySelector("tbody").innerHTML = "");
-
-  tickets.forEach(t => {
-    const fila = `<tr>
-      <td>${t.id}</td>
-      <td>${t.nombre}</td>
-      <td>${t.fechaEliminacion || ""}</td>
-      <td>
-        <button onclick="eliminarTicket('${t.id}')">Eliminar</button>
-      </td>
-    </tr>`;
-
-    tablaTodos.querySelector("tbody").innerHTML += fila;
-    if (t.tipo === "propietario") tablaPropietarios.querySelector("tbody").innerHTML += fila;
-    else tablaOtros.querySelector("tbody").innerHTML += fila;
+// NAV
+navBtns.forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    navBtns.forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const target = btn.dataset.section;
+    pages.forEach(p=>p.classList.remove('active'));
+    document.getElementById(target).classList.add('active');
+    if(target==='expirados') renderExpired();
+    if(target==='panel') renderMovimientos();
+    if(target==='usuarios') renderUsers();
   });
+});
 
-  // Mostrar solo la tabla seleccionada
-  tablaTodos.style.display = tipo === "todos" ? "" : "none";
-  tablaPropietarios.style.display = tipo === "propietarios" ? "" : "none";
-  tablaOtros.style.display = tipo === "otros" ? "" : "none";
-}
+// FILTROS
+panelTipoSelect.addEventListener('change',()=>{
+  currentPanelTipo = panelTipoSelect.value;
+  renderMovimientos();
+});
+usuariosTipoSelect.addEventListener('change',()=>{
+  currentUsuariosTipo = usuariosTipoSelect.value;
+  renderUsers();
+});
 
-// Renderizar tabla USUARIOS
-async function renderizarUsuarios() {
-  const usuarios = await cargarUsuarios();
-  const tipo = filtroUsuarios.value;
-  tablaUsuarios.innerHTML = "";
-
-  usuarios.forEach(u => {
-    if (tipo === "todos" || (tipo === "propietarios" && u.tipo === "propietario") || (tipo === "otros" && u.tipo !== "propietario")) {
-      const fila = `<tr>
-        <td>${u.id}</td>
-        <td>${u.nombre}</td>
-        <td>${u.tipo}</td>
-        <td>
-          <button onclick="verFicha('${u.id}')">Ficha</button>
-        </td>
-      </tr>`;
-      tablaUsuarios.innerHTML += fila;
-    }
-  });
-}
-
-// Eliminar ticket
-window.eliminarTicket = async function(id) {
-  await deleteDoc(doc(db, "tickets", id));
-  renderizarPanel();
-}
-
-// Ver ficha usuario
-window.verFicha = function(id) {
-  alert("Ficha usuario: " + id);
-}
-
-// Escanear código
-codigoInput.addEventListener("keypress", async e => {
-  if (e.key === "Enter") {
-    const codigo = codigoInput.value.trim();
-    if (codigo) {
-      await addDoc(collection(db, "tickets"), {
-        id: generarID(),
-        nombre: codigo,
-        tipo: "otro",
-        fechaEliminacion: new Date().toLocaleDateString()
-      });
-      codigoInput.value = "";
-      renderizarPanel();
-    }
+// ESCANEO AUTOMATICO
+scanInput.addEventListener('input',()=>{
+  const code = scanInput.value.trim();
+  if(code.length===8){
+    registrarMovimiento(code);
+    scanInput.value='';
+    scanOk.style.display='inline';
+    setTimeout(()=>scanOk.style.display='none',800);
   }
 });
 
-// Filtros
-filtroPanel.addEventListener("change", renderizarPanel);
-filtroUsuarios.addEventListener("change", renderizarUsuarios);
+// FUNCIONES
+function renderMovimientos(){
+  movimientosTable.innerHTML='';
+  let filtered = movimientos;
+  if(currentPanelTipo!=='todos') filtered = movimientos.filter(m=>m.tipo===currentPanelTipo);
+  filtered.forEach((m,i)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${i+1}</td><td>${m.nombre}</td><td>${m.entrada||''}</td><td>${m.salida||''}</td><td>${m.tipo}</td>
+    <td style="display:none;">${m.autorizante||''}</td>
+    <td><button onclick="verFicha(${m.userL})">FICHA</button></td>`;
+    movimientosTable.appendChild(tr);
+  });
+}
 
-// Imprimir
-imprimirBtn.addEventListener("click", () => window.print());
+function renderUsers(){
+  usersTable.innerHTML='';
+  let filtered = users;
+  if(currentUsuariosTipo!=='todos') filtered = users.filter(u=>u.tipo===currentUsuariosTipo);
+  filtered.forEach(u=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${u.l}</td><td>${u.nombre}</td><td>${u.dni||''}</td><td>${u.celular||''}</td><td>${u.autorizante||''}</td>
+    <td>${u.fechaExp||''}</td><td>${u.tipo}</td><td><button onclick="editarUser(${u.l})">EDIT</button><button onclick="eliminarUser(${u.l})">DEL</button></td>`;
+    usersTable.appendChild(tr);
+  });
+}
 
-// Inicializar
-renderizarPanel();
-renderizarUsuarios();
-codigoInput.focus();
+function renderExpired(){
+  expiredTable.innerHTML='';
+  const start = (expiredPage-1)*itemsPerPage;
+  const paginated = expirados.slice(start,start+itemsPerPage);
+  paginated.forEach((e,i)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${start+i+1}</td><td>${e.nombre}</td><td>${e.dni||''}</td><td>${e.codigoIngreso||''}</td><td>${e.codigoSalida||''}</td><td>${e.tipo}</td><td>${e.fechaElim||''}</td>`;
+    expiredTable.appendChild(tr);
+  });
+  renderExpiredPagination();
+}
+
+function renderExpiredPagination(){
+  expiredPaginationDiv.innerHTML='';
+  const totalPages = Math.ceil(expirados.length/itemsPerPage);
+  for(let i=1;i<=totalPages;i++){
+    const btn = document.createElement('button');
+    btn.textContent=i;
+    if(i===expiredPage) btn.disabled=true;
+    btn.addEventListener('click',()=>{expiredPage=i; renderExpired();});
+    expiredPaginationDiv.appendChild(btn);
+  }
+}
+
+// REGISTRO
+function registrarMovimiento(code){
+  const u = users.find(x=>x.l==parseInt(code));
+  if(!u) return alert('Código no encontrado');
+  const now = new Date().toLocaleTimeString();
+  const mov = movimientos.find(m=>m.userL===u.l && !m.salida);
+  if(mov){ mov.salida=now; }
+  else{ movimientos.push({userL:u.l,nombre:u.nombre,tipo:u.tipo,autorizante:u.autorizante,entrada:now}); }
+  renderMovimientos();
+}
+
+// FICHA
+function verFicha(l){
+  const u = users.find(x=>x.l===l);
+  if(!u) return;
+  document.getElementById('fichaL').textContent=u.l;
+  document.getElementById('fichaNombre').textContent=u.nombre;
+  document.getElementById('fichaDni').textContent=u.dni||'';
+  document.getElementById('fichaCelular').textContent=u.celular||'';
+  document.getElementById('fichaAutorizante').textContent=u.autorizante||'';
+  document.getElementById('fichaFechaExp').textContent=u.fechaExp||'';
+  document.getElementById('fichaTipo').textContent=u.tipo;
+  document.getElementById('fichaModal').style.display='flex';
+}
+document.getElementById('closeFichaBtn').addEventListener('click',()=>{document.getElementById('fichaModal').style.display='none';});
+
+// IMPRIMIR
+document.getElementById('printActiveBtn').addEventListener('click',()=>{window.print();});
