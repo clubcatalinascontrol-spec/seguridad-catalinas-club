@@ -1,225 +1,53 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Catalinas Country — Control de Ingreso</title>
-  <link rel="stylesheet" href="styles.css" />
-  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <meta charset="UTF-8">
+  <title>Panel de Control</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
-<body class="modo-dia">
-<header class="topbar">
-  <div class="nav">
-    <div class="nav-center">
-      <button class="nav-btn active" data-section="panel">PANEL</button>
-      <button class="nav-btn" data-section="usuarios">USUARIOS</button>
-      <button class="nav-btn" data-section="novedades">NOVEDADES</button>
-      <button class="nav-btn" data-section="expirados" id="expiradosBtn">EXPIRADOS</button>
-      <button class="nav-btn" data-section="config">CONFIG</button>
-      <!-- Mantener 'DÍA' visible (sin toggle NOCHE). -->
-      <button class="nav-btn static-day">DÍA</button>
+<body>
+  <!-- Bloqueo por contraseña -->
+  <div id="passwordOverlay">
+    <div class="overlay-content">
+      <h2>Para continuar operando, por favor, ingrese su contraseña</h2>
+      <input type="password" id="passwordInput" placeholder="Ingrese contraseña">
+      <button id="passwordBtn">Ingresar</button>
+      <p id="passwordError" class="error"></p>
     </div>
   </div>
-</header>
 
-<main class="container">
-  <!-- PANEL -->
-  <section id="panel" class="page active">
-    <h2 class="title-centered">Control de acceso y egreso de Catalinas Country</h2>
+  <header>
+    <h1>Panel de Control</h1>
+  </header>
 
-    <!-- Tabs por tipo dentro de un div (agrupados) -->
-    <div class="controls" style="flex-direction:column;gap:12px;">
-      <div class="filters-group" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
-        <button class="tab-btn active" data-tipo="todos">TODOS</button>
-        <button class="tab-btn" data-tipo="propietario">PROPIETARIOS</button>
-        <button class="tab-btn" data-tipo="administracion">ADMIN</button>
-        <button class="tab-btn" data-tipo="empleado">EMPLEADOS</button>
-        <button class="tab-btn" data-tipo="obrero">OBREROS</button>
-        <button class="tab-btn" data-tipo="invitado">INVITADOS</button>
-        <button class="tab-btn" data-tipo="guardia">GUARDIAS</button>
-        <button class="tab-btn" data-tipo="otro">OTROS</button>
-      </div>
-
-      <div style="display:flex;gap:10px;justify-content:center;align-items:center;">
-        <button id="scanBtn">ESCANEAR</button>
-        <button id="printActiveBtn">IMPRIMIR</button>
-        <span id="scanOk" class="okmsg" style="display:none;font-weight:700;">OK</span>
-      </div>
-    </div>
-
-    <div class="table-wrap">
-      <!-- Tabla: Notar que DNI se oculta de PANEL -->
-      <table id="movimientosTable" class="sheet">
+  <main>
+    <section id="panel">
+      <h2>Usuarios Registrados</h2>
+      <table id="usuariosTable">
         <thead>
           <tr>
-            <th>#L</th><th>Nombre</th><!-- DNI oculto en PANEL --><th>H. Entrada</th><th>H. Salida</th><th>Tipo</th><th>Acción</th>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Email</th>
+            <th>Acción</th>
           </tr>
         </thead>
-        <tbody></tbody>
+        <tbody id="usuariosBody">
+          <!-- Usuarios cargados dinámicamente -->
+        </tbody>
       </table>
-    </div>
+    </section>
+  </main>
 
-    <div id="pagination" class="pagination"></div>
-  </section>
-
-  <!-- USUARIOS -->
-  <section id="usuarios" class="page">
-    <h2 class="title-centered">Gestión de Usuarios</h2>
-
-    <!-- Formulario para agregar usuario: placeholders con guía -->
-    <div class="form-row">
-      <select id="userL">
-        <option value="NN">NN</option>
-      </select>
-
-      <input id="userNombre" placeholder="Nombre Completo — guía: Lote - Nombre Completo - DNI - Celular - Autorizante - Tipo" maxlength="25" />
-
-      <input id="userDni" placeholder="DNI (max 8 dígitos)" maxlength="8" inputmode="numeric" />
-
-      <input id="userCelular" placeholder="Celular (10 dígitos opcional)" maxlength="10" inputmode="numeric" />
-
-      <input id="userAutorizante" placeholder="Autorizante (letras, solo INVITADO muestra esto)" maxlength="12" />
-
-      <select id="userTipo">
-        <option value="NN">NN</option>
-        <option value="propietario">propietario</option>
-        <option value="administracion">administración</option>
-        <option value="empleado">empleado</option>
-        <option value="obrero">obrero</option>
-        <option value="invitado">invitado</option>
-        <option value="guardia">guardia</option>
-        <option value="otro">otro</option>
-      </select>
-
-      <button id="addUserBtn">Agregar Usuario</button>
-      <span id="userMessage" class="okmsg"></span>
-    </div>
-
-    <div class="table-wrap">
-      <!-- Tabla de usuarios: incluimos Celular, FechaExpedicion y Autorizante (autorizante visible solo si tipo=invitado) -->
-      <table id="usersTable" class="sheet">
-        <thead>
-          <tr>
-            <th>#L</th><th>Nombre</th><th>DNI</th><th>Celular</th><th>F. Expedición</th><th>Autorizante</th><th>Tipo</th><th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </section>
-
-  <!-- NOVEDADES -->
-  <section id="novedades" class="page">
-    <h2 class="title-centered">NOVEDADES</h2>
-
-    <div class="form-row" style="flex-direction:column;align-items:center;">
-      <textarea id="novedadText" placeholder="Escribe una novedad (sin límite de caracteres)" rows="4" style="width:100%;max-width:800px;"></textarea>
-      <div style="margin-top:8px;">
-        <button id="saveNovedadBtn">OK</button>
-      </div>
-    </div>
-
-    <div class="table-wrap" style="margin-top:16px;">
-      <table id="novedadesTable" class="sheet">
-        <thead>
-          <tr><th>Hora</th><th>Novedades</th><th>Acción</th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </section>
-
-  <!-- EXPIRADOS (acceso con contraseña) -->
-  <section id="expirados" class="page">
-    <h2 class="title-centered">EXPIRADOS</h2>
-
-    <div class="table-wrap">
-      <table id="expiradosTable" class="sheet">
-        <thead>
-          <tr>
-            <th>#L</th><th>Nombre</th><th>DNI</th><th>F. Eliminación</th><th>Tipo</th><th>Código de Ingreso</th><th>Código de Salida</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </section>
-
-  <!-- CONFIG -->
-  <section id="config" class="page">
-    <h2 class="title-centered">Cambiar Contraseña</h2>
-    <div class="form-row">
-      <input id="currentPass" type="password" placeholder="Contraseña actual (4 dígitos)" maxlength="4" inputmode="numeric" />
-      <input id="newPass" type="password" placeholder="Nueva contraseña (4 dígitos)" maxlength="4" inputmode="numeric" />
-      <button id="savePassBtn">Cambiar Contraseña</button>
-    </div>
-    <div class="form-row">
-      <button id="restoreDefaultBtn">Restaurar Contraseña</button>
-      <span id="restoreMsg" class="okmsg"></span>
-    </div>
-    <p class="muted">La contraseña debe estar compuesta únicamente por 4 números. Se usará para editar/eliminar usuarios y movimientos en el panel y para imprimir las tarjetas de cada usuario</p>
-  </section>
-</main>
-
-<!-- MODAL ESCANEO -->
-<div id="scanModal" class="scanner-overlay">
-  <div class="scanner-box" role="dialog" aria-modal="true" aria-labelledby="scan-title">
-    <h3 id="scan-title">Escanear código</h3>
-    <input id="scanInput" maxlength="32" placeholder="Pegue/teclee 8 caracteres" inputmode="text" />
-    <div style="margin-top:10px;display:flex;gap:8px;justify-content:center;align-items:center;">
-      <button id="cancelScanBtn">Cancelar</button>
-    </div>
-    <div id="scanMessage" style="margin-top:10px;font-weight:700;"></div>
-  </div>
-</div>
-
-<!-- MODAL EDITAR USUARIO -->
-<div id="editUserModal" class="scanner-overlay">
-  <div class="scanner-box">
-    <h3>Editar Usuario</h3>
-    <select id="editUserL"></select>
-    <input id="editUserNombre" placeholder="Nombre completo (max 25)" maxlength="25"/>
-    <input id="editUserDni" placeholder="DNI (8 dígitos)" maxlength="8" inputmode="numeric"/>
-    <input id="editUserCelular" placeholder="Celular (10 dígitos opcional)" maxlength="10" inputmode="numeric"/>
-    <input id="editUserAutorizante" placeholder="Autorizante (solo letras, max 12)" maxlength="12"/>
-    <input id="editUserFechaExp" placeholder="Fecha de expedición (no editable)" readonly />
-    <select id="editUserTipo">
-      <option value="NN">NN</option>
-      <option value="propietario">propietario</option>
-      <option value="administracion">administración</option>
-      <option value="empleado">empleado</option>
-      <option value="obrero">obrero</option>
-      <option value="invitado">invitado</option>
-      <option value="guardia">guardia</option>
-      <option value="otro">otro</option>
-    </select>
-    <div class="form-row">
-      <button id="cancelEditBtn">Cancelar</button>
-      <button id="finalizeEditBtn">Finalizar</button>
-    </div>
-    <span id="editUserMsg" class="okmsg"></span>
-  </div>
-</div>
-
-<!-- MODAL FICHA (vista solo lectura) -->
-<div id="fichaModal" class="scanner-overlay">
-  <div class="scanner-box">
-    <h3>Ficha de Usuario</h3>
-    <div style="text-align:left; margin-top:8px;">
-      <p><strong>#L:</strong> <span id="fichaL"></span></p>
-      <p><strong>Nombre:</strong> <span id="fichaNombre"></span></p>
-      <p><strong>DNI:</strong> <span id="fichaDni"></span></p>
-      <p><strong>Celular:</strong> <span id="fichaCelular"></span></p>
-      <p><strong>F. Expedición:</strong> <span id="fichaFechaExp"></span></p>
-      <p id="fichaAutorizanteRow"><strong>Autorizante:</strong> <span id="fichaAutorizante"></span></p>
-      <p><strong>Tipo:</strong> <span id="fichaTipo"></span></p>
-    </div>
-    <div style="margin-top:10px;display:flex;justify-content:center;">
-      <button id="closeFichaBtn">CANCELAR</button>
+  <!-- Modal ficha -->
+  <div id="modalFicha" class="modal hidden">
+    <div class="modal-content">
+      <span class="close" id="closeFicha">&times;</span>
+      <h3>Ficha de Usuario</h3>
+      <div id="fichaContent"></div>
     </div>
   </div>
-</div>
 
-<script type="module" src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
