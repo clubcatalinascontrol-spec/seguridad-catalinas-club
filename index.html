@@ -8,6 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 </head>
 <body>
+
 <!-- PASSWORD OVERLAY -->
 <div id="passwordBanner" class="password-banner" style="display:none;">
   <div class="password-inner">
@@ -33,14 +34,56 @@
 </header>
 
 <main class="container">
-<!-- PANEL -->
-<section id="panel" class="page active">
-  <h2 class="title-centered">Control de acceso y egreso de Catalinas Country</h2>
+  <!-- PANEL -->
+  <section id="panel" class="page active">
+    <h2 class="title-centered">Control de acceso y egreso de Catalinas Country</h2>
 
-  <div class="controls" style="flex-direction:column;gap:12px;">
-    <div style="display:flex;gap:12px;justify-content:center;align-items:center;">
-      <input id="scanInputFixed" placeholder="Pegue/teclee código (8 caracteres)" maxlength="32" inputmode="text" />
-      <select id="movFilterSelect">
+    <div class="controls" style="flex-direction:column;gap:12px;">
+
+      <!-- DESPLEGABLE TIPO -->
+      <div style="display:flex;gap:10px;justify-content:center;align-items:center;">
+        <select id="movimientosTipoSelect">
+          <option value="todos">TODOS</option>
+          <option value="propietario">PROPIETARIOS</option>
+          <option value="administracion">ADMIN</option>
+          <option value="empleado">EMPLEADOS</option>
+          <option value="obrero">OBREROS</option>
+          <option value="invitado">INVITADOS</option>
+          <option value="guardia">GUARDIAS</option>
+          <option value="otro">OTROS</option>
+        </select>
+        <input id="scanInputPanel" maxlength="32" placeholder="Escanee código aquí" inputmode="text" autofocus />
+        <button id="printActiveBtn">IMPRIMIR</button>
+        <span id="scanOk" class="okmsg" style="display:none;font-weight:700;">OK</span>
+      </div>
+
+    </div>
+
+    <div class="table-wrap">
+      <table id="movimientosTable" class="sheet">
+        <thead>
+          <tr>
+            <th>#L</th>
+            <th>Nombre</th>
+            <th>H. Entrada</th>
+            <th>H. Salida</th>
+            <th>Tipo</th>
+            <th class="autorizante-th" style="display:none;">Autorizante</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div id="pagination" class="pagination"></div>
+  </section>
+
+  <!-- USUARIOS -->
+  <section id="usuarios" class="page">
+    <h2 class="title-centered">Gestión de Usuarios</h2>
+
+    <div class="controls" style="justify-content:center;margin-bottom:12px;">
+      <select id="usuariosTipoSelect">
         <option value="todos">TODOS</option>
         <option value="propietario">PROPIETARIOS</option>
         <option value="administracion">ADMIN</option>
@@ -50,115 +93,125 @@
         <option value="guardia">GUARDIAS</option>
         <option value="otro">OTROS</option>
       </select>
-      <button id="printActiveBtn">IMPRIMIR</button>
-      <span id="scanOk" class="okmsg" style="display:none;font-weight:700;">OK</span>
+    </div>
+
+    <div class="form-row">
+      <select id="userL"></select>
+      <input id="userNombre" placeholder="Nombre Completo (25 letras)" maxlength="25" />
+      <input id="userDni" placeholder="DNI (8 dígitos) opcional" maxlength="8" inputmode="numeric" />
+      <input id="userCelular" placeholder="Celular (10 dígitos) opcional" maxlength="10" inputmode="numeric" />
+      <input id="userAutorizante" placeholder="Autorizante (letras, max 12) opcional" maxlength="12" />
+      <select id="userTipo">
+        <option value="NN">NN</option>
+        <option value="propietario">propietario</option>
+        <option value="administracion">administración</option>
+        <option value="empleado">empleado</option>
+        <option value="obrero">obrero</option>
+        <option value="invitado">invitado</option>
+        <option value="guardia">guardia</option>
+        <option value="otro">otro</option>
+      </select>
+      <button id="addUserBtn">Agregar Usuario</button>
+      <span id="userMessage" class="okmsg"></span>
+    </div>
+
+    <div class="table-wrap">
+      <table id="usersTable" class="sheet">
+        <thead>
+          <tr><th>#L</th><th>Nombre</th><th>DNI</th><th>Celular</th><th>Autorizante</th><th>F. Expedición</th><th>Tipo</th><th>Acciones</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- EXPIRADOS -->
+  <section id="expirados" class="page">
+    <h2 class="title-centered">Usuarios Expirados / Eliminados</h2>
+    <div class="table-wrap">
+      <table id="expiredTable" class="sheet">
+        <thead>
+          <tr>
+            <th>#L</th>
+            <th>Nombre</th>
+            <th>DNI</th>
+            <th>Código Ingreso</th>
+            <th>Código Salida</th>
+            <th>Tipo</th>
+            <th>F. Eliminación</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div id="expiredPagination" class="pagination"></div>
+  </section>
+
+  <!-- NOVEDADES -->
+  <section id="novedades" class="page">
+    <h2 class="title-centered">NOVEDADES</h2>
+    <div class="form-row" style="flex-direction:column;align-items:center;">
+      <textarea id="novedadTexto" placeholder="Escriba la novedad..." style="min-width:80%;min-height:90px;padding:8px;border-radius:8px;border:1px solid #ccc;"></textarea>
+      <div style="margin-top:8px;">
+        <button id="guardarNovedadBtn">OK</button>
+        <span id="novedadMsg" class="okmsg"></span>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table id="novedadesTable" class="sheet">
+        <thead>
+          <tr><th>Hora</th><th>Novedad</th><th>Acción</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- MODALS (sin cambios) -->
+  <div id="editUserModal" class="scanner-overlay">
+    <div class="scanner-box">
+      <h3>Editar Usuario</h3>
+      <select id="editUserL"></select>
+      <input id="editUserNombre" placeholder="Nombre completo (max 25)" maxlength="25"/>
+      <input id="editUserDni" placeholder="DNI (8 dígitos)" maxlength="8" inputmode="numeric"/>
+      <input id="editUserCelular" placeholder="Celular (10 dígitos) opcional" maxlength="10" inputmode="numeric"/>
+      <input id="editUserAutorizante" placeholder="Autorizante (letras, max 12) opcional" maxlength="12"/>
+      <select id="editUserTipo">
+        <option value="NN">NN</option>
+        <option value="propietario">propietario</option>
+        <option value="administracion">administración</option>
+        <option value="empleado">empleado</option>
+        <option value="obrero">obrero</option>
+        <option value="invitado">invitado</option>
+        <option value="guardia">guardia</option>
+        <option value="otro">otro</option>
+      </select>
+      <div class="form-row">
+        <button id="cancelEditBtn">Cancelar</button>
+        <button id="finalizeEditBtn">Finalizar</button>
+      </div>
+      <span id="editUserMsg" class="okmsg"></span>
     </div>
   </div>
 
-  <div class="table-wrap">
-    <table id="movimientosTable" class="sheet">
-      <thead>
-        <tr>
-          <th>#L</th>
-          <th>Nombre</th>
-          <th>H. Entrada</th>
-          <th>H. Salida</th>
-          <th>Tipo</th>
-          <th class="autorizante-th" style="display:none;">Autorizante</th>
-          <th>Acción</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-  <div id="pagination" class="pagination"></div>
-</section>
-
-<!-- USUARIOS -->
-<section id="usuarios" class="page">
-  <h2 class="title-centered">Gestión de Usuarios</h2>
-
-  <div class="controls" style="justify-content:center;margin-bottom:12px;">
-    <select id="userFilterSelect">
-      <option value="todos">TODOS</option>
-      <option value="propietario">PROPIETARIOS</option>
-      <option value="administracion">ADMIN</option>
-      <option value="empleado">EMPLEADOS</option>
-      <option value="obrero">OBREROS</option>
-      <option value="invitado">INVITADOS</option>
-      <option value="guardia">GUARDIAS</option>
-      <option value="otro">OTROS</option>
-    </select>
-  </div>
-
-  <div class="form-row">
-    <select id="userL"></select>
-    <input id="userNombre" placeholder="Nombre Completo (25 letras)" maxlength="25" />
-    <input id="userDni" placeholder="DNI (8 dígitos) opcional" maxlength="8" inputmode="numeric" />
-    <input id="userCelular" placeholder="Celular (10 dígitos) opcional" maxlength="10" inputmode="numeric" />
-    <input id="userAutorizante" placeholder="Autorizante (letras, max 12) opcional" maxlength="12" />
-    <select id="userTipo">
-      <option value="NN">NN</option>
-      <option value="propietario">propietario</option>
-      <option value="administracion">administración</option>
-      <option value="empleado">empleado</option>
-      <option value="obrero">obrero</option>
-      <option value="invitado">invitado</option>
-      <option value="guardia">guardia</option>
-      <option value="otro">otro</option>
-    </select>
-    <button id="addUserBtn">Agregar Usuario</button>
-    <span id="userMessage" class="okmsg"></span>
-  </div>
-
-  <div class="table-wrap">
-    <table id="usersTable" class="sheet">
-      <thead>
-        <tr><th>#L</th><th>Nombre</th><th>DNI</th><th>Celular</th><th>Autorizante</th><th>F. Expedición</th><th>Tipo</th><th>Acciones</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-</section>
-
-<!-- EXPIRADOS -->
-<section id="expirados" class="page">
-  <h2 class="title-centered">Usuarios Expirados / Eliminados</h2>
-  <div class="table-wrap">
-    <table id="expiredTable" class="sheet">
-      <thead>
-        <tr>
-          <th>#L</th><th>Nombre</th><th>DNI</th><th>Código Ingreso</th><th>Código Salida</th><th>Tipo</th><th>F. Eliminación</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-  <div id="expiredPagination" class="pagination"></div>
-</section>
-
-<!-- NOVEDADES -->
-<section id="novedades" class="page">
-  <h2 class="title-centered">NOVEDADES</h2>
-  <div class="form-row" style="flex-direction:column;align-items:center;">
-    <textarea id="novedadTexto" placeholder="Escriba la novedad..." style="min-width:80%;min-height:90px;padding:8px;border-radius:8px;border:1px solid #ccc;"></textarea>
-    <div style="margin-top:8px;">
-      <button id="guardarNovedadBtn">OK</button>
-      <span id="novedadMsg" class="okmsg"></span>
+  <div id="fichaModal" class="scanner-overlay">
+    <div class="scanner-box" role="dialog" aria-modal="true" aria-labelledby="ficha-title">
+      <h3 id="ficha-title">Ficha de Usuario</h3>
+      <div style="text-align:left; max-width:340px; margin:0 auto;">
+        <p><strong>#L:</strong> <span id="fichaL"></span></p>
+        <p><strong>Nombre:</strong> <span id="fichaNombre"></span></p>
+        <p><strong>DNI:</strong> <span id="fichaDni"></span></p>
+        <p><strong>Celular:</strong> <span id="fichaCelular"></span></p>
+        <p><strong>Autorizante:</strong> <span id="fichaAutorizante"></span></p>
+        <p><strong>Fecha de expedición:</strong> <span id="fichaFechaExp"></span></p>
+        <p><strong>Tipo:</strong> <span id="fichaTipo"></span></p>
+      </div>
+      <div style="margin-top:12px;display:flex;justify-content:center;">
+        <button id="closeFichaBtn">Cancelar</button>
+      </div>
     </div>
   </div>
-  <div class="table-wrap">
-    <table id="novedadesTable" class="sheet">
-      <thead>
-        <tr><th>Hora</th><th>Novedad</th><th>Acción</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-</section>
 
-<!-- MODALS (scan, edit, ficha) sin cambios importantes en estructura -->
-<!-- MODAL FICHA incluido -->
 </main>
 
 <script type="module" src="app.js"></script>
