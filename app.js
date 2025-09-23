@@ -114,7 +114,7 @@ function llenarLSelect(){
 }
 llenarLSelect();
 
-/* ----------------------------- USUARIOS (añadidos: celular, autorizante, fechaExpedicion) ----------------------------- */
+/* ----------------------------- USUARIOS - agregar y render ----------------------------- */
 const userNombre=document.getElementById("userNombre");
 const userDni=document.getElementById("userDni");
 const userTipo=document.getElementById("userTipo");
@@ -123,6 +123,24 @@ const userAutorizante=document.getElementById("userAutorizante");
 const addUserBtn=document.getElementById("addUserBtn");
 const userMessage=document.getElementById("userMessage");
 const usersTableBody=document.querySelector("#usersTable tbody");
+
+// Renderizar tabla usuarios
+async function renderUsuarios(){
+  usersTableBody.innerHTML="";
+  const snap = await getDocs(query(usuariosRef, orderBy("nombre","asc")));
+  snap.forEach(d=>{
+    const u = d.data();
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${u.L||""}</td>
+                    <td>${(u.nombre||"").toUpperCase()}</td>
+                    <td>${u.dni||""}</td>
+                    <td>${u.tipo||""}</td>
+                    <td>${u.celular||""}</td>
+                    <td>${u.autorizante||""}</td>
+                    <td>${u.fechaExpedicion ? fechaDDMMYYYY(u.fechaExpedicion) : ""}</td>`;
+    usersTableBody.appendChild(tr);
+  });
+}
 
 // Agregar usuario
 addUserBtn.addEventListener("click",async ()=>{
@@ -178,6 +196,7 @@ addUserBtn.addEventListener("click",async ()=>{
     userMessage.textContent="Usuario agregado";
     userL.value="NN"; userNombre.value=""; userDni.value=""; userTipo.value="NN"; userCelular.value=""; userAutorizante.value="";
     setTimeout(()=>userMessage.textContent="",2500);
+    renderUsuarios();
   }catch(err){
     console.error(err);
     userMessage.style.color="red";
@@ -186,9 +205,10 @@ addUserBtn.addEventListener("click",async ()=>{
   }
 });
 
-// app.js (parte 2) - Movimientos, novedades, escaneo y FICHA
+renderUsuarios();
+// app.js (parte 2) - Movimientos, escaneo, novedades, fichas y expirados
 
-/* ----------------------------- NOVEDADES - agregar/editar/eliminar ----------------------------- */
+/* ----------------------------- NOVEDADES ----------------------------- */
 const novedadesTableBody = document.querySelector("#novedadesTable tbody");
 const novTxt = document.getElementById("novedadTexto");
 const guardarNovedadBtn = document.getElementById("guardarNovedadBtn");
@@ -202,22 +222,21 @@ guardarNovedadBtn.addEventListener("click", async ()=>{
   try{
     if(editingNovedadId){
       await updateDoc(doc(db,"novedades",editingNovedadId), { texto, when: isoNow() });
-      editingNovedadId = null; novMsg.style.color="green"; novMsg.textContent="Novedad editada";
+      editingNovedadId=null; novMsg.style.color="green"; novMsg.textContent="Novedad editada";
     } else {
       await addDoc(novedadesRef, { texto, when: isoNow() });
       novMsg.style.color="green"; novMsg.textContent="Novedad guardada";
     }
     novTxt.value=""; setTimeout(()=>novMsg.textContent="",2000);
-  }catch(err){ console.error(err); novMsg.style.color="red"; novMsg.textContent="Error"; setTimeout(()=>novMsg.textContent="",2000); }
+  } catch(err){ console.error(err); novMsg.style.color="red"; novMsg.textContent="Error"; setTimeout(()=>novMsg.textContent="",2000); }
 });
 
-// render novedades
+// Render novedades
 onSnapshot(query(novedadesRef, orderBy("when","desc")), snapshot=>{
   novedadesTableBody.innerHTML="";
   snapshot.docs.forEach(d=>{
     const n=d.data();
     const tr=document.createElement("tr");
-
     let horaFecha="";
     if(n.when){
       const date=n.when.toDate ? n.when.toDate() : new Date(n.when);
@@ -225,15 +244,13 @@ onSnapshot(query(novedadesRef, orderBy("when","desc")), snapshot=>{
       const fecha=date.toLocaleDateString("es-AR");
       horaFecha=`${hora}<br><small>${fecha}</small>`;
     }
-
     tr.innerHTML=`<td style="white-space:nowrap">${horaFecha}</td>
-      <td style="text-align:left;padding-left:8px;">${n.texto||""}</td>
-      <td>
-        <button class="edit-nov" data-id="${d.id}">Editar</button>
-        <button class="del-nov" data-id="${d.id}">Eliminar</button>
-      </td>`;
+                    <td style="text-align:left;padding-left:8px;">${n.texto||""}</td>
+                    <td>
+                      <button class="edit-nov" data-id="${d.id}">Editar</button>
+                      <button class="del-nov" data-id="${d.id}">Eliminar</button>
+                    </td>`;
     novedadesTableBody.appendChild(tr);
-
     tr.querySelector(".edit-nov").addEventListener("click", ()=>{ novTxt.value=n.texto||""; editingNovedadId=d.id; document.querySelector('#novedades').scrollIntoView({behavior:'smooth'}); });
     tr.querySelector(".del-nov").addEventListener("click", async ()=>{
       if(!isUnlocked){ alert("Operación no permitida. Introduzca la contraseña de apertura."); return; }
@@ -243,7 +260,7 @@ onSnapshot(query(novedadesRef, orderBy("when","desc")), snapshot=>{
   });
 });
 
-/* ----------------------------- MOVIMIENTOS - pestañas, paginación, imprimir ----------------------------- */
+/* ----------------------------- MOVIMIENTOS ----------------------------- */
 const movimientosTableBody=document.querySelector("#movimientosTable tbody");
 const paginationDiv=document.getElementById("pagination");
 const MOV_LIMIT=25;
@@ -261,21 +278,15 @@ tabBtns.forEach(btn=>{
   });
 });
 
-const printActiveBtn=document.getElementById("printActiveBtn");
-printActiveBtn.addEventListener("click", ()=>{
-  if(!isUnlocked){ alert("Operación no permitida. Introduzca la contraseña de apertura."); return; }
-  printMovimientosPorTipo(activeTipo);
-});
-
-function renderPagination(totalItems){
+function renderPagination(totalItems, container){
   const totalPages=Math.max(1,Math.ceil(totalItems/MOV_LIMIT));
-  paginationDiv.innerHTML="";
+  container.innerHTML="";
   for(let p=1;p<=totalPages;p++){
     const btn=document.createElement("button");
     btn.textContent=p;
     if(p===currentPage){ btn.style.background="#d8a800"; btn.style.color="#111"; }
     btn.addEventListener("click",()=>{ currentPage=p; renderMovsPage(); });
-    paginationDiv.appendChild(btn);
+    container.appendChild(btn);
   }
 }
 
@@ -294,8 +305,11 @@ function renderMovsPage(){
   page.forEach(item=>{
     const tr=document.createElement("tr");
     const autorizText=item.autorizante||"";
-    tr.innerHTML=`<td>${item.L||""}</td><td>${(item.nombre||"").toUpperCase()}</td>
-      <td>${item.entrada||""}</td><td>${item.salida||""}</td><td>${item.tipo||""}</td>
+    tr.innerHTML=`<td>${item.L||""}</td>
+      <td>${(item.nombre||"").toUpperCase()}</td>
+      <td>${item.entrada||""}</td>
+      <td>${item.salida||""}</td>
+      <td>${item.tipo||""}</td>
       <td class="autorizante-td">${autorizText}</td>
       <td>
         <button class="ficha-btn" data-L="${item.L}">FICHA</button>
@@ -328,7 +342,7 @@ function renderMovsPage(){
       try{ await deleteDoc(doc(db,"movimientos",e.currentTarget.dataset.id)); } catch(err){ console.error(err); alert("Error eliminando movimiento"); }
     });
   });
-  renderPagination(filtered.length);
+  renderPagination(filtered.length, paginationDiv);
 }
 
 // onSnapshot movimientos
@@ -352,7 +366,6 @@ onSnapshot(query(movimientosRef, orderBy("hora","desc")), snapshot=>{
     }
   });
 });
-
 /* ----------------------------- ESCANEAR CÓDIGOS AUTOMÁTICO ----------------------------- */
 const scanBtn=document.getElementById("scanBtn");
 const scanModal=document.getElementById("scanModal");
@@ -367,7 +380,7 @@ scanBtn.addEventListener("click", ()=>{
   scanInput.value=""; scanMessage.textContent="";
   scanInput.focus();
 });
-cancelScanBtn.addEventListener("click", ()=>{ scanMessage.textContent=""; scanInput.value=""; });
+cancelScanBtn.addEventListener("click", ()=>{ scanModal.classList.remove("active"); scanMessage.textContent=""; scanInput.value=""; });
 
 let scanProcessing=false;
 scanInput.addEventListener("input", async ()=>{
@@ -408,8 +421,8 @@ scanInput.addEventListener("input", async ()=>{
 
     scanOk.style.display="inline-block";
     setTimeout(()=>scanOk.style.display="none",900);
-    scanModal.classList.remove("active");
     scanInput.value="";
+    scanInput.focus();
   } catch(err){ console.error(err); scanMessage.style.color="red"; scanMessage.textContent="Error al registrar"; setTimeout(()=>{ scanMessage.textContent=""; },1800); }
   finally{ scanProcessing=false; }
 });
@@ -430,7 +443,7 @@ userFilterBtns.forEach(btn=>{
 });
 function filterUsersTable(){
   document.querySelectorAll('#usersTable tbody tr').forEach(tr=>{
-    const tipo=tr.children[6] ? tr.children[6].textContent.trim() : "";
+    const tipo=tr.children[3] ? tr.children[3].textContent.trim() : "";
     tr.style.display=(activeUserFilter==="todos" || tipo===activeUserFilter) ? "" : "none";
   });
 }
@@ -438,3 +451,43 @@ function filterUsersTable(){
 /* ----------------------------- Edit modal cancel ----------------------------- */
 document.getElementById("cancelEditBtn").addEventListener("click", ()=>{ document.getElementById("editUserModal").classList.remove("active"); });
 
+/* ----------------------------- EXPIRADOS - render y paginación ----------------------------- */
+const expiredTableBody=document.querySelector("#expiredTable tbody");
+const expiredPaginationDiv=document.getElementById("expiredPagination");
+const EXPIRED_LIMIT=25;
+let expiredCache=[],expiredPage=1;
+
+function renderExpiredPage(){
+  expiredTableBody.innerHTML="";
+  const start=(expiredPage-1)*EXPIRED_LIMIT;
+  const page=expiredCache.slice(start,start+EXPIRED_LIMIT);
+  page.forEach(item=>{
+    const tr=document.createElement("tr");
+    const fechaElim=item.fechaEliminacion ? new Date(item.fechaEliminacion) : new Date();
+    tr.innerHTML=`<td>${item.L||""}</td>
+                    <td>${(item.nombre||"").toUpperCase()}</td>
+                    <td>${item.tipo||""}</td>
+                    <td>${item.autorizante||""}</td>
+                    <td>${fechaDDMMYYYY(item.fechaEliminacion)}</td>`;
+    expiredTableBody.appendChild(tr);
+  });
+  renderPagination(expiredCache.length, expiredPaginationDiv, EXPIRED_LIMIT, expiredPage, p=>{ expiredPage=p; renderExpiredPage(); });
+}
+
+function renderPagination(totalItems, container, limit=25, current=1, onClick){
+  const totalPages=Math.max(1,Math.ceil(totalItems/limit));
+  container.innerHTML="";
+  for(let p=1;p<=totalPages;p++){
+    const btn=document.createElement("button");
+    btn.textContent=p;
+    if(p===current){ btn.style.background="#d8a800"; btn.style.color="#111"; }
+    btn.addEventListener("click",()=>onClick(p));
+    container.appendChild(btn);
+  }
+}
+
+// onSnapshot expirados
+onSnapshot(query(expiredRef, orderBy("fechaEliminacion","desc")), snapshot=>{
+  expiredCache=snapshot.docs.map(d=>({__id:d.id, ...d.data()}));
+  renderExpiredPage();
+});
