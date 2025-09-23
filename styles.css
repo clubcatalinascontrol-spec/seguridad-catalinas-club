@@ -1,65 +1,145 @@
-/* Reset y tipografía */
-* { margin:0; padding:0; box-sizing:border-box; font-family: "Poppins", sans-serif; }
-body { line-height:1.4; transition: background 0.3s, color 0.3s; }
+/* General */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: rgba(255, 255, 255, 0.92); /* Blanco opaco */
+  color: #1f2634;
+}
 
-/* Modo Día (por defecto) */
-body.modo-dia { background: #f5f5f5; color: #1f2634; }
-body.modo-day { background: #f5f5f5; color: #1f2634; }
+header {
+  background-color: #f4cf19; /* Amarillo */
+  padding: 15px;
+  text-align: center;
+  font-size: 24px;
+  font-weight: bold;
+  border-bottom: 4px solid #1f2634;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+}
 
-/* Topbar / Nav */
-.topbar { padding:8px 0; box-shadow:0 2px 4px rgba(0,0,0,0.1); position:sticky; top:0; z-index:100; }
-.nav-center { display:flex; gap:6px; justify-content:center; flex-wrap:wrap; }
-.nav-btn { padding:6px 12px; border-radius:6px; cursor:pointer; transition:all 0.3s; border:none; font-weight:600; background:#e0e0e0; color:#1f2634; }
-.nav-btn.active { background:#f4cf19; color:#111; }
-.nav-btn.static-day { background:transparent; font-weight:700; color:#111; pointer-events:none; }
+/* Panel */
+main {
+  padding: 20px;
+}
 
-/* Controls / Tabs */
-.filters-group { padding:8px; border-radius:8px; } /* wrapper for category buttons */
+section {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
 
-.tab-btn { padding:6px 10px; border-radius:6px; cursor:pointer; border:none; font-weight:500; transition:0.3s; background:#e8e8e8; color:#111; }
-.tab-btn.active { background:#f4cf19; color:#111; }
-.tab-btn:hover { transform:translateY(-1px); }
+/* Tabla */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+  border-radius: 8px;
+  overflow: hidden;
+}
 
-/* Container general */
-.container { max-width:1200px; margin:20px auto; padding:0 12px; }
-.page { display:none; animation:fadeIn 0.3s ease; }
-.page.active { display:block; }
+thead {
+  background-color: #1f2634;
+  color: #fff;
+}
 
-/* Titles */
-.title-centered { text-align:center; margin-bottom:20px; font-weight:700; }
+thead th {
+  padding: 12px;
+  text-align: left;
+  font-size: 15px;
+}
 
-/* Tables */
-.sheet { width:100%; border-collapse:collapse; margin-top:12px; border-radius:8px; overflow:hidden; }
-.sheet th, .sheet td { padding:8px 6px; text-align:center; font-size:0.95rem; }
-.sheet th { background:#f4cf19; color:#111; }
-.sheet tr:nth-child(even) { background:rgba(0,0,0,0.03); }
+tbody td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  background: #fff;
+}
 
-/* Table-wrap */
-.table-wrap { margin-top:12px; border-radius:10px; overflow:hidden; background:#fff; padding:8px; }
+tbody tr:nth-child(even) {
+  background: #f9f9f9;
+}
 
-/* Formularios y botones */
-.form-row { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-bottom:12px; }
-input, select, button, textarea { padding:6px 8px; border-radius:6px; font-size:0.95rem; cursor:pointer; transition:0.3s; border:1px solid #ccc; background:#fff; color:#111; }
-textarea { resize:vertical; }
-.okmsg { margin-left:8px; color:#0a0; font-weight:700; }
+tbody tr:hover {
+  background: #fff5cc;
+}
 
-/* Botones de acción consistentes */
-.action-delete { background:#ff4d4f; color:#fff; border:none; padding:6px 8px; border-radius:6px; cursor:pointer; }
-.action-edit { background:#2b7cff; color:#fff; border:none; padding:6px 8px; border-radius:6px; cursor:pointer; }
+/* Botones */
+button {
+  background-color: #f4cf19;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.3s;
+}
 
-/* Modales */
-.scanner-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:200; }
-.scanner-overlay.active { display:flex; }
-.scanner-box { padding:20px; border-radius:10px; width:90%; max-width:480px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.3); background:#fff; color:#111; }
+button:hover {
+  background-color: #ffd633;
+}
 
-/* Animaciones */
-@keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
+/* Modal */
+.modal {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-/* Paginación */
-.pagination { margin-top:10px; text-align:center; }
-.pagination button { padding:4px 8px; margin:2px; border:none; border-radius:4px; cursor:pointer; }
+.modal-content {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  width: 400px;
+  text-align: center;
+}
 
-/* Estética extra */
-.muted { font-size:0.9rem; color:#666; margin-top:8px; }
+.hidden {
+  display: none;
+}
 
-/* Hacer que botones de PANEL tengan texto negro (ya aplicado en .tab-btn) */
+.close {
+  float: right;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+/* Overlay de contraseña */
+#passwordOverlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(255,255,255,0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.overlay-content {
+  background: #fff;
+  border: 3px solid #f4cf19;
+  border-radius: 12px;
+  padding: 30px;
+  text-align: center;
+  box-shadow: 0px 4px 6px rgba(0,0,0,0.3);
+}
+
+.overlay-content h2 {
+  margin-bottom: 20px;
+}
+
+.overlay-content input {
+  padding: 10px;
+  width: 80%;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.error {
+  color: red;
+  font-size: 14px;
+}
