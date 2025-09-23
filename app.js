@@ -578,13 +578,80 @@ onSnapshot(query(movimientosRef, orderBy("hora","desc")), snapshot => {
     }
   });
 
-  // auto-imprimir propietarios cada múltiplo de 25
-  const propietariosCount = movimientosCache.filter(m=>m.tipo==="propietario").length;
-  if(propietariosCount>0 && propietariosCount % MOV_LIMIT === 0){
-    printMovimientosPorTipo("propietario", true);
+// ------------------ AUTO-IMPRESIÓN PROPIETARIOS ------------------
+let autoPrintPropietarios = true; // por defecto activado
+
+// Botón para activar/desactivar auto-impresión
+const toggleAutoPrintBtn = document.createElement("button");
+toggleAutoPrintBtn.id = "toggleAutoPrintBtn";
+toggleAutoPrintBtn.style.marginLeft = "10px";
+toggleAutoPrintBtn.textContent = "Auto-Impresión";
+
+function updateAutoPrintBtn(){
+  if(autoPrintPropietarios){
+    toggleAutoPrintBtn.style.background = "green";
+    toggleAutoPrintBtn.style.color = "#fff";
+  } else {
+    toggleAutoPrintBtn.style.background = "red";
+    toggleAutoPrintBtn.style.color = "#fff";
   }
+}
+
+// inicializamos color al cargar
+updateAutoPrintBtn();
+
+// agregamos botón al DOM (junto al printActiveBtn)
+printActiveBtn.parentNode.insertBefore(toggleAutoPrintBtn, printActiveBtn.nextSibling);
+
+toggleAutoPrintBtn.addEventListener("click", ()=>{
+  autoPrintPropietarios = !autoPrintPropietarios;
+  updateAutoPrintBtn();
 });
 
+// ------------------ onSnapshot MOVIMIENTOS ------------------
+onSnapshot(query(movimientosRef, orderBy("hora","desc")), snapshot => {
+
+  snapshot.docChanges().forEach(change => {
+    const d = change.doc;
+    const data = { __id: d.id, ...d.data() };
+
+    if(change.type === "added"){
+      movimientosCache.unshift(data);
+      movimientosCache = movimientosCache.filter((v,i,a)=>a.findIndex(x=>x.__id===v.__id)===i);
+
+      const matchesFilter = (activeTipo === "todos" || data.tipo === activeTipo);
+      if(matchesFilter){
+        const tr = document.createElement("tr");
+        const autorizText = data.autorizante || "";
+        tr.innerHTML = `<td>${data.L||""}</td><td>${(data.nombre||"").toUpperCase()}</td>
+          <td>${data.entrada||""}</td><td>${data.salida||""}</td><td>${data.tipo||""}</td>
+          <td class="autorizante-td">${autorizText}</td>
+          <td>
+            <button class="ficha-btn" data-L="${data.L}">FICHA</button>
+            <button class="delMov" data-id="${data.__id}">Eliminar</button>
+          </td>`;
+        // listeners ficha y eliminar (mantener los que ya tienes)
+        movimientosTableBody.insertAdjacentElement('afterbegin', tr);
+      }
+    } else if(change.type === "modified"){
+      const idx = movimientosCache.findIndex(x=>x.__id===data.__id);
+      if(idx > -1) movimientosCache[idx] = data;
+      renderMovsPage();
+    } else if(change.type === "removed"){
+      movimientosCache = movimientosCache.filter(x=>x.__id !== data.__id);
+      const row = movimientosTableBody.querySelector(`.delMov[data-id="${data.__id}"]`)?.closest("tr");
+      if(row) row.remove();
+      renderMovsPage();
+    }
+  });
+
+  // ---------- AUTO-IMPRESIÓN controlada por el botón ----------
+  const propietariosCount = movimientosCache.filter(m=>m.tipo==="propietario").length;
+  if(autoPrintPropietarios && propietariosCount>0 && propietariosCount % MOV_LIMIT === 0){
+    printMovimientosPorTipo("propietario", true);
+  }
+
+});
 
 /* ----------------------------- ESCANEAR CÓDIGOS AUTOMÁTICO ----------------------------- */
 const scanBtn = document.getElementById("scanBtn");
@@ -680,6 +747,7 @@ document.getElementById("closeFichaBtn").addEventListener("click", ()=>{ documen
 document.getElementById("cancelEditBtn").addEventListener("click", ()=>{ document.getElementById("editUserModal").classList.remove("active"); });
 
 /* Nota final: se quitaron funciones y prompts de cambio/restore de contraseña y la sección CONFIG por pedido del usuario. */
+
 
 
 
