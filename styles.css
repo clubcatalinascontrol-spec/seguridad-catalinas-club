@@ -1,135 +1,151 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Seguridad Catalinas Club</title>
-<link rel="stylesheet" href="styles.css">
-</head>
-<body>
+/* ----------------------------- VARIABLES DE COLOR ----------------------------- */
+:root{
+  --bg:#f5f5f5; 
+  --panel:#ffffff; 
+  --accent:#f4cf19; 
+  --muted:#666666; 
+  --text:#1f2634; 
+  --white:#ffffff; 
+  --blur-bg:rgba(0,0,0,0.35);
+}
 
-<div class="topbar">
-  <div>
-    <button class="nav-btn active" data-section="panel">PANEL</button>
-    <button class="nav-btn" data-section="usuarios">USUARIOS</button>
-    <button class="nav-btn" data-section="expired">EXPIRADOS</button>
-    <button class="nav-btn" data-section="novedades">NOVEDADES</button>
-  </div>
-  <div>
-    <button id="scanBtn">ESCANEAR</button>
-    <button id="printActiveBtn">IMPRIMIR</button>
-  </div>
-</div>
+/* ----------------------------- ESTILOS GENERALES ----------------------------- */
+body{
+  margin:0;
+  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
 
-<div id="passwordBanner">
-  Introduzca la contraseña para desbloquear el sistema:
-  <input type="password" id="initPassInput" />
-  <button id="initPassBtn">Ingresar</button>
-  <span id="initPassMsg"></span>
-</div>
+h2{
+  margin: 10px 0;
+}
 
-<div id="panel" class="page active">
-  <h2>PANEL</h2>
-  <table id="movimientosTable">
-    <thead>
-      <tr>
-        <th>#L</th><th>Nombre</th><th>H. Entrada</th><th>H. Salida</th><th>Tipo</th><th class="autorizante-th">Autorizante</th><th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-  <div id="pagination"></div>
-</div>
+button{
+  cursor:pointer;
+}
 
-<div id="usuarios" class="page">
-  <h2>USUARIOS</h2>
-  <table id="usersTable">
-    <thead>
-      <tr>
-        <th>#L</th><th>Nombre</th><th>DNI</th><th>Celular</th><th>Autorizante</th><th>F. Expedición</th><th>Tipo</th><th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
+.page{
+  display:none;
+  padding:10px;
+}
 
-<div id="expired" class="page">
-  <h2>EXPIRADOS</h2>
-  <table id="expiredTable">
-    <thead>
-      <tr>
-        <th>#L</th><th>Nombre</th><th>DNI</th><th>Código Ingreso</th><th>Código Salida</th><th>Tipo</th><th>F. Eliminación</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-  <div id="expiredPagination"></div>
-</div>
+.page.active{
+  display:block;
+}
 
-<div id="novedades" class="page">
-  <h2>NOVEDADES</h2>
-  <textarea id="novedadTexto" rows="2" style="width:100%;"></textarea>
-  <button id="guardarNovedadBtn">Guardar</button>
-  <span id="novedadMsg" class="msg"></span>
-  <table id="novedadesTable">
-    <thead>
-      <tr><th>Hora / Fecha</th><th>Texto</th><th>Acciones</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
+/* ----------------------------- TOPBAR ----------------------------- */
+.topbar{
+  display:flex;
+  background:#111;
+  padding:5px;
+}
 
-<!-- Modales -->
-<div id="scanModal" class="modal">
-  <div class="modal-content">
-    <h3>Escaneo de Código</h3>
-    <input type="text" id="scanInput" />
-    <div id="scanMessage" class="msg"></div>
-    <div>
-      <span id="scanOk" style="display:none;color:green;font-weight:700;">OK</span>
-      <button id="cancelScanBtn">Cancelar</button>
-    </div>
-  </div>
-</div>
+.nav-btn{
+  flex:1;
+  background:#222;
+  color:var(--white);
+  border:none;
+  padding:10px;
+}
 
-<div id="fichaModal" class="modal">
-  <div class="modal-content">
-    <h3>Ficha Usuario</h3>
-    <div>#L: <span id="fichaL"></span></div>
-    <div>Nombre: <span id="fichaNombre"></span></div>
-    <div>DNI: <span id="fichaDni"></span></div>
-    <div>Celular: <span id="fichaCelular"></span></div>
-    <div>Autorizante: <span id="fichaAutorizante"></span></div>
-    <div>F. Expedición: <span id="fichaFechaExp"></span></div>
-    <div>Tipo: <span id="fichaTipo"></span></div>
-    <button id="closeFichaBtn">Cerrar</button>
-  </div>
-</div>
+.nav-btn.active{
+  background:var(--accent);
+  color:#111;
+}
 
-<div id="editUserModal" class="modal">
-  <div class="modal-content">
-    <h3>Editar Usuario</h3>
-    <select id="editUserL"></select>
-    <input type="text" id="editUserNombre" placeholder="Nombre" />
-    <input type="text" id="editUserDni" placeholder="DNI" />
-    <input type="text" id="editUserCelular" placeholder="Celular" />
-    <input type="text" id="editUserAutorizante" placeholder="Autorizante" />
-    <select id="editUserTipo">
-      <option value="NN">NN</option>
-      <option value="propietario">Propietario</option>
-      <option value="administracion">Administración</option>
-      <option value="empleado">Empleado</option>
-      <option value="obrero">Obrero</option>
-      <option value="invitado">Invitado</option>
-      <option value="guardia">Guardia</option>
-    </select>
-    <span id="editUserMsg" class="msg"></span>
-    <div>
-      <button id="finalizeEditBtn">Guardar</button>
-      <button id="cancelEditBtn">Cancelar</button>
-    </div>
-  </div>
-</div>
+/* ----------------------------- MODALES ----------------------------- */
+.modal{
+  display:none;
+  position:fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background:var(--blur-bg);
+  justify-content:center;
+  align-items:center;
+  z-index:1000;
+}
 
-</body>
-</html>
+.modal.active{
+  display:flex;
+}
+
+.modal input, .modal select, .modal textarea{
+  margin:5px 0;
+}
+
+/* ----------------------------- TAB BUTTONS ----------------------------- */
+.tabs{
+  margin:10px 0;
+}
+
+.tab-btn{
+  background:#ccc;
+  border:none;
+  padding:5px 10px;
+  margin-right:5px;
+}
+
+.tab-btn.active{
+  background:var(--accent);
+  color:#111;
+}
+
+/* ----------------------------- TABLES ----------------------------- */
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-bottom:10px;
+}
+
+th, td{
+  border:1px solid #000;
+  padding:6px;
+  text-align:center;
+}
+
+thead th{
+  background:var(--accent);
+  font-weight:700;
+}
+
+.autorizante-hidden .autorizante-th,
+.autorizante-hidden .autorizante-td{
+  display:none;
+}
+
+/* ----------------------------- ESCANEAR ----------------------------- */
+#scanModal input{
+  padding:5px;
+}
+
+/* ----------------------------- PAGINACIÓN ----------------------------- */
+#pagination button,
+#expiredPagination button{
+  margin:2px;
+  padding:5px 8px;
+  border:none;
+  background:#eee;
+}
+
+#pagination button:hover,
+#expiredPagination button:hover{
+  background:#ddd;
+}
+
+/* ----------------------------- BOTONES ----------------------------- */
+button:hover{
+  opacity:0.85;
+}
+
+/* ----------------------------- IMPRESIÓN ----------------------------- */
+@media print{
+  body{ font-size:10px; color:#000; }
+  table, th, td{
+    font-size:10px;
+    border:1px solid #000;
+    padding:1px;
+    color:#000;
+  }
+  thead th{ background:none; font-weight:700; }
+}
