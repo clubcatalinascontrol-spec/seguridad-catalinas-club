@@ -2,16 +2,16 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebas
 import { getFirestore, collection, query, where, orderBy, onSnapshot, addDoc, getDocs, updateDoc, deleteDoc, doc, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyB8fQJsN0tqpuz48Om30m6u6jhEcSfKYEw",
-  authDomain: "supermercadox-107f6.firebaseapp.com",
-  projectId: "supermercadox-107f6",
-  storageBucket: "supermercadox-107f6.firebasestorage.app",
-  messagingSenderId: "504958637825",
-  appId: "1:504958637825:web:6ae5e2cde43206b3052d00"
+  apiKey: "AIzaSyBmgexrB3aDlx5XARYqigaPoFsWX5vDz_4",
+  authDomain: "seguridad-catalinas-club.firebaseapp.com",
+  projectId: "seguridad-catalinas-club",
+  storageBucket: "seguridad-catalinas-club.firebasestorage.app",
+  messagingSenderId: "980866194296",
+  appId: "1:980866194296:web:3fefc2a107d0ec6052468d"
 };
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
 /* ----------------------------- GLOBAL ----------------------------- */
 let isUnlocked=false, editingNovedadId=null;
 const horaActualStr=()=>new Date().toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"});
@@ -248,3 +248,4 @@ onSnapshot(expiradosRef, snap=>{
     tbody.appendChild(tr);
   });
 });
+
