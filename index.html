@@ -7,94 +7,124 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-
-<div class="topbar">
-  <div>
-    <button class="nav-btn active" data-section="panel">PANEL</button>
-    <button class="nav-btn" data-section="usuarios">USUARIOS</button>
-    <button class="nav-btn" data-section="expired">EXPIRADOS</button>
-    <button class="nav-btn" data-section="novedades">NOVEDADES</button>
+  <div class="topbar">
+    <button class="nav-btn active" data-section="panel">Panel</button>
+    <button class="nav-btn" data-section="usuarios">Usuarios</button>
+    <button class="nav-btn" data-section="expired">Expirados</button>
+    <button class="nav-btn" data-section="novedades">Novedades</button>
   </div>
-  <div>
-    <button id="scanBtn">ESCANEAR</button>
-    <button id="printActiveBtn">IMPRIMIR</button>
+
+  <div id="passwordBanner" class="password-banner">
+    <input id="initPassInput" type="password" placeholder="Contraseña">
+    <button id="initPassBtn">Desbloquear</button>
+    <span id="initPassMsg"></span>
   </div>
-</div>
 
-<div id="passwordBanner">
-  Introduzca la contraseña para desbloquear el sistema:
-  <input type="password" id="initPassInput" />
-  <button id="initPassBtn">Ingresar</button>
-  <span id="initPassMsg"></span>
-</div>
-
-<div id="panel" class="page active">
-  <h2>PANEL</h2>
-  <table id="movimientosTable">
-    <thead>
-      <tr>
-        <th>#L</th><th>Nombre</th><th>H. Entrada</th><th>H. Salida</th><th>Tipo</th><th class="autorizante-th">Autorizante</th><th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-  <div id="pagination"></div>
-</div>
-
-<div id="usuarios" class="page">
-  <h2>USUARIOS</h2>
-  <table id="usersTable">
-    <thead>
-      <tr>
-        <th>#L</th><th>Nombre</th><th>DNI</th><th>Celular</th><th>Autorizante</th><th>F. Expedición</th><th>Tipo</th><th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
-
-<div id="expired" class="page">
-  <h2>EXPIRADOS</h2>
-  <table id="expiredTable">
-    <thead>
-      <tr>
-        <th>#L</th><th>Nombre</th><th>DNI</th><th>Código Ingreso</th><th>Código Salida</th><th>Tipo</th><th>F. Eliminación</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-  <div id="expiredPagination"></div>
-</div>
-
-<div id="novedades" class="page">
-  <h2>NOVEDADES</h2>
-  <textarea id="novedadTexto" rows="2" style="width:100%;"></textarea>
-  <button id="guardarNovedadBtn">Guardar</button>
-  <span id="novedadMsg" class="msg"></span>
-  <table id="novedadesTable">
-    <thead>
-      <tr><th>Hora / Fecha</th><th>Texto</th><th>Acciones</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
-
-<!-- Modales -->
-<div id="scanModal" class="modal">
-  <div class="modal-content">
-    <h3>Escaneo de Código</h3>
-    <input type="text" id="scanInput" />
-    <div id="scanMessage" class="msg"></div>
-    <div>
-      <span id="scanOk" style="display:none;color:green;font-weight:700;">OK</span>
+  <div id="panel" class="page active">
+    <h2>Panel</h2>
+    <button id="scanBtn">Escanear</button>
+    <button id="printActiveBtn">Imprimir Activos</button>
+    <div id="scanModal" class="modal">
+      <input id="scanInput" type="text" placeholder="Ingrese código">
       <button id="cancelScanBtn">Cancelar</button>
+      <span id="scanMessage"></span>
+      <span id="scanOk" style="display:none;">✔</span>
     </div>
+    <div class="tabs">
+      <button class="tab-btn active" data-tipo="todos">Todos</button>
+      <button class="tab-btn" data-tipo="propietario">Propietario</button>
+      <button class="tab-btn" data-tipo="empleado">Empleado</button>
+      <button class="tab-btn" data-tipo="invitado">Invitado</button>
+    </div>
+    <table id="movimientosTable">
+      <thead>
+        <tr>
+          <th>#L</th>
+          <th>Nombre</th>
+          <th>H. Entrada</th>
+          <th>H. Salida</th>
+          <th>Tipo</th>
+          <th class="autorizante-th">Autorizante</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div id="pagination"></div>
   </div>
-</div>
 
-<div id="fichaModal" class="modal">
-  <div class="modal-content">
-    <h3>Ficha Usuario</h3>
+  <div id="usuarios" class="page">
+    <h2>Usuarios</h2>
+    <select id="userL"></select>
+    <input id="userNombre" type="text" placeholder="Nombre">
+    <input id="userDni" type="text" placeholder="DNI">
+    <input id="userCelular" type="text" placeholder="Celular">
+    <input id="userAutorizante" type="text" placeholder="Autorizante">
+    <select id="userTipo">
+      <option value="NN">NN</option>
+      <option value="propietario">Propietario</option>
+      <option value="empleado">Empleado</option>
+      <option value="invitado">Invitado</option>
+      <option value="obrero">Obrero</option>
+    </select>
+    <button id="addUserBtn">Agregar</button>
+    <span id="userMessage"></span>
+    <table id="usersTable">
+      <thead>
+        <tr>
+          <th>#L</th>
+          <th>Nombre</th>
+          <th>DNI</th>
+          <th>Celular</th>
+          <th>Autorizante</th>
+          <th>F. Expedición</th>
+          <th>Tipo</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div id="expired" class="page">
+    <h2>Expirados</h2>
+    <table id="expiredTable">
+      <thead>
+        <tr>
+          <th>#L</th>
+          <th>Nombre</th>
+          <th>DNI</th>
+          <th>Cód. Entrada</th>
+          <th>Cód. Salida</th>
+          <th>Tipo</th>
+          <th>F. Eliminación</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div id="expiredPagination"></div>
+  </div>
+
+  <div id="novedades" class="page">
+    <h2>Novedades</h2>
+    <textarea id="novedadTexto"></textarea>
+    <button id="guardarNovedadBtn">Guardar</button>
+    <span id="novedadMsg"></span>
+    <table id="novedadesTable">
+      <thead>
+        <tr>
+          <th>Hora</th>
+          <th>Texto</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- Modales ficha y editar -->
+  <div id="fichaModal" class="modal">
+    <span id="closeFichaBtn">Cerrar</span>
     <div>#L: <span id="fichaL"></span></div>
     <div>Nombre: <span id="fichaNombre"></span></div>
     <div>DNI: <span id="fichaDni"></span></div>
@@ -102,34 +132,26 @@
     <div>Autorizante: <span id="fichaAutorizante"></span></div>
     <div>F. Expedición: <span id="fichaFechaExp"></span></div>
     <div>Tipo: <span id="fichaTipo"></span></div>
-    <button id="closeFichaBtn">Cerrar</button>
   </div>
-</div>
 
-<div id="editUserModal" class="modal">
-  <div class="modal-content">
-    <h3>Editar Usuario</h3>
+  <div id="editUserModal" class="modal">
+    <span id="cancelEditBtn">Cancelar</span>
     <select id="editUserL"></select>
-    <input type="text" id="editUserNombre" placeholder="Nombre" />
-    <input type="text" id="editUserDni" placeholder="DNI" />
-    <input type="text" id="editUserCelular" placeholder="Celular" />
-    <input type="text" id="editUserAutorizante" placeholder="Autorizante" />
+    <input id="editUserNombre" type="text">
+    <input id="editUserDni" type="text">
+    <input id="editUserCelular" type="text">
+    <input id="editUserAutorizante" type="text">
     <select id="editUserTipo">
       <option value="NN">NN</option>
       <option value="propietario">Propietario</option>
-      <option value="administracion">Administración</option>
       <option value="empleado">Empleado</option>
-      <option value="obrero">Obrero</option>
       <option value="invitado">Invitado</option>
-      <option value="guardia">Guardia</option>
+      <option value="obrero">Obrero</option>
     </select>
-    <span id="editUserMsg" class="msg"></span>
-    <div>
-      <button id="finalizeEditBtn">Guardar</button>
-      <button id="cancelEditBtn">Cancelar</button>
-    </div>
+    <button id="finalizeEditBtn">Guardar</button>
+    <span id="editUserMsg"></span>
   </div>
-</div>
 
+  <script type="module" src="app.js"></script>
 </body>
 </html>
