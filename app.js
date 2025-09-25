@@ -476,11 +476,76 @@ function renderMovsPage(){
 }
 
 /* ----------------------------- Escuchar movimientos (order by hora desc) ----------------------------- */
-onSnapshot(query(movimientosRef, orderBy("hora","desc")), snapshot=>{
-  movimientosCache = snapshot.docs.map(d=>({__id:d.id,...d.data()}));
-  const totalPages=Math.max(1,Math.ceil(movimientosCache.length/MOV_LIMIT));
-  if(currentPage>totalPages) currentPage=totalPages;
-  renderMovsPage();
+onSnapshot(query(movimientosRef, orderBy("hora","desc")), snapshot => {
+  snapshot.docChanges().forEach(change => {
+    const data = { __id: change.doc.id, ...change.doc.data() };
+
+    if (change.type === "added") {
+      movimientosCache.unshift(data); // agrego al inicio del cache
+
+      // si la fila está en la página visible, la agrego directamente a la tabla
+      const start = (currentPage - 1) * MOV_LIMIT;
+      const end = start + MOV_LIMIT;
+      const filtered = activeTipo === "todos" ? movimientosCache : movimientosCache.filter(m => m.tipo === activeTipo);
+      const newIndex = filtered.findIndex(m => m.__id === data.__id);
+
+      if (newIndex >= start && newIndex < end) {
+        const tr = document.createElement("tr");
+        const autorizText = data.autorizante || "";
+        tr.innerHTML = `<td>${data.L||""}</td><td>${(data.nombre||"").toUpperCase()}</td>
+          <td>${data.entrada||""}</td><td>${data.salida||""}</td><td>${data.tipo||""}</td>
+          <td class="autorizante-td">${autorizText}</td>
+          <td>
+            <button class="ficha-btn" data-L="${data.L}">FICHA</button>
+            <button class="delMov" data-id="${data.__id}">Eliminar</button>
+          </td>`;
+
+        // agregar eventos
+        tr.querySelector(".ficha-btn").addEventListener("click", async (e) => {
+          const L = e.currentTarget.dataset.L;
+          try {
+            const snap = await getDocs(query(usuariosRef, where("L","==",L), limit(1)));
+            if(!snap.empty){
+              const u = snap.docs[0].data();
+              document.getElementById("fichaL").textContent = u.L||"";
+              document.getElementById("fichaNombre").textContent = (u.nombre||"").toUpperCase();
+              document.getElementById("fichaDni").textContent = u.dni||"";
+              document.getElementById("fichaCelular").textContent = u.celular||"";
+              document.getElementById("fichaAutorizante").textContent = u.autorizante||"";
+              document.getElementById("fichaFechaExp").textContent = u.fechaExpedicion ? fechaDDMMYYYY(u.fechaExpedicion) : "";
+              document.getElementById("fichaTipo").textContent = u.tipo||"";
+              document.getElementById("fichaModal").classList.add("active");
+            } else { alert("No se encontró ficha para ese lote"); }
+          } catch(err){ console.error(err); alert("Error al buscar ficha"); }
+        });
+
+        tr.querySelector(".delMov").addEventListener("click", async e => {
+          if(!isUnlocked){ alert("Operación no permitida."); return; }
+          if(!confirm("Eliminar movimiento permanentemente?")) return;
+          try{ await deleteDoc(doc(db,"movimientos",e.currentTarget.dataset.id)); } catch(err){ console.error(err); alert("Error eliminando movimiento"); }
+        });
+
+        // decidir si agregar al inicio o fin según paginación
+        movimientosTableBody.insertBefore(tr, movimientosTableBody.firstChild);
+      }
+    }
+
+    if (change.type === "removed") {
+      movimientosCache = movimientosCache.filter(m => m.__id !== data.__id);
+      const row = movimientosTableBody.querySelector(`button.delMov[data-id="${data.__id}"]`)?.closest("tr");
+      if(row) row.remove();
+    }
+
+    if (change.type === "modified") {
+      const index = movimientosCache.findIndex(m => m.__id === data.__id);
+      if(index !== -1) movimientosCache[index] = data;
+      renderMovsPage(); // para simplificar, re-render de la página actual
+    }
+  });
+
+  renderPagination(activeTipo === "todos" ? movimientosCache.length : movimientosCache.filter(m => m.tipo === activeTipo).length);
+});
+
 
   // auto-imprimir propietarios cada múltiplo de 25
   const propietariosCount = movimientosCache.filter(m=>m.tipo==="propietario").length;
@@ -602,3 +667,4 @@ function filterUsersTable(){
 }
 
 /* Nota: dejamos las demás listeners (closeFicha, cancelEdit) en Parte 1 para mantener continuidad */
+
