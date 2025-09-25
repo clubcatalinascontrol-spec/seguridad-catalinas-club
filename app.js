@@ -503,24 +503,28 @@ function renderMovsPage() {
       </td>`;
     movimientosTableBody.appendChild(tr);
 
-    // ficha desde panel
-    tr.querySelector(".ficha-btn").addEventListener("click", async (e) => {
-      const L = e.currentTarget.dataset.L;
-      try {
-        const snap = await getDocs(query(usuariosRef, where("L", "==", L), limit(1)));
-        if (!snap.empty) {
-          const u = snap.docs[0].data();
-          document.getElementById("fichaL").textContent = u.L || "";
-          document.getElementById("fichaNombre").textContent = (u.nombre || "").toUpperCase();
-          document.getElementById("fichaDni").textContent = u.dni || "";
-          document.getElementById("fichaCelular").textContent = u.celular || "";
-          document.getElementById("fichaAutorizante").textContent = u.autorizante || "";
-          document.getElementById("fichaFechaExp").textContent = u.fechaExpedicion ? fechaDDMMYYYY(u.fechaExpedicion) : "";
-          document.getElementById("fichaTipo").textContent = u.tipo || "";
-          document.getElementById("fichaModal").classList.add("active");
-        } else { alert("No se encontró ficha para ese lote"); }
-      } catch (err) { console.error(err); alert("Error al buscar ficha"); }
-    });
+// ficha desde panel
+tr.querySelector(".ficha-btn").addEventListener("click", async (e) => {
+  const L = (e.currentTarget.dataset.L || "").trim(); // limpio espacios
+  if(!L){ alert("Lote inválido"); return; }
+  try {
+    const snap = await getDocs(query(usuariosRef, where("L", "==", L), limit(1)));
+    if (!snap.empty) {
+      const u = snap.docs[0].data();
+      document.getElementById("fichaL").textContent = u.L || "";
+      document.getElementById("fichaNombre").textContent = (u.nombre || "").toUpperCase();
+      document.getElementById("fichaDni").textContent = u.dni || "";
+      document.getElementById("fichaCelular").textContent = u.celular || "";
+      document.getElementById("fichaAutorizante").textContent = u.autorizante || "";
+      document.getElementById("fichaFechaExp").textContent = u.fechaExpedicion ? fechaDDMMYYYY(u.fechaExpedicion) : "";
+      document.getElementById("fichaTipo").textContent = u.tipo || "";
+      document.getElementById("fichaModal").classList.add("active");
+    } else { alert("No se encontró ficha para ese lote"); }
+  } catch (err) {
+    console.error(err); 
+    alert("Error al buscar ficha");
+  }
+});
 
     // eliminar movimiento
     tr.querySelector(".delMov").addEventListener("click", async e => {
@@ -661,5 +665,6 @@ function filterUsersTable(){
     tr.style.display = (activeUserFilter === "todos" || tipo === activeUserFilter) ? "" : "none";
   });
 }
+
 
 
