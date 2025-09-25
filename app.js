@@ -291,26 +291,71 @@ onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
   });
 });
 
-/* ----------------------------- EXPIRADOS - render en tiempo real ----------------------------- */
+/* ----------------------------- EXPIRADOS - render con paginación + tooltip ----------------------------- */
 const expiredTableBody = document.querySelector("#expiredTable tbody");
-if(expiredTableBody){
-  onSnapshot(query(expiredRef, orderBy("when","desc")), snapshot=>{
-    expiredTableBody.innerHTML = "";
-    snapshot.docs.forEach(d=>{
-      const e = d.data();
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${e.L || ""}</td>
-        <td>${(e.nombre||"").toUpperCase()}</td>
-        <td>${e.dni || ""}</td>
-        <td>${e.codigoIngreso || ""}</td>
-        <td>${e.codigoSalida || ""}</td>
-        <td>${e.tipo || ""}</td>
-        <td>${e.when ? fechaDDMMYYYY(e.when) : ""}</td>`;
-      expiredTableBody.appendChild(tr);
-    });
+const expiredPagination = document.getElementById("expiredPagination");
+const EXP_LIMIT = 25;
+let expiredCache = [];
+let expiredPage = 1;
+
+function renderExpiredPage() {
+  if (!expiredTableBody) return;
+  expiredTableBody.innerHTML = "";
+
+  const start = (expiredPage - 1) * EXP_LIMIT;
+  const end = start + EXP_LIMIT;
+  const pageData = expiredCache.slice(start, end);
+
+  pageData.forEach(e => {
+    const tr = document.createElement("tr");
+
+    // formatear fecha/hora
+    let fecha = "";
+    let hora = "";
+    if (e.when) {
+      const d = new Date(e.when.seconds * 1000); // Firestore Timestamp → Date
+      fecha = d.toLocaleDateString("es-AR");     // ejemplo: 25/09/2025
+      hora = d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }); // ejemplo: 14:35
+    }
+
+    tr.innerHTML = `
+      <td>${e.L || ""}</td>
+      <td>${(e.nombre||"").toUpperCase()}</td>
+      <td>${e.dni || ""}</td>
+      <td>${e.codigoIngreso || ""}</td>
+      <td>${e.codigoSalida || ""}</td>
+      <td>${e.tipo || ""}</td>
+      <td title="${fecha}">${hora}</td>
+    `;
+    expiredTableBody.appendChild(tr);
   });
+
+  // render paginación
+  if (expiredPagination) {
+    const totalPages = Math.max(1, Math.ceil(expiredCache.length / EXP_LIMIT));
+    expiredPagination.innerHTML = "";
+    for (let i = 1; i <= totalPages; i++) {
+      const btn = document.createElement("button");
+      btn.textContent = i;
+      if (i === expiredPage) btn.classList.add("active");
+      btn.addEventListener("click", () => {
+        expiredPage = i;
+        renderExpiredPage();
+      });
+      expiredPagination.appendChild(btn);
+    }
+  }
 }
 
+if (expiredTableBody) {
+  onSnapshot(query(expiredRef, orderBy("when", "desc")), snapshot => {
+    expiredCache = snapshot.docs.map(d => d.data());
+    if (expiredPage > Math.ceil(expiredCache.length / EXP_LIMIT)) {
+      expiredPage = 1;
+    }
+    renderExpiredPage();
+  });
+}
 /* ----------------------------- NOVEDADES - agregar/editar/eliminar + render ----------------------------- */
 const novedadesTableBody = document.querySelector("#novedadesTable tbody");
 const novTxt = document.getElementById("novedadTexto");
@@ -377,42 +422,6 @@ if(novedadesTableBody){
 
 // app.js (PARTE 2) - movimientos, impresión, escaneo, filtros
 /* ----------------------------- MOVIMIENTOS (pestañas por tipo y paginación) ----------------------------- */
-const movimientosTableBody=document.querySelector("#movimientosTable tbody");
-const paginationDiv=document.getElementById("pagination");
-const MOV_LIMIT=25;
-let movimientosCache=[], currentPage=1, activeTipo = "todos";
-
-// pestañas tipo
-document.querySelectorAll(".tab-btn").forEach(btn=>{
-  btn.addEventListener("click", ()=>{
-    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
-    btn.classList.add("active");
-    activeTipo = btn.dataset.tipo;
-    currentPage = 1;
-    renderMovsPage();
-  });
-});
-
-// imprimir pestaña activa
-const printActiveBtn = document.getElementById("printActiveBtn");
-if(printActiveBtn) printActiveBtn.addEventListener("click", ()=>{ if(!isUnlocked){ alert("Operación no permitida."); return; } printMovimientosPorTipo(activeTipo); });
-
-function renderPagination(totalItems){
-  const totalPages=Math.max(1,Math.ceil(totalItems/MOV_LIMIT));
-  paginationDiv.innerHTML="";
-  for(let p=1;p<=totalPages;p++){
-    const btn=document.createElement("button");
-    btn.textContent=p;
-    if(p===currentPage){ btn.style.background="#d8a800"; btn.style.color="#111"; }
-    btn.addEventListener("click", ()=>{ currentPage=p; renderMovsPage(); });
-    paginationDiv.appendChild(btn);
-  }
-}
-
-function shouldShowAutorizanteColumn(tipo){
-  return ["obrero","invitado","empleado","otro"].includes(tipo);
-}
-
 function renderMovsPage(){
   if(!movimientosTableBody) return;
   movimientosTableBody.innerHTML="";
@@ -433,13 +442,41 @@ function renderMovsPage(){
   page.forEach(item=>{
     const tr=document.createElement("tr");
     const autorizText = item.autorizante || "";
-    tr.innerHTML = `<td>${item.L||""}</td><td>${(item.nombre||"").toUpperCase()}</td>
-      <td>${item.entrada||""}</td><td>${item.salida||""}</td><td>${item.tipo||""}</td>
+
+    // procesar fecha/hora entrada
+    let entradaHora = item.entrada || "";
+    let entradaFecha = "";
+    if(item.hora && item.hora.toDate){
+      const d = item.hora.toDate();
+      if(item.entrada){ // solo si hay entrada
+        entradaHora = d.toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"});
+        entradaFecha = d.toLocaleDateString("es-AR");
+      }
+    }
+
+    // procesar fecha/hora salida
+    let salidaHora = item.salida || "";
+    let salidaFecha = "";
+    if(item.hora && item.hora.toDate){
+      const d = item.hora.toDate();
+      if(item.salida){ // solo si hay salida
+        salidaHora = d.toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"});
+        salidaFecha = d.toLocaleDateString("es-AR");
+      }
+    }
+
+    tr.innerHTML = `
+      <td>${item.L||""}</td>
+      <td>${(item.nombre||"").toUpperCase()}</td>
+      <td title="${entradaFecha}">${entradaHora}</td>
+      <td title="${salidaFecha}">${salidaHora}</td>
+      <td>${item.tipo||""}</td>
       <td class="autorizante-td">${autorizText}</td>
       <td>
         <button class="ficha-btn" data-L="${item.L}">FICHA</button>
         <button class="delMov" data-id="${item.__id}">Eliminar</button>
       </td>`;
+
     movimientosTableBody.appendChild(tr);
 
     // ficha desde panel
@@ -472,11 +509,27 @@ function renderMovsPage(){
   renderPagination(filtered.length);
 }
 
-/* ----------------------------- Escuchar movimientos (order by hora desc) ----------------------------- */
-onSnapshot(query(movimientosRef, orderBy("hora","desc")), snapshot=>{
-  movimientosCache = snapshot.docs.map(d=>({__id:d.id,...d.data()}));
-  const totalPages=Math.max(1,Math.ceil(movimientosCache.length/MOV_LIMIT));
-  if(currentPage>totalPages) currentPage=totalPages;
+/* ----------------------------- Escuchar movimientos (order by hora desc, historial) ----------------------------- */
+onSnapshot(query(movimientosRef, orderBy("hora", "desc")), snapshot => {
+  snapshot.docChanges().forEach(change => {
+    if (change.type === "added") {
+      // Insertar al inicio (más reciente arriba), sin borrar los anteriores
+      movimientosCache.unshift({ __id: change.doc.id, ...change.doc.data() });
+    }
+    if (change.type === "modified") {
+      const idx = movimientosCache.findIndex(m => m.__id === change.doc.id);
+      if (idx !== -1) {
+        movimientosCache[idx] = { __id: change.doc.id, ...change.doc.data() };
+      }
+    }
+    if (change.type === "removed") {
+      movimientosCache = movimientosCache.filter(m => m.__id !== change.doc.id);
+    }
+  });
+
+  const totalPages = Math.max(1, Math.ceil(movimientosCache.length / MOV_LIMIT));
+  if (currentPage > totalPages) currentPage = totalPages;
+
   renderMovsPage();
 
   // auto-imprimir propietarios cada múltiplo de 25
@@ -599,3 +652,4 @@ function filterUsersTable(){
 }
 
 /* Nota: dejamos las demás listeners (closeFicha, cancelEdit) en Parte 1 para mantener continuidad */
+
