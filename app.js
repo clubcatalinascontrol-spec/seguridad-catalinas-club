@@ -198,10 +198,10 @@ onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
       <td>${u.fechaExpedicion ? fechaDDMMYYYY(u.fechaExpedicion) : ""}</td>
       <td>${u.tipo||""}</td>
       <td>
-        <button class="ficha-btn" data-id="${docSnap.id}">FICHA</button>
-        <button class="edit-btn" data-id="${docSnap.id}">Editar</button>
-        <button class="del-btn" data-id="${docSnap.id}">Eliminar</button>
-        <button class="print-btn" data-id="${docSnap.id}">Imprimir Tarjeta</button>
+<button class="ficha-btn" data-dni="${u.dni || ''}">FICHA</button>
+<button class="edit-btn" data-id="${docSnap.id}">Editar</button>
+<button class="del-btn" data-id="${docSnap.id}">Eliminar</button>
+<button class="print-btn" data-id="${docSnap.id}">Imprimir Tarjeta</button>
       </td>`;
     usersTableBody.appendChild(tr);
 
@@ -663,33 +663,34 @@ function filterUsersTable(){
   });
 }
 
-// ficha desde USUARIOS - versión corregida
-document.querySelectorAll(".users-ficha-btn").forEach(btn => {
-  btn.addEventListener("click", async e => {
-    const dni = (e.currentTarget.dataset.dni || "").trim();
-    if (!dni) {
-      alert("Esta ficha no puede abrirse porque el usuario no tiene DNI cargado");
-      return;
-    }
-    try {
-      const snap = await getDocs(query(usuariosRef, where("dni", "==", dni), limit(1)));
-      if (!snap.empty) {
-        const u = snap.docs[0].data();
-        document.getElementById("fichaL").textContent = u.L || "";
-        document.getElementById("fichaNombre").textContent = (u.nombre || "").toUpperCase();
-        document.getElementById("fichaDni").textContent = u.dni || "";
-        document.getElementById("fichaCelular").textContent = u.celular || "";
-        document.getElementById("fichaAutorizante").textContent = u.autorizante || "";
-        document.getElementById("fichaFechaExp").textContent = u.fechaExpedicion ? fechaDDMMYYYY(u.fechaExpedicion) : "";
-        document.getElementById("fichaTipo").textContent = u.tipo || "";
-        document.getElementById("fichaModal").classList.add("active");
-      } else {
-        alert("No se encontró ficha para este usuario");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Error al buscar ficha");
-    }
-  });
-});
+// ficha desde USUARIOS - versión corregida con delegación de eventos
+const usersTable = document.getElementById("usersTable");
+usersTable.addEventListener("click", async (e) => {
+  if (!e.target.classList.contains("users-ficha-btn")) return;
 
+  const dni = (e.target.dataset.dni || "").trim();
+  if (!dni) {
+    alert("Esta ficha no puede abrirse porque el usuario no tiene DNI cargado");
+    return;
+  }
+
+  try {
+    const snap = await getDocs(query(usuariosRef, where("dni", "==", dni), limit(1)));
+    if (!snap.empty) {
+      const u = snap.docs[0].data();
+      document.getElementById("fichaL").textContent = u.L || "";
+      document.getElementById("fichaNombre").textContent = (u.nombre || "").toUpperCase();
+      document.getElementById("fichaDni").textContent = u.dni || "";
+      document.getElementById("fichaCelular").textContent = u.celular || "";
+      document.getElementById("fichaAutorizante").textContent = u.autorizante || "";
+      document.getElementById("fichaFechaExp").textContent = u.fechaExpedicion ? fechaDDMMYYYY(u.fechaExpedicion) : "";
+      document.getElementById("fichaTipo").textContent = u.tipo || "";
+      document.getElementById("fichaModal").classList.add("active");
+    } else {
+      alert("No se encontró ficha para este usuario");
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Error al buscar ficha");
+  }
+});
