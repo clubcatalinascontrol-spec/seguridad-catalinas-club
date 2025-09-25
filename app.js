@@ -299,6 +299,7 @@ let expiredCache = [], expiredCurrentPage = 1;
 
 // función para obtener hora en 24h desde Date o Firestore Timestamp
 function horaHHMM(date){
+  if(!date) return "";
   const d = date.toDate ? date.toDate() : date;
   const h = d.getHours().toString().padStart(2,'0');
   const m = d.getMinutes().toString().padStart(2,'0');
@@ -350,18 +351,19 @@ if(expiredTableBody){
     page.forEach(e => {
       const tr = document.createElement("tr");
       tr.innerHTML = `<td>${e.L || ""}</td>
-        <td>${(e.nombre||"").toUpperCase()}</td>
+        <td>${(e.nombre || "").toUpperCase()}</td>
         <td>${e.dni || ""}</td>
         <td>${e.codigoIngreso || ""}</td>
         <td>${e.codigoSalida || ""}</td>
         <td>${e.tipo || ""}</td>
-        <td title="${e.when ? horaHHMM(e.when) : ''}">${e.when ? fechaDDMMYYYY(e.when) : ""}</td>`;
+        <td title="${horaHHMM(e.when)}">${e.when ? fechaDDMMYYYY(e.when) : ""}</td>`;
       expiredTableBody.appendChild(tr);
     });
 
     renderExpiredPagination(expiredCache.length);
   }
 }
+
 /* ----------------------------- NOVEDADES - agregar/editar/eliminar + render ----------------------------- */
 const novedadesTableBody = document.querySelector("#novedadesTable tbody");
 const novTxt = document.getElementById("novedadTexto");
@@ -659,4 +661,5 @@ function filterUsersTable(){
     tr.style.display = (activeUserFilter === "todos" || tipo === activeUserFilter) ? "" : "none";
   });
 }
+
 
