@@ -422,25 +422,29 @@ if(novedadesTableBody){
 
 // app.js (PARTE 2) - movimientos, impresión, escaneo, filtros
 /* ----------------------------- MOVIMIENTOS (pestañas por tipo y paginación) ----------------------------- */
+/* ----------------------------- MOVIMIENTOS (pestañas por tipo y paginación) ----------------------------- */
 function renderMovsPage(){
+  // seleccionar tbody correctamente
+  const movimientosTableBody = document.querySelector("#movimientosTable tbody");
   if(!movimientosTableBody) return;
-  movimientosTableBody.innerHTML="";
-  const filtered = activeTipo === "todos" ? movimientosCache : movimientosCache.filter(m=>m.tipo===activeTipo);
-  const start=(currentPage-1)*MOV_LIMIT;
-  const page = filtered.slice(start, start+MOV_LIMIT);
+
+  movimientosTableBody.innerHTML = "";
+  const filtered = activeTipo === "todos" ? movimientosCache : movimientosCache.filter(m => m.tipo === activeTipo);
+  const start = (currentPage - 1) * MOV_LIMIT;
+  const page = filtered.slice(start, start + MOV_LIMIT);
 
   const table = document.getElementById("movimientosTable");
   const showAut = shouldShowAutorizanteColumn(activeTipo);
   if(showAut){
     table.classList.remove('autorizante-hidden');
-    document.querySelectorAll('.autorizante-th').forEach(th=>th.style.display='table-cell');
+    document.querySelectorAll('.autorizante-th').forEach(th => th.style.display = 'table-cell');
   } else {
     table.classList.add('autorizante-hidden');
-    document.querySelectorAll('.autorizante-th').forEach(th=>th.style.display='none');
+    document.querySelectorAll('.autorizante-th').forEach(th => th.style.display = 'none');
   }
 
-  page.forEach(item=>{
-    const tr=document.createElement("tr");
+  page.forEach(item => {
+    const tr = document.createElement("tr");
     const autorizText = item.autorizante || "";
 
     // procesar fecha/hora entrada
@@ -480,7 +484,7 @@ function renderMovsPage(){
     movimientosTableBody.appendChild(tr);
 
     // ficha desde panel
-    tr.querySelector(".ficha-btn").addEventListener("click", async (e)=>{
+    tr.querySelector(".ficha-btn").addEventListener("click", async (e) => {
       const L = e.currentTarget.dataset.L;
       try{
         const snap = await getDocs(query(usuariosRef, where("L","==",L), limit(1)));
@@ -494,12 +498,14 @@ function renderMovsPage(){
           document.getElementById("fichaFechaExp").textContent = u.fechaExpedicion ? fechaDDMMYYYY(u.fechaExpedicion) : "";
           document.getElementById("fichaTipo").textContent = u.tipo||"";
           document.getElementById("fichaModal").classList.add("active");
-        } else { alert("No se encontró ficha para ese lote"); }
-      }catch(err){ console.error(err); alert("Error al buscar ficha"); }
+        } else {
+          alert("No se encontró ficha para ese lote");
+        }
+      } catch(err) { console.error(err); alert("Error al buscar ficha"); }
     });
 
     // eliminar movimiento
-    tr.querySelector(".delMov").addEventListener("click", async e=>{
+    tr.querySelector(".delMov").addEventListener("click", async e => {
       if(!isUnlocked){ alert("Operación no permitida. Introduzca la contraseña de apertura."); return; }
       if(!confirm("Eliminar movimiento permanentemente?")) return;
       try{ await deleteDoc(doc(db,"movimientos",e.currentTarget.dataset.id)); } catch(err){ console.error(err); alert("Error eliminando movimiento"); }
@@ -508,7 +514,6 @@ function renderMovsPage(){
 
   renderPagination(filtered.length);
 }
-
 /* ----------------------------- Escuchar movimientos (order by hora desc, historial) ----------------------------- */
 onSnapshot(query(movimientosRef, orderBy("hora", "desc")), snapshot => {
   snapshot.docChanges().forEach(change => {
@@ -651,5 +656,6 @@ function filterUsersTable(){
 }
 
 /* Nota: dejamos las demás listeners (closeFicha, cancelEdit) en Parte 1 para mantener continuidad */
+
 
 
