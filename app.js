@@ -380,6 +380,8 @@ document.getElementById("closeFichaBtn").addEventListener("click", ()=>{ documen
 document.getElementById("cancelEditBtn").addEventListener("click", ()=>{ document.getElementById("editUserModal").classList.remove("active"); });
 // app.js (PARTE 2) - movimientos, impresión, escaneo, filtros
 
+// app.js (PARTE 2) - movimientos, impresión, escaneo, filtros
+
 /* ----------------------------- MOVIMIENTOS (pestañas por tipo y paginación) ----------------------------- */
 const movimientosTableBody = document.querySelector("#movimientosTable tbody");
 const paginationDiv = document.getElementById("pagination");
@@ -506,6 +508,27 @@ onSnapshot(query(movimientosRef, orderBy("hora", "desc")), snapshot => {
 });
 
 /* ----------------------------- ESCANEAR CÓDIGOS (movimientos totalmente independientes) ----------------------------- */
+const scanBtn = document.getElementById("scanBtn");
+const scanModal = document.getElementById("scanModal");
+const scanInput = document.getElementById("scanInput");
+const cancelScanBtn = document.getElementById("cancelScanBtn");
+const scanMessage = document.getElementById("scanMessage");
+const scanOk = document.getElementById("scanOk");
+let scanProcessing = false;
+
+scanBtn.addEventListener("click", () => {
+  if(!isUnlocked){ alert("Operación no permitida. Introduzca la contraseña de apertura."); return; }
+  scanModal.classList.add("active");
+  scanInput.value = "";
+  scanMessage.textContent = "";
+  scanInput.focus();
+});
+cancelScanBtn.addEventListener("click", () => {
+  scanModal.classList.remove("active");
+  scanMessage.textContent = "";
+  scanInput.value = "";
+});
+
 scanInput.addEventListener("input", async () => {
   const raw = (scanInput.value || "").trim();
   if (scanProcessing) return;
@@ -548,3 +571,41 @@ scanInput.addEventListener("input", async () => {
     setTimeout(()=>{ scanMessage.textContent=""; },1800);
   } finally { scanProcessing = false; }
 });
+
+/* ----------------------------- IMPRIMIR movimientos (A4, font-size reducido) ----------------------------- */
+function printMovimientosPorTipo(tipo, auto=false){
+  if(!auto && !isUnlocked){ alert("Operación no permitida."); return; }
+  const filtered = tipo==="todos" ? movimientosCache : movimientosCache.filter(m=>m.tipo===tipo);
+  const toPrint = filtered.slice(0,25);
+  const w = window.open("","_blank","width=900,height=600");
+  const title = tipo==="todos" ? "Movimientos - Todos" : `Movimientos - ${tipo}`;
+  let html = `<html><head><title>${title}</title><style>
+    @page{size:A4;margin:6mm;} body{font-family:Arial,Helvetica,sans-serif;font-size:10px;color:#000;}
+    table{width:100%;border-collapse:collapse} th,td{border:1px solid #000;padding:2px;text-align:center;font-size:10px}
+    thead th{background:#fff;font-weight:700;color:#000}
+    img, svg { filter: grayscale(100%); }
+    </style></head><body><h3>${title}</h3><table><thead><tr><th>#L</th><th>Nombre</th><th>DNI</th><th>H. Entrada</th><th>H. Salida</th><th>Tipo</th></tr></thead><tbody>`;
+  toPrint.forEach(m=>{
+    html += `<tr><td>${m.L||""}</td><td>${(m.nombre||"").toUpperCase()}</td><td>${m.dni||""}</td><td>${m.entrada||""}</td><td>${m.salida||""}</td><td>${m.tipo||""}</td></tr>`;
+  });
+  html += `</tbody></table></body></html>`;
+  w.document.write(html);
+  w.print();
+}
+
+/* ----------------------------- USUARIOS - filtros (botones) ----------------------------- */
+let activeUserFilter = "todos";
+document.querySelectorAll(".user-filter-btn").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".user-filter-btn").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    activeUserFilter = btn.dataset.tipo;
+    filterUsersTable();
+  });
+});
+function filterUsersTable(){
+  document.querySelectorAll('#usersTable tbody tr').forEach(tr=>{
+    const tipo = tr.children[6] ? tr.children[6].textContent.trim() : "";
+    tr.style.display = (activeUserFilter === "todos" || tipo === activeUserFilter) ? "" : "none";
+  });
+}
