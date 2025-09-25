@@ -309,13 +309,19 @@ function renderExpiredPage() {
   pageData.forEach(e => {
     const tr = document.createElement("tr");
 
-    // formatear fecha/hora
+    // formatear hora y tooltip de fecha
     let fecha = "";
     let hora = "";
     if (e.when) {
-      const d = new Date(e.when.seconds * 1000); // Firestore Timestamp → Date
-      fecha = d.toLocaleDateString("es-AR");     // ejemplo: 25/09/2025
-      hora = d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }); // ejemplo: 14:35
+      let d;
+      // manejar Firestore Timestamp o Date/String
+      if (e.when.toDate) d = e.when.toDate();          // Firestore Timestamp
+      else if (e.when.seconds) d = new Date(e.when.seconds * 1000); // Timestamp legacy
+      else d = new Date(e.when);                        // Date o string
+      if (!isNaN(d)) {
+        fecha = d.toLocaleDateString("es-AR");          // tooltip
+        hora = d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }); // celda
+      }
     }
 
     tr.innerHTML = `
@@ -422,20 +428,57 @@ if(novedadesTableBody){
 
 // app.js (PARTE 2) - movimientos, impresión, escaneo, filtros
 /* ----------------------------- MOVIMIENTOS (pestañas por tipo y paginación) ----------------------------- */
-/* ----------------------------- MOVIMIENTOS (pestañas por tipo y paginación) ----------------------------- */
-function renderMovsPage(){
-  // seleccionar tbody correctamente
-  const movimientosTableBody = document.querySelector("#movimientosTable tbody");
-  if(!movimientosTableBody) return;
+const movimientosTableBody = document.querySelector("#movimientosTable tbody");
+const paginationDiv = document.getElementById("pagination");
+const MOV_LIMIT = 25;
+let movimientosCache = [], currentPage = 1, activeTipo = "todos";
 
+// pestañas tipo
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    activeTipo = btn.dataset.tipo;
+    currentPage = 1;
+    renderMovsPage();
+  });
+});
+
+// imprimir pestaña activa
+const printActiveBtn = document.getElementById("printActiveBtn");
+if (printActiveBtn) printActiveBtn.addEventListener("click", () => {
+  if (!isUnlocked) { alert("Operación no permitida."); return; }
+  printMovimientosPorTipo(activeTipo);
+});
+
+function renderPagination(totalItems) {
+  const totalPages = Math.max(1, Math.ceil(totalItems / MOV_LIMIT));
+  paginationDiv.innerHTML = "";
+  for (let p = 1; p <= totalPages; p++) {
+    const btn = document.createElement("button");
+    btn.textContent = p;
+    if (p === currentPage) btn.style.background = "#d8a800";
+    if (p === currentPage) btn.style.color = "#111";
+    btn.addEventListener("click", () => { currentPage = p; renderMovsPage(); });
+    paginationDiv.appendChild(btn);
+  }
+}
+
+function shouldShowAutorizanteColumn(tipo) {
+  return ["obrero", "invitado", "empleado", "otro"].includes(tipo);
+}
+
+function renderMovsPage() {
+  if (!movimientosTableBody) return;
   movimientosTableBody.innerHTML = "";
+
   const filtered = activeTipo === "todos" ? movimientosCache : movimientosCache.filter(m => m.tipo === activeTipo);
   const start = (currentPage - 1) * MOV_LIMIT;
   const page = filtered.slice(start, start + MOV_LIMIT);
 
   const table = document.getElementById("movimientosTable");
   const showAut = shouldShowAutorizanteColumn(activeTipo);
-  if(showAut){
+  if (showAut) {
     table.classList.remove('autorizante-hidden');
     document.querySelectorAll('.autorizante-th').forEach(th => th.style.display = 'table-cell');
   } else {
@@ -447,34 +490,32 @@ function renderMovsPage(){
     const tr = document.createElement("tr");
     const autorizText = item.autorizante || "";
 
-    // procesar fecha/hora entrada
-    let entradaHora = item.entrada || "";
-    let entradaFecha = "";
-    if(item.hora && item.hora.toDate){
-      const d = item.hora.toDate();
-      if(item.entrada){
-        entradaHora = d.toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"});
-        entradaFecha = d.toLocaleDateString("es-AR");
-      }
+    // Procesar entrada
+    let entradaHora = "", entradaFecha = "";
+    if (item.entradaHoraObj) { // si ya tienes un Date en cache
+      entradaHora = item.entradaHoraObj.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+      entradaFecha = item.entradaHoraObj.toLocaleDateString("es-AR");
+    } else if (item.entrada) {
+      let d = parseDateSafe(item.entrada);
+      if (d) { entradaHora = d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }); entradaFecha = d.toLocaleDateString("es-AR"); }
     }
 
-    // procesar fecha/hora salida
-    let salidaHora = item.salida || "";
-    let salidaFecha = "";
-    if(item.hora && item.hora.toDate){
-      const d = item.hora.toDate();
-      if(item.salida){
-        salidaHora = d.toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"});
-        salidaFecha = d.toLocaleDateString("es-AR");
-      }
+    // Procesar salida
+    let salidaHora = "", salidaFecha = "";
+    if (item.salidaHoraObj) {
+      salidaHora = item.salidaHoraObj.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+      salidaFecha = item.salidaHoraObj.toLocaleDateString("es-AR");
+    } else if (item.salida) {
+      let d = parseDateSafe(item.salida);
+      if (d) { salidaHora = d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }); salidaFecha = d.toLocaleDateString("es-AR"); }
     }
 
     tr.innerHTML = `
-      <td>${item.L||""}</td>
-      <td>${(item.nombre||"").toUpperCase()}</td>
+      <td>${item.L || ""}</td>
+      <td>${(item.nombre || "").toUpperCase()}</td>
       <td title="${entradaFecha}">${entradaHora}</td>
       <td title="${salidaFecha}">${salidaHora}</td>
-      <td>${item.tipo||""}</td>
+      <td>${item.tipo || ""}</td>
       <td class="autorizante-td">${autorizText}</td>
       <td>
         <button class="ficha-btn" data-L="${item.L}">FICHA</button>
@@ -484,58 +525,59 @@ function renderMovsPage(){
     movimientosTableBody.appendChild(tr);
 
     // ficha desde panel
-    tr.querySelector(".ficha-btn").addEventListener("click", async (e) => {
+    tr.querySelector(".ficha-btn").addEventListener("click", async e => {
       const L = e.currentTarget.dataset.L;
-      try{
-        const snap = await getDocs(query(usuariosRef, where("L","==",L), limit(1)));
-        if(!snap.empty){
+      try {
+        const snap = await getDocs(query(usuariosRef, where("L", "==", L), limit(1)));
+        if (!snap.empty) {
           const u = snap.docs[0].data();
-          document.getElementById("fichaL").textContent = u.L||"";
-          document.getElementById("fichaNombre").textContent = (u.nombre||"").toUpperCase();
-          document.getElementById("fichaDni").textContent = u.dni||"";
-          document.getElementById("fichaCelular").textContent = u.celular||"";
-          document.getElementById("fichaAutorizante").textContent = u.autorizante||"";
+          document.getElementById("fichaL").textContent = u.L || "";
+          document.getElementById("fichaNombre").textContent = (u.nombre || "").toUpperCase();
+          document.getElementById("fichaDni").textContent = u.dni || "";
+          document.getElementById("fichaCelular").textContent = u.celular || "";
+          document.getElementById("fichaAutorizante").textContent = u.autorizante || "";
           document.getElementById("fichaFechaExp").textContent = u.fechaExpedicion ? fechaDDMMYYYY(u.fechaExpedicion) : "";
-          document.getElementById("fichaTipo").textContent = u.tipo||"";
+          document.getElementById("fichaTipo").textContent = u.tipo || "";
           document.getElementById("fichaModal").classList.add("active");
-        } else {
-          alert("No se encontró ficha para ese lote");
-        }
-      } catch(err) { console.error(err); alert("Error al buscar ficha"); }
+        } else alert("No se encontró ficha para ese lote");
+      } catch (err) { console.error(err); alert("Error al buscar ficha"); }
     });
 
     // eliminar movimiento
     tr.querySelector(".delMov").addEventListener("click", async e => {
-      if(!isUnlocked){ alert("Operación no permitida. Introduzca la contraseña de apertura."); return; }
-      if(!confirm("Eliminar movimiento permanentemente?")) return;
-      try{ await deleteDoc(doc(db,"movimientos",e.currentTarget.dataset.id)); } catch(err){ console.error(err); alert("Error eliminando movimiento"); }
+      if (!isUnlocked) { alert("Operación no permitida."); return; }
+      if (!confirm("Eliminar movimiento permanentemente?")) return;
+      try { await deleteDoc(doc(db, "movimientos", e.currentTarget.dataset.id)); } catch (err) { console.error(err); alert("Error eliminando movimiento"); }
     });
   });
 
   renderPagination(filtered.length);
 }
-/* ----------------------------- Escuchar movimientos (order by hora desc, historial) ----------------------------- */
-onSnapshot(query(movimientosRef, orderBy("hora", "desc")), snapshot => {
-  snapshot.docChanges().forEach(change => {
-    if (change.type === "added") {
-      // Insertar al inicio (más reciente arriba), sin borrar los anteriores
-      movimientosCache.unshift({ __id: change.doc.id, ...change.doc.data() });
-    }
-    if (change.type === "modified") {
-      const idx = movimientosCache.findIndex(m => m.__id === change.doc.id);
-      if (idx !== -1) {
-        movimientosCache[idx] = { __id: change.doc.id, ...change.doc.data() };
-      }
-    }
-    if (change.type === "removed") {
-      movimientosCache = movimientosCache.filter(m => m.__id !== change.doc.id);
-    }
-  });
 
+/* ----------------------------- Parsear fecha/hora seguro ----------------------------- */
+function parseDateSafe(value) {
+  if (!value) return null;
+  if (value.toDate) return value.toDate();        // Firestore Timestamp
+  if (value.seconds) return new Date(value.seconds * 1000); // Timestamp legacy
+  const d = new Date(value);
+  return isNaN(d) ? null : d;                     // Date o string
+}
+
+/* ----------------------------- Escuchar movimientos ----------------------------- */
+onSnapshot(query(movimientosRef, orderBy("hora", "desc")), snapshot => {
+  movimientosCache = snapshot.docs.map(d => {
+    const data = d.data();
+    return {
+      __id: d.id,
+      ...data,
+      entradaHoraObj: parseDateSafe(data.entrada),
+      salidaHoraObj: parseDateSafe(data.salida)
+    };
+  });
   const totalPages = Math.max(1, Math.ceil(movimientosCache.length / MOV_LIMIT));
   if (currentPage > totalPages) currentPage = totalPages;
-
   renderMovsPage();
+});
 
   // auto-imprimir propietarios cada múltiplo de 25
   const propietariosCount = movimientosCache.filter(m=>m.tipo==="propietario").length;
@@ -656,6 +698,7 @@ function filterUsersTable(){
 }
 
 /* Nota: dejamos las demás listeners (closeFicha, cancelEdit) en Parte 1 para mantener continuidad */
+
 
 
 
