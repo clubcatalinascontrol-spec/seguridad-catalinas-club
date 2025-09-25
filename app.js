@@ -291,41 +291,32 @@ onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
   });
 });
 
-/* ----------------------------- EXPIRADOS - render con paginación y tooltip hora ----------------------------- */
+/* ----------------------------- EXPIRADOS - render con paginación ----------------------------- */
 const expiredTableBody = document.querySelector("#expiredTable tbody");
 const expiredPaginationDiv = document.getElementById("expiredPagination");
 const EXP_LIMIT = 25;
 let expiredCache = [], expiredCurrentPage = 1;
 
-// función para obtener hora en 24h desde Date o Firestore Timestamp
+// función para hora hh:mm
 function horaHHMM(date){
   if(!date) return "";
   const d = date.toDate ? date.toDate() : date;
-  const h = d.getHours().toString().padStart(2,'0');
-  const m = d.getMinutes().toString().padStart(2,'0');
-  return `${h}:${m}`;
+  return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
 }
 
 if(expiredTableBody){
-  // escuchar cambios en tiempo real
-  onSnapshot(query(expiredRef, orderBy("when","desc")), snapshot => {
-    snapshot.docChanges().forEach(change => {
+  onSnapshot(query(expiredRef, orderBy("when","desc")), snapshot=>{
+    snapshot.docChanges().forEach(change=>{
       const data = { __id: change.doc.id, ...change.doc.data() };
-      if(change.type === "added"){
-        expiredCache.unshift(data); // nuevos al inicio
-      }
-      if(change.type === "removed"){
-        expiredCache = expiredCache.filter(e => e.__id !== data.__id);
-      }
-      if(change.type === "modified"){
-        const index = expiredCache.findIndex(e => e.__id === data.__id);
-        if(index !== -1) expiredCache[index] = data;
+      if(change.type==="added") expiredCache.unshift(data);
+      if(change.type==="removed") expiredCache = expiredCache.filter(e=>e.__id!==data.__id);
+      if(change.type==="modified"){
+        const index = expiredCache.findIndex(e=>e.__id===data.__id);
+        if(index!==-1) expiredCache[index] = data;
       }
     });
 
-    // ordenar por fecha descendente por si acaso
-    expiredCache.sort((a,b) => (b.when?.toDate ? b.when.toDate() : b.when) - (a.when?.toDate ? a.when.toDate() : a.when));
-
+    expiredCache.sort((a,b)=>(b.when?.toDate ? b.when.toDate() : b.when) - (a.when?.toDate ? a.when.toDate() : a.when));
     expiredCurrentPage = 1;
     renderExpiredPage();
   });
@@ -333,11 +324,11 @@ if(expiredTableBody){
   function renderExpiredPagination(totalItems){
     const totalPages = Math.max(1, Math.ceil(totalItems / EXP_LIMIT));
     expiredPaginationDiv.innerHTML = "";
-    for(let p=1; p<=totalPages; p++){
+    for(let p=1;p<=totalPages;p++){
       const btn = document.createElement("button");
       btn.textContent = p;
-      if(p === expiredCurrentPage){ btn.style.background="#d8a800"; btn.style.color="#111"; }
-      btn.addEventListener("click", ()=>{ expiredCurrentPage = p; renderExpiredPage(); });
+      if(p===expiredCurrentPage){ btn.style.background="#d8a800"; btn.style.color="#111"; }
+      btn.addEventListener("click", ()=>{ expiredCurrentPage=p; renderExpiredPage(); });
       expiredPaginationDiv.appendChild(btn);
     }
   }
@@ -345,17 +336,18 @@ if(expiredTableBody){
   function renderExpiredPage(){
     if(!expiredTableBody) return;
     expiredTableBody.innerHTML = "";
-    const start = (expiredCurrentPage - 1) * EXP_LIMIT;
-    const page = expiredCache.slice(start, start + EXP_LIMIT);
+    const start = (expiredCurrentPage-1)*EXP_LIMIT;
+    const page = expiredCache.slice(start, start+EXP_LIMIT);
 
-    page.forEach(e => {
+    page.forEach(e=>{
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${e.L || ""}</td>
-        <td>${(e.nombre || "").toUpperCase()}</td>
-        <td>${e.dni || ""}</td>
-        <td>${e.codigoIngreso || ""}</td>
-        <td>${e.codigoSalida || ""}</td>
-        <td>${e.tipo || ""}</td>
+      tr.innerHTML = `
+        <td>${e.L||""}</td>
+        <td>${(e.nombre||"").toUpperCase()}</td>
+        <td>${e.dni||""}</td>
+        <td>${e.codigoIngreso||""}</td>
+        <td>${e.codigoSalida||""}</td>
+        <td>${e.tipo||""}</td>
         <td title="${horaHHMM(e.when)}">${e.when ? fechaDDMMYYYY(e.when) : ""}</td>`;
       expiredTableBody.appendChild(tr);
     });
@@ -363,7 +355,6 @@ if(expiredTableBody){
     renderExpiredPagination(expiredCache.length);
   }
 }
-
 /* ----------------------------- NOVEDADES - agregar/editar/eliminar + render ----------------------------- */
 const novedadesTableBody = document.querySelector("#novedadesTable tbody");
 const novTxt = document.getElementById("novedadTexto");
@@ -701,3 +692,4 @@ document.querySelectorAll(".users-ficha-btn").forEach(btn => {
     }
   });
 });
+
