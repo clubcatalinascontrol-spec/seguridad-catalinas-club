@@ -480,15 +480,22 @@ function renderMovsPage() {
 
 /* ----------------------------- Escuchar movimientos (order by hora desc) ----------------------------- */
 onSnapshot(query(movimientosRef, orderBy("hora", "desc")), snapshot => {
+  let nuevos = false;
   snapshot.docChanges().forEach(change => {
     const data = { __id: change.doc.id, ...change.doc.data() };
-    if (change.type === "added") movimientosCache.unshift(data);
+    if (change.type === "added") {
+      movimientosCache.unshift(data);
+      nuevos = true;
+    }
     if (change.type === "removed") movimientosCache = movimientosCache.filter(m => m.__id !== data.__id);
     if (change.type === "modified") {
       const index = movimientosCache.findIndex(m => m.__id === data.__id);
       if (index !== -1) movimientosCache[index] = data;
     }
   });
+
+  // Si hay nuevos registros, forzamos mostrar la página 1
+  if (nuevos) currentPage = 1;
 
   // renderizamos página actual solo una vez, con cache actualizada
   renderMovsPage();
@@ -499,8 +506,6 @@ onSnapshot(query(movimientosRef, orderBy("hora", "desc")), snapshot => {
     printMovimientosPorTipo("propietario", true);
   }
 });
-
-
 /* ----------------------------- IMPRIMIR movimientos (A4, font-size reducido) ----------------------------- */
 function printMovimientosPorTipo(tipo, auto=false){
   if(!auto && !isUnlocked){ alert("Operación no permitida."); return; }
@@ -614,5 +619,6 @@ function filterUsersTable(){
 }
 
 /* Nota: dejamos las demás listeners (closeFicha, cancelEdit) en Parte 1 para mantener continuidad */
+
 
 
