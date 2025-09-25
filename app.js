@@ -1,4 +1,4 @@
-// app.js (módulo) - Firebase 9.22 (PARTE 1)
+// app.js (módulo) - Firebase 9.22 (PARTE 1 CORREGIDA)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, doc, onSnapshot, updateDoc, deleteDoc, query, where, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
@@ -22,7 +22,6 @@ const novedadesRef = collection(db, "novedades");
 
 /* ----------------------------- Helpers ----------------------------- */
 const generarCodigo = ()=> Math.random().toString(36).substring(2,10).toUpperCase();
-
 const horaActualStr = ()=>{
   const d=new Date();
   const hh=d.getHours().toString().padStart(2,"0");
@@ -32,8 +31,6 @@ const horaActualStr = ()=>{
   const yyyy=d.getFullYear();
   return `${hh}:${mm} (${dd}/${mo}/${yyyy})`;
 };
-
-// parsea ISO string o Firestore Timestamp u objetos Date
 function parseToDate(d){
   if(!d) return null;
   if(typeof d==="string") return new Date(d);
@@ -41,7 +38,6 @@ function parseToDate(d){
   if(typeof d.seconds==="number") return new Date(d.seconds*1000);
   return new Date(d);
 }
-
 function fechaDDMMYYYY(dateIso){
   const dt = parseToDate(dateIso) || new Date();
   const dd = String(dt.getDate()).padStart(2,'0');
@@ -49,7 +45,6 @@ function fechaDDMMYYYY(dateIso){
   const yyyy = dt.getFullYear();
   return `${dd}/${mm}/${yyyy}`;
 }
-
 const isoNow = ()=> new Date().toISOString();
 
 /* ----------------------------- UI elementos globales ----------------------------- */
@@ -60,10 +55,9 @@ const initPassInput = document.getElementById("initPassInput");
 const initPassBtn = document.getElementById("initPassBtn");
 const initPassMsg = document.getElementById("initPassMsg");
 
-// inicial: desbloqueo simple
+/* inicial: desbloqueo simple */
 const INITIAL_PASS = "1409";
 let isUnlocked = localStorage.getItem("unlocked") === "true";
-
 function toggleActionsDisabled(disabled){
   const selectors = [
     '#movimientosTable button',
@@ -92,22 +86,21 @@ function toggleActionsDisabled(disabled){
     passwordBanner.style.display = 'none';
   }
 }
-
 toggleActionsDisabled(!isUnlocked);
 
 initPassBtn.addEventListener('click', ()=>{
   const v = (initPassInput.value || "").trim();
   if(v === INITIAL_PASS){
     isUnlocked = true;
-    localStorage.setItem("unlocked","true");
-    initPassMsg.style.color='green';
-    initPassMsg.textContent='Desbloqueado';
-    setTimeout(()=>{ initPassMsg.textContent=''; initPassInput.value=''; },900);
+    localStorage.setItem("unlocked", "true");
+    initPassMsg.style.color = 'green';
+    initPassMsg.textContent = 'Desbloqueado';
+    setTimeout(()=>{ initPassMsg.textContent = ''; initPassInput.value = ''; }, 900);
     toggleActionsDisabled(false);
   } else {
-    initPassMsg.style.color='red';
-    initPassMsg.textContent='Contraseña incorrecta';
-    setTimeout(()=>{ initPassMsg.textContent=''; initPassInput.value=''; },1200);
+    initPassMsg.style.color = 'red';
+    initPassMsg.textContent = 'Contraseña incorrecta';
+    setTimeout(()=>{ initPassMsg.textContent = ''; initPassInput.value = ''; }, 1200);
   }
 });
 
@@ -126,18 +119,21 @@ const userL = document.getElementById("userL");
 const editUserL = document.getElementById("editUserL");
 function llenarLSelect(){
   if(!userL || !editUserL) return;
-  userL.innerHTML = ""; editUserL.innerHTML = "";
-  const optNN = document.createElement("option"); optNN.value="NN"; optNN.textContent="NN"; userL.appendChild(optNN);
-  const optNN2 = document.createElement("option"); optNN2.value="NN"; optNN2.textContent="NN"; editUserL.appendChild(optNN2);
+  userL.innerHTML = "";
+  editUserL.innerHTML = "";
+  const optNN = document.createElement("option");
+  optNN.value="NN"; optNN.textContent="NN"; userL.appendChild(optNN);
+  const optNN2 = document.createElement("option");
+  optNN2.value="NN"; optNN2.textContent="NN"; editUserL.appendChild(optNN2);
   for(let i=0;i<1000;i++){
-    const val=i.toString().padStart(3,"0");
+    const val = i.toString().padStart(3,"0");
     const opt = document.createElement("option"); opt.value=val; opt.textContent=val; userL.appendChild(opt);
     const opt2 = document.createElement("option"); opt2.value=val; opt2.textContent=val; editUserL.appendChild(opt2);
   }
 }
 llenarLSelect();
 
-/* ----------------------------- USUARIOS (agregar, render, editar, eliminar, ficha) ----------------------------- */
+/* ----------------------------- USUARIOS (AGREGAR + render real-time + editar/eliminar/print/ficha) ----------------------------- */
 const userNombre=document.getElementById("userNombre");
 const userDni=document.getElementById("userDni");
 const userTipo=document.getElementById("userTipo");
@@ -148,37 +144,45 @@ const userMessage=document.getElementById("userMessage");
 const usersTableBody=document.querySelector("#usersTable tbody");
 
 addUserBtn.addEventListener("click", async ()=>{
-  if(!isUnlocked){ alert("Operación no permitida. Introduzca la contraseña de apertura."); return; }
+  if(!isUnlocked){ alert("Operación no permitida."); return; }
   const L = userL ? userL.value.trim() : "NN";
   let nombre = (userNombre ? userNombre.value : "").trim();
   const dni = (userDni ? userDni.value.trim() : "");
   const tipo = userTipo ? userTipo.value : "NN";
-  const celular = (userCelular ? userCelular.value.trim() : "");
-  const autorizante = (userAutorizante ? userAutorizante.value.trim() : "");
+  const celular = userCelular ? userCelular.value.trim() : "";
+  const autorizante = userAutorizante ? userAutorizante.value.trim() : "";
   if(!L || L==="NN" || !nombre || !tipo || tipo==="NN"){
-    if(userMessage){ userMessage.style.color="red"; userMessage.textContent="Debe cargar un nombre, un número de Lote y un Tipo"; setTimeout(()=>{ userMessage.textContent=""; userMessage.style.color=""; },3000);}
+    if(userMessage){ userMessage.style.color="red"; userMessage.textContent="Debe cargar un nombre, un número de Lote y un Tipo para continuar"; setTimeout(()=>{ userMessage.textContent=""; userMessage.style.color=""; }, 3000); }
     return;
   }
-  if(dni && !/^\d{8}$/.test(dni)){ if(userMessage){ userMessage.style.color="red"; userMessage.textContent="Si ingresa DNI, debe tener 8 dígitos"; setTimeout(()=>{ userMessage.textContent=""; userMessage.style.color=""; },2500);} return; }
-  if(celular && !/^\d{10}$/.test(celular)){ if(userMessage){ userMessage.style.color="red"; userMessage.textContent="Celular debe tener 10 dígitos si se ingresa"; setTimeout(()=>{ userMessage.textContent=""; },2500);} return; }
-  if(autorizante && !/^[A-Za-zÁÉÍÓÚáéíóúÑñ ]{1,12}$/.test(autorizante)){ if(userMessage){ userMessage.style.color="red"; userMessage.textContent="Autorizante: solo letras (max 12)"; setTimeout(()=>{ userMessage.textContent=""; userMessage.style.color=""; },2500);} return; }
+  if(dni && !/^\d{8}$/.test(dni)){
+    if(userMessage){ userMessage.style.color="red"; userMessage.textContent="Si ingresa DNI, debe tener 8 dígitos"; setTimeout(()=>{ userMessage.textContent=""; userMessage.style.color=""; }, 2500);} return;
+  }
+  if(celular && !/^\d{10}$/.test(celular)){
+    if(userMessage){ userMessage.style.color="red"; userMessage.textContent="Celular debe tener 10 dígitos si se ingresa"; setTimeout(()=>{ userMessage.textContent=""; }, 2500);} return;
+  }
+  if(autorizante && !/^[A-Za-zÁÉÍÓÚáéíóúÑñ ]{1,12}$/.test(autorizante)){
+    if(userMessage){ userMessage.style.color="red"; userMessage.textContent="Autorizante: solo letras (max 12)"; setTimeout(()=>{ userMessage.textContent=""; userMessage.style.color=""; }, 2500);} return;
+  }
   nombre = nombre.toUpperCase();
   try{
     if(dni){
-      const qDni=query(usuariosRef, where("dni","==",dni));
+      const qDni = query(usuariosRef, where("dni","==",dni));
       const existing = await getDocs(qDni);
-      if(!existing.empty){ if(userMessage){ userMessage.style.color="red"; userMessage.textContent="DNI ya registrado"; setTimeout(()=>{ userMessage.textContent=""; userMessage.style.color=""; },2500);} return; }
+      if(!existing.empty){ if(userMessage){ userMessage.style.color="red"; userMessage.textContent="DNI ya registrado"; setTimeout(()=>{ userMessage.textContent=""; userMessage.style.color=""; }, 2500);} return; }
     }
     const fechaExpIso = isoNow();
     await addDoc(usuariosRef,{
-      L,nombre,dni: dni||"",tipo,celular: celular||"",autorizante: autorizante||"",
+      L, nombre, dni: dni || "", tipo, celular: celular || "", autorizante: autorizante || "",
       fechaExpedicion: fechaExpIso,
       codigoIngreso: generarCodigo(),
       codigoSalida: generarCodigo()
     });
     if(userMessage){ userMessage.style.color="green"; userMessage.textContent="Usuario agregado"; setTimeout(()=>userMessage.textContent="",2500);}
-    if(userL) userL.value="NN"; if(userNombre) userNombre.value=""; if(userDni) userDni.value=""; if(userTipo) userTipo.value="NN"; if(userCelular) userCelular.value=""; if(userAutorizante) userAutorizante.value="";
-  } catch(err){ console.error(err); if(userMessage){ userMessage.style.color="red"; userMessage.textContent="Error"; setTimeout(()=>userMessage.textContent="",2500); } }
+    if(userL) userL.value="NN"; if(userNombre) userNombre.value="";
+    if(userDni) userDni.value=""; if(userTipo) userTipo.value="NN";
+    if(userCelular) userCelular.value=""; if(userAutorizante) userAutorizante.value="";
+  }catch(err){ console.error(err); if(userMessage){ userMessage.style.color="red"; userMessage.textContent="Error"; setTimeout(()=>userMessage.textContent="",2500);} }
 });
 
 /* ----------------------------- Render usuarios en tiempo real ----------------------------- */
@@ -197,16 +201,17 @@ onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
       <td>${u.fechaExpedicion ? fechaDDMMYYYY(u.fechaExpedicion) : ""}</td>
       <td>${u.tipo||""}</td>
       <td>
-        <button class="ficha-btn" data-L="${u.L}">FICHA</button>
+        <button class="ficha-btn">FICHA</button>
         <button class="edit-btn">Editar</button>
         <button class="del-btn">Eliminar</button>
         <button class="print-btn">Imprimir</button>
-      </td>
-    `;
+      </td>`;
     usersTableBody.appendChild(tr);
   });
 });
-/* ----------------------------- NOVEDADES (agregar/editar/eliminar) ----------------------------- */
+// app.js (PARTE 2 CORREGIDA) - Movimientos, Panel, Expirados, Novedades
+
+/* ----------------------------- NOVEDADES - agregar/editar/eliminar + render ----------------------------- */
 const novedadesTableBody = document.querySelector("#novedadesTable tbody");
 const novTxt = document.getElementById("novedadTexto");
 const guardarNovedadBtn = document.getElementById("guardarNovedadBtn");
@@ -221,7 +226,7 @@ if(guardarNovedadBtn){
     try{
       if(editingNovedadId){
         await updateDoc(doc(db,"novedades",editingNovedadId), { texto, when: isoNow() });
-        editingNovedadId=null;
+        editingNovedadId = null;
         novMsg.style.color="green"; novMsg.textContent="Novedad editada";
       } else {
         await addDoc(novedadesRef, { texto, when: isoNow() });
@@ -229,43 +234,37 @@ if(guardarNovedadBtn){
       }
       novTxt.value="";
       setTimeout(()=>novMsg.textContent="",2000);
-    } catch(err){ console.error(err); novMsg.style.color="red"; novMsg.textContent="Error"; setTimeout(()=>novMsg.textContent="",2000);}
+    }catch(err){ console.error(err); novMsg.style.color="red"; novMsg.textContent="Error"; setTimeout(()=>novMsg.textContent="",2000); }
   });
 }
 
-// render novedades
 if(novedadesTableBody){
   onSnapshot(query(novedadesRef, orderBy("when","desc")), snapshot=>{
-    novedadesTableBody.innerHTML="";
+    novedadesTableBody.innerHTML = "";
     snapshot.docs.forEach(d=>{
-      const n=d.data();
-      const tr=document.createElement("tr");
-      let horaFecha="";
+      const n = d.data();
+      const tr = document.createElement("tr");
+      let horaFecha = "";
       if(n.when){
-        const date=parseToDate(n.when);
+        const date = parseToDate(n.when);
         if(date){
-          const hora=date.toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"});
-          const fecha=date.toLocaleDateString("es-AR");
-          horaFecha = `${hora}<br><small>${fecha}</small>`;
+          const hora = date.toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"});
+          const fecha = date.toLocaleDateString("es-AR");
+          horaFecha = `<span title="${fecha}">${hora}</span>`;
         }
       }
-      tr.innerHTML=`
+      tr.innerHTML = `
         <td style="white-space:nowrap">${horaFecha}</td>
         <td style="text-align:left; padding-left:8px;">${n.texto||""}</td>
         <td>
           <button class="edit-nov" data-id="${d.id}">Editar</button>
           <button class="del-nov" data-id="${d.id}">Eliminar</button>
-        </td>
-      `;
+        </td>`;
       novedadesTableBody.appendChild(tr);
 
-      tr.querySelector(".edit-nov").addEventListener("click", ()=>{
-        novTxt.value = n.texto||"";
-        editingNovedadId = d.id;
-        document.querySelector('#novedades').scrollIntoView({behavior:'smooth'});
-      });
+      tr.querySelector(".edit-nov").addEventListener("click", ()=>{ novTxt.value = n.texto||""; editingNovedadId=d.id; document.querySelector('#novedades').scrollIntoView({behavior:'smooth'}); });
       tr.querySelector(".del-nov").addEventListener("click", async ()=>{
-        if(!isUnlocked){ alert("Operación no permitida."); return; }
+        if(!isUnlocked){ alert("Operación no permitida. Introduzca la contraseña de apertura."); return; }
         if(!confirm("Eliminar novedad?")) return;
         try{ await deleteDoc(doc(db,"novedades",d.id)); } catch(err){ console.error(err); alert("Error eliminando novedad"); }
       });
@@ -273,62 +272,79 @@ if(novedadesTableBody){
   });
 }
 
-/* ----------------------------- MOVIMIENTOS (panel, pestañas por tipo, paginación) ----------------------------- */
+/* ----------------------------- EXPIRADOS (tabla + paginación) ----------------------------- */
+const expiredTableBody = document.querySelector("#expiredTable tbody");
+const expiredPagination = document.getElementById("expiredPagination");
+const EXPIRED_LIMIT = 25;
+let expiredCache = [], expiredPage = 1;
+
+function renderExpiredPage(){
+  if(!expiredTableBody) return;
+  expiredTableBody.innerHTML = "";
+  const start = (expiredPage-1)*EXPIRED_LIMIT;
+  const page = expiredCache.slice(start,start+EXPIRED_LIMIT);
+  page.forEach(item=>{
+    const tr = document.createElement("tr");
+    const date = parseToDate(item.fecha);
+    let horaFecha = "";
+    if(date){
+      const hora = date.toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"});
+      const fecha = date.toLocaleDateString("es-AR");
+      horaFecha = `<span title="${fecha}">${hora}</span>`;
+    }
+    tr.innerHTML = `
+      <td>${item.L||""}</td>
+      <td>${item.nombre||""}</td>
+      <td>${item.tipo||""}</td>
+      <td style="white-space:nowrap">${horaFecha}</td>`;
+    expiredTableBody.appendChild(tr);
+  });
+  renderExpiredPagination();
+}
+
+function renderExpiredPagination(){
+  if(!expiredPagination) return;
+  const totalPages = Math.max(1, Math.ceil(expiredCache.length/EXPIRED_LIMIT));
+  expiredPagination.innerHTML = "";
+  for(let p=1;p<=totalPages;p++){
+    const btn=document.createElement("button");
+    btn.textContent=p;
+    if(p===expiredPage){ btn.style.background="#d8a800"; btn.style.color="#111"; }
+    btn.addEventListener("click", ()=>{ expiredPage=p; renderExpiredPage(); });
+    expiredPagination.appendChild(btn);
+  }
+}
+
+onSnapshot(query(expiredRef, orderBy("fecha","desc")), snapshot=>{
+  expiredCache = snapshot.docs.map(d=>({__id:d.id,...d.data()}));
+  if(expiredPage>Math.ceil(expiredCache.length/EXPIRED_LIMIT)) expiredPage=Math.max(1,Math.ceil(expiredCache.length/EXPIRED_LIMIT));
+  renderExpiredPage();
+});
+
+/* ----------------------------- PANEL MOVIMIENTOS (nuevos registros por escaneo) ----------------------------- */
 const movimientosTableBody=document.querySelector("#movimientosTable tbody");
 const paginationDiv=document.getElementById("pagination");
 const MOV_LIMIT=25;
 let movimientosCache=[], currentPage=1, activeTipo="todos";
 
-document.querySelectorAll(".tab-btn").forEach(btn=>{
-  btn.addEventListener("click", ()=>{
-    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
-    btn.classList.add("active");
-    activeTipo = btn.dataset.tipo;
-    currentPage=1;
-    renderMovsPage();
-  });
-});
-
-// imprimir movimientos
-const printActiveBtn = document.getElementById("printActiveBtn");
-if(printActiveBtn) printActiveBtn.addEventListener("click", ()=>{ if(!isUnlocked){ alert("Operación no permitida."); return; } printMovimientosPorTipo(activeTipo); });
-
-function renderPagination(totalItems){
-  const totalPages=Math.max(1,Math.ceil(totalItems/MOV_LIMIT));
-  paginationDiv.innerHTML="";
-  for(let p=1;p<=totalPages;p++){
-    const btn=document.createElement("button");
-    btn.textContent=p;
-    if(p===currentPage){ btn.style.background="#d8a800"; btn.style.color="#111"; }
-    btn.addEventListener("click", ()=>{ currentPage=p; renderMovsPage(); });
-    paginationDiv.appendChild(btn);
-  }
-}
-
-function shouldShowAutorizanteColumn(tipo){
-  return ["obrero","invitado","empleado","otro"].includes(tipo);
-}
+function shouldShowAutorizanteColumn(tipo){ return ["obrero","invitado","empleado","otro"].includes(tipo); }
 
 function renderMovsPage(){
   if(!movimientosTableBody) return;
   movimientosTableBody.innerHTML="";
   const filtered = activeTipo==="todos" ? movimientosCache : movimientosCache.filter(m=>m.tipo===activeTipo);
-  const start=(currentPage-1)*MOV_LIMIT;
+  const start = (currentPage-1)*MOV_LIMIT;
   const page = filtered.slice(start,start+MOV_LIMIT);
-  const table=document.getElementById("movimientosTable");
+
+  const table = document.getElementById("movimientosTable");
   const showAut = shouldShowAutorizanteColumn(activeTipo);
-  if(showAut){
-    table.classList.remove('autorizante-hidden');
-    document.querySelectorAll('.autorizante-th').forEach(th=>th.style.display='table-cell');
-  } else {
-    table.classList.add('autorizante-hidden');
-    document.querySelectorAll('.autorizante-th').forEach(th=>th.style.display='none');
-  }
+  if(showAut){ table.classList.remove('autorizante-hidden'); document.querySelectorAll('.autorizante-th').forEach(th=>th.style.display='table-cell'); }
+  else { table.classList.add('autorizante-hidden'); document.querySelectorAll('.autorizante-th').forEach(th=>th.style.display='none'); }
 
   page.forEach(item=>{
     const tr=document.createElement("tr");
-    const autorizText=item.autorizante||"";
-    tr.innerHTML=`
+    const autorizText = item.autorizante||"";
+    tr.innerHTML = `
       <td>${item.L||""}</td>
       <td>${(item.nombre||"").toUpperCase()}</td>
       <td>${item.entrada||""}</td>
@@ -338,38 +354,50 @@ function renderMovsPage(){
       <td>
         <button class="ficha-btn" data-L="${item.L}">FICHA</button>
         <button class="delMov" data-id="${item.__id}">Eliminar</button>
-      </td>
-    `;
+      </td>`;
     movimientosTableBody.appendChild(tr);
 
+    // ficha panel
     tr.querySelector(".ficha-btn").addEventListener("click", async e=>{
       const L = e.currentTarget.dataset.L;
       try{
         const snap = await getDocs(query(usuariosRef, where("L","==",L), limit(1)));
         if(!snap.empty){
           const u = snap.docs[0].data();
-          document.getElementById("fichaL").textContent=u.L||"";
-          document.getElementById("fichaNombre").textContent=(u.nombre||"").toUpperCase();
-          document.getElementById("fichaDni").textContent=u.dni||"";
-          document.getElementById("fichaCelular").textContent=u.celular||"";
-          document.getElementById("fichaAutorizante").textContent=u.autorizante||"";
-          document.getElementById("fichaFechaExp").textContent=u.fechaExpedicion?fechaDDMMYYYY(u.fechaExpedicion):"";
-          document.getElementById("fichaTipo").textContent=u.tipo||"";
+          document.getElementById("fichaL").textContent = u.L||"";
+          document.getElementById("fichaNombre").textContent = (u.nombre||"").toUpperCase();
+          document.getElementById("fichaDni").textContent = u.dni||"";
+          document.getElementById("fichaCelular").textContent = u.celular||"";
+          document.getElementById("fichaAutorizante").textContent = u.autorizante||"";
+          document.getElementById("fichaFechaExp").textContent = u.fechaExpedicion ? fechaDDMMYYYY(u.fechaExpedicion) : "";
+          document.getElementById("fichaTipo").textContent = u.tipo||"";
           document.getElementById("fichaModal").classList.add("active");
-        } else alert("No se encontró ficha para ese lote");
-      } catch(err){ console.error(err); alert("Error al buscar ficha"); }
+        } else { alert("No se encontró ficha para ese lote"); }
+      }catch(err){ console.error(err); alert("Error al buscar ficha"); }
     });
 
+    // eliminar movimiento
     tr.querySelector(".delMov").addEventListener("click", async e=>{
-      if(!isUnlocked){ alert("Operación no permitida."); return; }
+      if(!isUnlocked){ alert("Operación no permitida. Introduzca la contraseña de apertura."); return; }
       if(!confirm("Eliminar movimiento permanentemente?")) return;
-      try{ await deleteDoc(doc(db,"movimientos",e.currentTarget.dataset.id)); } catch(err){ console.error(err); alert("Error eliminando movimiento"); }
+      try{ await deleteDoc(doc(db,"movimientos",e.currentTarget.dataset.id)); }
+      catch(err){ console.error(err); alert("Error eliminando movimiento"); }
     });
   });
   renderPagination(filtered.length);
 }
 
-// escuchar movimientos
+function renderPagination(totalItems){
+  const totalPages=Math.max(1,Math.ceil(totalItems/MOV_LIMIT));
+  paginationDiv.innerHTML="";
+  for(let p=1;p<=totalPages;p++){
+    const btn=document.createElement("button"); btn.textContent=p;
+    if(p===currentPage){ btn.style.background="#d8a800"; btn.style.color="#111"; }
+    btn.addEventListener("click", ()=>{ currentPage=p; renderMovsPage(); });
+    paginationDiv.appendChild(btn);
+  }
+}
+
 onSnapshot(query(movimientosRef, orderBy("hora","desc")), snapshot=>{
   movimientosCache = snapshot.docs.map(d=>({__id:d.id,...d.data()}));
   const totalPages=Math.max(1,Math.ceil(movimientosCache.length/MOV_LIMIT));
@@ -377,31 +405,7 @@ onSnapshot(query(movimientosRef, orderBy("hora","desc")), snapshot=>{
   renderMovsPage();
 });
 
-// imprimir movimientos A4
-function printMovimientosPorTipo(tipo, auto=false){
-  if(!auto && !isUnlocked){ alert("Operación no permitida."); return; }
-  const filtered = tipo==="todos"?movimientosCache:movimientosCache.filter(m=>m.tipo===tipo);
-  const toPrint = filtered.slice(0,25);
-  const w=window.open("","_blank","width=900,height=600");
-  const title = tipo==="todos"?"Movimientos - Todos":`Movimientos - ${tipo}`;
-  let html = `<html><head><title>${title}</title><style>
-    @page{size:A4;margin:6mm;}
-    body{font-family:Arial,Helvetica,sans-serif;font-size:10px;color:#000;}
-    table{width:100%;border-collapse:collapse}
-    th,td{border:1px solid #000;padding:2px;text-align:center;font-size:10px}
-    thead th{background:#fff;font-weight:700;color:#000}
-    img, svg{filter:grayscale(100%)}
-  </style></head><body><h3>${title}</h3><table><thead><tr>
-    <th>#L</th><th>Nombre</th><th>DNI</th><th>H. Entrada</th><th>H. Salida</th><th>Tipo</th>
-  </tr></thead><tbody>`;
-  toPrint.forEach(m=>{
-    html+=`<tr><td>${m.L||""}</td><td>${(m.nombre||"").toUpperCase()}</td><td>${m.dni||""}</td><td>${m.entrada||""}</td><td>${m.salida||""}</td><td>${m.tipo||""}</td></tr>`;
-  });
-  html+="</tbody></table></body></html>";
-  w.document.write(html); w.print();
-}
-
-/* ----------------------------- ESCANEAR CODIGOS ----------------------------- */
+/* ----------------------------- ESCANEAR CÓDIGOS (nuevos registros sin sobreescribir) ----------------------------- */
 const scanBtn = document.getElementById("scanBtn");
 const scanModal = document.getElementById("scanModal");
 const scanInput = document.getElementById("scanInput");
@@ -412,99 +416,41 @@ let scanProcessing = false;
 
 scanBtn.addEventListener("click", ()=>{
   if(!isUnlocked){ alert("Operación no permitida."); return; }
-  scanModal.classList.add("active"); scanInput.value=""; scanMessage.textContent="";
-  scanInput.focus();
+  scanModal.classList.add("active"); scanInput.value=""; scanMessage.textContent=""; scanInput.focus();
 });
 
 cancelScanBtn.addEventListener("click", ()=>{
-  scanModal.classList.remove("active");
-  scanInput.value=""; scanMessage.textContent="";
+  scanModal.classList.remove("active"); scanMessage.textContent=""; scanInput.value="";
 });
 
 scanInput.addEventListener("input", async ()=>{
   const raw = (scanInput.value||"").trim();
   if(scanProcessing) return;
   if(raw.length<8) return;
-  scanProcessing=true;
+  scanProcessing = true;
   const code = raw.substring(0,8).toUpperCase();
   try{
-    let userDoc=null; let tipoAccion="entrada";
+    let userDoc=null, tipoAccion="entrada";
     let snap = await getDocs(query(usuariosRef, where("codigoIngreso","==",code)));
     if(!snap.empty){ userDoc=snap.docs[0]; tipoAccion="entrada"; }
-    else{
-      snap = await getDocs(query(usuariosRef, where("codigoSalida","==",code)));
-      if(!snap.empty){ userDoc=snap.docs[0]; tipoAccion="salida"; }
-    }
-    if(!userDoc){ scanMessage.style.color="red"; scanMessage.textContent="Código no válido"; setTimeout(()=>scanMessage.textContent="",1800); scanProcessing=false; return; }
+    else { snap = await getDocs(query(usuariosRef, where("codigoSalida","==",code))); if(!snap.empty){ userDoc=snap.docs[0]; tipoAccion="salida"; } }
+    if(!userDoc){ scanMessage.style.color="red"; scanMessage.textContent="Código no válido"; setTimeout(()=>{scanMessage.textContent="";},1800); scanProcessing=false; return; }
     const u = userDoc.data();
+
     if(tipoAccion==="entrada"){
-      await addDoc(movimientosRef,{L:u.L,nombre:u.nombre,dni:u.dni||"",tipo:u.tipo,autorizante:u.autorizante||"",entrada:horaActualStr(),salida:"",hora:serverTimestamp()});
+      await addDoc(movimientosRef,{
+        L: u.L, nombre: u.nombre, dni: u.dni||"", tipo: u.tipo, autorizante: u.autorizante||"",
+        entrada: horaActualStr(), salida: "", hora: serverTimestamp()
+      });
     } else {
-      const movQ=query(movimientosRef, where("L","==",u.L), where("salida","==",""));
-      const movSnap = await getDocs(movQ);
-      if(!movSnap.empty){
-        let chosen = movSnap.docs[0]; let chosenTime = chosen.data().hora?.toDate?.()||new Date(0);
-        movSnap.docs.forEach(d=>{ const t=d.data().hora?.toDate?.()||new Date(0); if(t>chosenTime){ chosen=d; chosenTime=t; } });
-        await updateDoc(doc(db,"movimientos",chosen.id),{salida:horaActualStr()});
-      } else {
-        await addDoc(movimientosRef,{L:u.L,nombre:u.nombre,dni:u.dni||"",tipo:u.tipo,autorizante:u.autorizante||"",entrada:"",salida:horaActualStr(),hora:serverTimestamp()});
-      }
+      await addDoc(movimientosRef,{
+        L: u.L, nombre: u.nombre, dni: u.dni||"", tipo: u.tipo, autorizante: u.autorizante||"",
+        entrada: "", salida: horaActualStr(), hora: serverTimestamp()
+      });
     }
-    scanOk.style.display="inline-block";
-    setTimeout(()=>scanOk.style.display="none",900);
+
+    scanOk.style.display="inline-block"; setTimeout(()=>scanOk.style.display="none",900);
     scanInput.value=""; scanMessage.textContent="";
-  } catch(err){ console.error(err); scanMessage.style.color="red"; scanMessage.textContent="Error al registrar"; setTimeout(()=>scanMessage.textContent="",1800);}
+  }catch(err){ console.error(err); scanMessage.style.color="red"; scanMessage.textContent="Error al registrar"; setTimeout(()=>{ scanMessage.textContent=""; },1800); }
   finally{ scanProcessing=false; }
-});
-
-/* ----------------------------- EXPIRADOS ----------------------------- */
-const expiredTableBody=document.querySelector("#expiredTable tbody");
-const expiredPagination=document.getElementById("expiredPagination");
-let expiredCache=[], expiredPage=1, expiredTipo="todos";
-
-function renderExpiredPagination(total){
-  const totalPages=Math.max(1,Math.ceil(total/25));
-  expiredPagination.innerHTML="";
-  for(let p=1;p<=totalPages;p++){
-    const btn=document.createElement("button"); btn.textContent=p;
-    if(p===expiredPage){ btn.style.background="#d8a800"; btn.style.color="#111"; }
-    btn.addEventListener("click", ()=>{ expiredPage=p; renderExpiredPage(); });
-    expiredPagination.appendChild(btn);
-  }
-}
-
-function renderExpiredPage(){
-  if(!expiredTableBody) return;
-  expiredTableBody.innerHTML="";
-  const filtered = expiredTipo==="todos"?expiredCache:expiredCache.filter(m=>m.tipo===expiredTipo);
-  const start=(expiredPage-1)*25;
-  const page = filtered.slice(start,start+25);
-  page.forEach(item=>{
-    const tr=document.createElement("tr");
-    tr.innerHTML=`
-      <td>${item.L||""}</td>
-      <td>${(item.nombre||"").toUpperCase()}</td>
-      <td>${item.tipo||""}</td>
-      <td>${item.fEliminacion?fechaDDMMYYYY(item.fEliminacion):""}</td>
-    `;
-    expiredTableBody.appendChild(tr);
-  });
-  renderExpiredPagination(filtered.length);
-}
-
-// escuchar expirados
-onSnapshot(query(expiredRef, orderBy("fEliminacion","desc")), snapshot=>{
-  expiredCache = snapshot.docs.map(d=>({__id:d.id,...d.data()}));
-  const totalPages=Math.max(1,Math.ceil(expiredCache.length/25));
-  if(expiredPage>totalPages) expiredPage=totalPages;
-  renderExpiredPage();
-});
-
-// filtro expirados por tipo
-document.querySelectorAll(".expired-filter-btn").forEach(btn=>{
-  btn.addEventListener("click", ()=>{
-    document.querySelectorAll(".expired-filter-btn").forEach(b=>b.classList.remove("active"));
-    btn.classList.add("active");
-    expiredTipo=btn.dataset.tipo; expiredPage=1; renderExpiredPage();
-  });
 });
