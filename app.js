@@ -278,12 +278,20 @@ const expiredPaginationDiv = document.getElementById("expiredPagination");
 const EXP_LIMIT = 25;
 let expiredCache = [], expiredCurrentPage = 1;
 
-// función para obtener hora en 24h desde Date o Firestore Timestamp
+// helper para parsear Date, ISO string o Firestore Timestamp
+function parseToDate(d){
+  if(!d) return null;
+  if(typeof d === "string") return new Date(d);
+  if(typeof d.toDate === "function") return d.toDate();
+  if(typeof d.seconds === "number") return new Date(d.seconds*1000);
+  return new Date(d);
+}
+
+// obtener hora hh:mm
 function horaHHMM(date){
-  const d = date.toDate ? date.toDate() : date;
-  const h = d.getHours().toString().padStart(2,'0');
-  const m = d.getMinutes().toString().padStart(2,'0');
-  return `${h}:${m}`;
+  const d = parseToDate(date);
+  if(!d) return "";
+  return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
 }
 
 if(expiredTableBody){
@@ -291,19 +299,17 @@ if(expiredTableBody){
   onSnapshot(query(expiredRef, orderBy("when","desc")), snapshot => {
     snapshot.docChanges().forEach(change => {
       const data = { __id: change.doc.id, ...change.doc.data() };
-      if(change.type === "added"){
-        expiredCache.unshift(data); // agrego al inicio
-      }
-      if(change.type === "removed"){
-        expiredCache = expiredCache.filter(e => e.__id !== data.__id);
-      }
+      if(change.type === "added") expiredCache.push(data);
+      if(change.type === "removed") expiredCache = expiredCache.filter(e => e.__id !== data.__id);
       if(change.type === "modified"){
         const index = expiredCache.findIndex(e => e.__id === data.__id);
         if(index !== -1) expiredCache[index] = data;
       }
     });
 
-    // siempre mostrar la primera página al haber nuevos registros
+    // ordenar por fecha descendente
+    expiredCache.sort((a,b)=> parseToDate(b.when).getTime() - parseToDate(a.when).getTime());
+
     expiredCurrentPage = 1;
     renderExpiredPage();
   });
@@ -321,20 +327,22 @@ if(expiredTableBody){
   }
 
   function renderExpiredPage(){
-    if(!expiredTableBody) return;
     expiredTableBody.innerHTML = "";
-    const start = (expiredCurrentPage - 1) * EXP_LIMIT;
-    const page = expiredCache.slice(start, start + EXP_LIMIT);
+    const start = (expiredCurrentPage-1)*EXP_LIMIT;
+    const page = expiredCache.slice(start, start+EXP_LIMIT);
 
     page.forEach(e => {
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${e.L || ""}</td>
+      tr.innerHTML = `
+        <td>${e.L || ""}</td>
         <td>${(e.nombre||"").toUpperCase()}</td>
         <td>${e.dni || ""}</td>
         <td>${e.codigoIngreso || ""}</td>
         <td>${e.codigoSalida || ""}</td>
         <td>${e.tipo || ""}</td>
-        <td title="${e.when ? horaHHMM(e.when) : ''}">${e.when ? fechaDDMMYYYY(e.when) : ""}</td>`;
+        <td title="${e.when ? horaHHMM(e.when) : ''}">
+          ${e.when ? fechaDDMMYYYY(e.when) : ""}
+        </td>`;
       expiredTableBody.appendChild(tr);
     });
 
@@ -616,4 +624,5 @@ function filterUsersTable(){
     tr.style.display = (activeUserFilter === "todos" || tipo === activeUserFilter) ? "" : "none";
   });
 }
+
 
