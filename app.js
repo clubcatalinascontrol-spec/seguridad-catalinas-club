@@ -311,7 +311,7 @@ if(expiredTableBody){
     snapshot.docChanges().forEach(change => {
       const data = { __id: change.doc.id, ...change.doc.data() };
       if(change.type === "added"){
-        expiredCache.unshift(data); // agrego al inicio
+        expiredCache.unshift(data); // nuevos al inicio
       }
       if(change.type === "removed"){
         expiredCache = expiredCache.filter(e => e.__id !== data.__id);
@@ -322,7 +322,9 @@ if(expiredTableBody){
       }
     });
 
-    // siempre mostrar la primera página al haber nuevos registros
+    // ordenar por fecha descendente por si acaso
+    expiredCache.sort((a,b) => (b.when?.toDate ? b.when.toDate() : b.when) - (a.when?.toDate ? a.when.toDate() : a.when));
+
     expiredCurrentPage = 1;
     renderExpiredPage();
   });
@@ -360,7 +362,6 @@ if(expiredTableBody){
     renderExpiredPagination(expiredCache.length);
   }
 }
-
 /* ----------------------------- NOVEDADES - agregar/editar/eliminar + render ----------------------------- */
 const novedadesTableBody = document.querySelector("#novedadesTable tbody");
 const novTxt = document.getElementById("novedadTexto");
@@ -658,3 +659,4 @@ function filterUsersTable(){
     tr.style.display = (activeUserFilter === "todos" || tipo === activeUserFilter) ? "" : "none";
   });
 }
+
