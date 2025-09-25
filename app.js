@@ -379,6 +379,7 @@ if(novedadesTableBody){
 document.getElementById("closeFichaBtn").addEventListener("click", ()=>{ document.getElementById("fichaModal").classList.remove("active"); });
 document.getElementById("cancelEditBtn").addEventListener("click", ()=>{ document.getElementById("editUserModal").classList.remove("active"); });
 // app.js (PARTE 2) - movimientos, impresión, escaneo, filtros
+
 /* ----------------------------- MOVIMIENTOS (pestañas por tipo y paginación) ----------------------------- */
 const movimientosTableBody = document.querySelector("#movimientosTable tbody");
 const paginationDiv = document.getElementById("pagination");
@@ -494,9 +495,6 @@ onSnapshot(query(movimientosRef, orderBy("hora", "desc")), snapshot => {
     }
   });
 
-  // Si hay nuevos registros, forzamos mostrar la página 1
-  if (nuevos) currentPage = 1;
-
   // renderizamos página actual solo una vez, con cache actualizada
   renderMovsPage();
 
@@ -506,6 +504,49 @@ onSnapshot(query(movimientosRef, orderBy("hora", "desc")), snapshot => {
     printMovimientosPorTipo("propietario", true);
   }
 });
+
+/* ----------------------------- ESCANEAR CÓDIGOS (movimientos independientes) ----------------------------- */
+scanInput.addEventListener("input", async () => {
+  const raw = (scanInput.value || "").trim();
+  if (scanProcessing) return;
+  if (raw.length < 8) return;
+  scanProcessing = true;
+  const code = raw.substring(0,8).toUpperCase();
+  try {
+    let userDoc = null;
+    let tipoAccion = "entrada";
+    let snap = await getDocs(query(usuariosRef, where("codigoIngreso","==",code)));
+    if(!snap.empty){ userDoc = snap.docs[0]; tipoAccion = "entrada"; }
+    else { snap = await getDocs(query(usuariosRef, where("codigoSalida","==",code))); if(!snap.empty){ userDoc = snap.docs[0]; tipoAccion = "salida"; } }
+
+    if(!userDoc){
+      scanMessage.style.color = "red";
+      scanMessage.textContent = "Código no válido";
+      setTimeout(()=>{ scanMessage.textContent = ""; }, 1800);
+      scanProcessing = false;
+      return;
+    }
+
+    const u = userDoc.data();
+    // SIEMPRE crear un registro nuevo
+    const newMov = tipoAccion === "entrada"
+      ? { L: u.L, nombre: u.nombre, dni: u.dni||"", tipo: u.tipo, autorizante: u.autorizante||"", entrada: horaActualStr(), salida: "", hora: serverTimestamp() }
+      : { L: u.L, nombre: u.nombre, dni: u.dni||"", tipo: u.tipo, autorizante: u.autorizante||"", entrada: "", salida: horaActualStr(), hora: serverTimestamp() };
+
+    await addDoc(movimientosRef, newMov);
+
+    scanOk.style.display = "inline-block";
+    setTimeout(()=>scanOk.style.display = "none", 900);
+    scanInput.value = "";
+    scanMessage.textContent = "";
+  } catch (err) {
+    console.error(err);
+    scanMessage.style.color = "red";
+    scanMessage.textContent = "Error al registrar";
+    setTimeout(()=>{ scanMessage.textContent=""; },1800);
+  } finally { scanProcessing = false; }
+});
+
 /* ----------------------------- IMPRIMIR movimientos (A4, font-size reducido) ----------------------------- */
 function printMovimientosPorTipo(tipo, auto=false){
   if(!auto && !isUnlocked){ alert("Operación no permitida."); return; }
@@ -619,6 +660,7 @@ function filterUsersTable(){
 }
 
 /* Nota: dejamos las demás listeners (closeFicha, cancelEdit) en Parte 1 para mantener continuidad */
+
 
 
 
