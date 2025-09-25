@@ -198,7 +198,7 @@ onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
       <td>${u.fechaExpedicion ? fechaDDMMYYYY(u.fechaExpedicion) : ""}</td>
       <td>${u.tipo||""}</td>
       <td>
-<button class="ficha-btn" data-dni="${u.dni || ''}">FICHA</button>
+<button class="users-ficha-btn" data-dni="${u.dni || ''}">FICHA</button>
 <button class="edit-btn" data-id="${docSnap.id}">Editar</button>
 <button class="del-btn" data-id="${docSnap.id}">Eliminar</button>
 <button class="print-btn" data-id="${docSnap.id}">Imprimir Tarjeta</button>
@@ -482,17 +482,18 @@ function renderMovsPage() {
     document.querySelectorAll('.autorizante-th').forEach(th => th.style.display = 'none');
   }
 
-  page.forEach(item => {
-    const tr = document.createElement("tr");
-    const autorizText = item.autorizante || "";
-    tr.innerHTML = `<td>${item.L || ""}</td><td>${(item.nombre || "").toUpperCase()}</td>
-      <td>${item.entrada || ""}</td><td>${item.salida || ""}</td><td>${item.tipo || ""}</td>
-      <td class="autorizante-td">${autorizText}</td>
-      <td>
-        <button class="ficha-btn" data-L="${item.L}">FICHA</button>
-        <button class="delMov" data-id="${item.__id}">Eliminar</button>
-      </td>`;
-    movimientosTableBody.appendChild(tr);
+ page.forEach(item => {
+  const tr = document.createElement("tr");
+  const autorizText = item.autorizante || "";
+  tr.innerHTML = `<td>${item.L || ""}</td><td>${(item.nombre || "").toUpperCase()}</td>
+    <td>${item.entrada || ""}</td><td>${item.salida || ""}</td><td>${item.tipo || ""}</td>
+    <td class="autorizante-td">${autorizText}</td>
+    <td>
+      <button class="ficha-btn" data-dni="${item.dni || ''}">FICHA</button>
+      <button class="delMov" data-id="${item.__id}">Eliminar</button>
+    </td>`;
+  movimientosTableBody.appendChild(tr);
+});
 
 // ficha desde panel - versión corregida
 tr.querySelector(".ficha-btn").addEventListener("click", async (e) => {
@@ -694,3 +695,4 @@ usersTable.addEventListener("click", async (e) => {
     alert("Error al buscar ficha");
   }
 });
+
