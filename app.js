@@ -545,12 +545,12 @@ onSnapshot(query(movimientosRef, orderBy("hora","desc")), snapshot => {
   if (nuevos) currentPage = 1;
   renderMovsPage();
 
-  // auto-imprimir propietarios cada múltiplo de 25
-  const propietariosCount = movimientosCache.filter(m => m.tipo === "propietario").length;
-  if (propietariosCount > 0 && propietariosCount % MOV_LIMIT === 0) {
-    printMovimientosPorTipo("propietario", true);
-  }
-});
+  // auto-imprimir propietarios cada múltiplo de 25 borrar "//" para habilitar
+  //const propietariosCount = movimientosCache.filter(m => m.tipo === "propietario").length;
+  //if (propietariosCount > 0 && propietariosCount % MOV_LIMIT === 0) {
+    //printMovimientosPorTipo("propietario", true);
+  //}
+//});
 
 /* ----------------------------- ESCANEAR CÓDIGOS (movimientos totalmente independientes) ----------------------------- */
 const scanBtn = document.getElementById("scanBtn");
@@ -654,6 +654,7 @@ function filterUsersTable(){
     tr.style.display = (activeUserFilter === "todos" || tipo === activeUserFilter) ? "" : "none";
   });
 }
+
 
 
 
