@@ -511,6 +511,10 @@ tr.querySelector(".ficha-btn").addEventListener("click", async (e) => {
     const snap = await getDocs(query(usuariosRef, where("L", "==", L), limit(1)));
     if (!snap.empty) {
       const u = snap.docs[0].data();
+      if(!u.dni || u.dni.trim() === ""){
+        alert("Esta ficha no puede abrirse porque el usuario no tiene DNI cargado");
+        return;
+      }
       document.getElementById("fichaL").textContent = u.L || "";
       document.getElementById("fichaNombre").textContent = (u.nombre || "").toUpperCase();
       document.getElementById("fichaDni").textContent = u.dni || "";
@@ -519,7 +523,9 @@ tr.querySelector(".ficha-btn").addEventListener("click", async (e) => {
       document.getElementById("fichaFechaExp").textContent = u.fechaExpedicion ? fechaDDMMYYYY(u.fechaExpedicion) : "";
       document.getElementById("fichaTipo").textContent = u.tipo || "";
       document.getElementById("fichaModal").classList.add("active");
-    } else { alert("No se encontró ficha para ese lote"); }
+    } else { 
+      alert("No se encontró ficha para ese lote"); 
+    }
   } catch (err) {
     console.error(err); 
     alert("Error al buscar ficha");
@@ -659,12 +665,46 @@ document.querySelectorAll(".user-filter-btn").forEach(btn=>{
     filterUsersTable();
   });
 });
+
 function filterUsersTable(){
   document.querySelectorAll('#usersTable tbody tr').forEach(tr=>{
     const tipo = tr.children[6] ? tr.children[6].textContent.trim() : "";
     tr.style.display = (activeUserFilter === "todos" || tipo === activeUserFilter) ? "" : "none";
   });
 }
+
+// ficha desde USUARIOS
+document.querySelectorAll(".users-ficha-btn").forEach(btn=>{
+  btn.addEventListener("click", async e => {
+    const L = (e.currentTarget.dataset.L || "").trim();
+    const dni = (e.currentTarget.dataset.dni || "").trim();
+    if(!L || !dni){ 
+      alert("Esta ficha no puede abrirse porque el usuario no tiene DNI cargado"); 
+      return; 
+    }
+    try {
+      const snap = await getDocs(query(usuariosRef, where("L", "==", L), where("dni","==", dni), limit(1)));
+      if(!snap.empty){
+        const u = snap.docs[0].data();
+        document.getElementById("fichaL").textContent = u.L || "";
+        document.getElementById("fichaNombre").textContent = (u.nombre || "").toUpperCase();
+        document.getElementById("fichaDni").textContent = u.dni || "";
+        document.getElementById("fichaCelular").textContent = u.celular || "";
+        document.getElementById("fichaAutorizante").textContent = u.autorizante || "";
+        document.getElementById("fichaFechaExp").textContent = u.fechaExpedicion ? fechaDDMMYYYY(u.fechaExpedicion) : "";
+        document.getElementById("fichaTipo").textContent = u.tipo || "";
+        document.getElementById("fichaModal").classList.add("active");
+      } else { 
+        alert("No se encontró ficha para ese usuario"); 
+      }
+    } catch(err){ 
+      console.error(err); 
+      alert("Error al buscar ficha"); 
+    }
+  });
+});
+
+
 
 
 
