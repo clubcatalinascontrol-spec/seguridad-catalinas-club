@@ -429,27 +429,41 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
 
 // imprimir pestaña activa
 const printActiveBtn = document.getElementById("printActiveBtn");
-if (printActiveBtn) printActiveBtn.addEventListener("click", () => {
-  if (!isUnlocked) { alert("Operación no permitida."); return; }
-  printMovimientosPorTipo(activeTipo);
-});
+if (printActiveBtn) {
+  printActiveBtn.addEventListener("click", () => {
+    if (!isUnlocked) { 
+      alert("Operación no permitida."); 
+      return; 
+    }
+    printMovimientosPorTipo(activeTipo);
+  });
+}
 
+// mostrar/ocultar columna autorizante según tipo
+function shouldShowAutorizanteColumn(tipo) {
+  return ["obrero", "invitado", "empleado", "otro"].includes(tipo);
+}
+
+// renderizar botones de paginación
 function renderPagination(totalItems) {
   const totalPages = Math.max(1, Math.ceil(totalItems / MOV_LIMIT));
   paginationDiv.innerHTML = "";
   for (let p = 1; p <= totalPages; p++) {
     const btn = document.createElement("button");
     btn.textContent = p;
-    if (p === currentPage) { btn.style.background = "#d8a800"; btn.style.color = "#111"; }
-    btn.addEventListener("click", () => { currentPage = p; renderMovsPage(); });
+    if (p === currentPage) { 
+      btn.style.background = "#d8a800"; 
+      btn.style.color = "#111"; 
+    }
+    btn.addEventListener("click", () => { 
+      currentPage = p; 
+      renderMovsPage(); 
+    });
     paginationDiv.appendChild(btn);
   }
 }
 
-function shouldShowAutorizanteColumn(tipo) {
-  return ["obrero", "invitado", "empleado", "otro"].includes(tipo);
-}
-
+// renderizar movimientos en la tabla
 function renderMovsPage() {
   if (!movimientosTableBody) return;
   movimientosTableBody.innerHTML = "";
@@ -494,9 +508,9 @@ function renderMovsPage() {
 
     // eliminar movimiento
     tr.querySelector(".delMov").addEventListener("click", async e => {
-      if (!isUnlocked) {
-        alert("Operación no permitida. Introduzca la contraseña de apertura.");
-        return;
+      if (!isUnlocked) { 
+        alert("Operación no permitida. Introduzca la contraseña de apertura."); 
+        return; 
       }
       if (!confirm("Eliminar movimiento permanentemente?")) return;
       try {
@@ -512,30 +526,8 @@ function renderMovsPage() {
   renderPagination(filtered.length);
 }
 
-  page.forEach(item => {
-    const tr = document.createElement("tr");
-    const autorizText = item.autorizante || "";
-    tr.innerHTML = `<td>${item.L || ""}</td><td>${(item.nombre || "").toUpperCase()}</td>
-      <td>${item.entrada || ""}</td><td>${item.salida || ""}</td><td>${item.tipo || ""}</td>
-      <td class="autorizante-td">${autorizText}</td>
-      <td>
-        <button class="delMov" data-id="${item.__id}">Eliminar</button>
-      </td>`;
-    movimientosTableBody.appendChild(tr);
-
-    // eliminar movimiento
-    tr.querySelector(".delMov").addEventListener("click", async e => {
-      if (!isUnlocked) { alert("Operación no permitida. Introduzca la contraseña de apertura."); return; }
-      if (!confirm("Eliminar movimiento permanentemente?")) return;
-      try { await deleteDoc(doc(db, "movimientos", e.currentTarget.dataset.id)); } catch (err) { console.error(err); alert("Error eliminando movimiento"); }
-    });
-  });
-
-  renderPagination(filtered.length);
-}
-
 /* ----------------------------- Escuchar movimientos (order by hora desc) ----------------------------- */
-onSnapshot(query(movimientosRef, orderBy("hora", "desc")), snapshot => {
+onSnapshot(query(movimientosRef, orderBy("hora","desc")), snapshot => {
   let nuevos = false;
   snapshot.docChanges().forEach(change => {
     const data = { __id: change.doc.id, ...change.doc.data() };
@@ -662,5 +654,6 @@ function filterUsersTable(){
     tr.style.display = (activeUserFilter === "todos" || tipo === activeUserFilter) ? "" : "none";
   });
 }
+
 
 
