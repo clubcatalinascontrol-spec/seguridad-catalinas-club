@@ -1,4 +1,4 @@
-// app.js (PARTE 1) - Firebase 9.22
+// app.js (PARTE 1) - Firebase 9.22 (INICIO)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, doc, onSnapshot, updateDoc, deleteDoc, query, where, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
@@ -57,7 +57,6 @@ const initPassMsg = document.getElementById("initPassMsg");
 
 const INITIAL_PASS = "1409";
 let isUnlocked = localStorage.getItem("unlocked") === "true";
-
 function toggleActionsDisabled(disabled){
   const selectors = [
     '#movimientosTable button',
@@ -111,7 +110,7 @@ navBtns.forEach(btn=>btn.addEventListener("click", ()=>{
   btn.classList.add("active");
 }));
 
-/* ----------------------------- Select #L ----------------------------- */
+/* ----------------------------- Select #L desplegable ----------------------------- */
 const userL = document.getElementById("userL");
 const editUserL = document.getElementById("editUserL");
 function llenarLSelect(){
@@ -127,153 +126,14 @@ function llenarLSelect(){
 }
 llenarLSelect();
 
-/* ----------------------------- USUARIOS ----------------------------- */
-const userNombre=document.getElementById("userNombre");
-const userDni=document.getElementById("userDni");
-const userTipo=document.getElementById("userTipo");
-const userCelular=document.getElementById("userCelular");
-const userAutorizante=document.getElementById("userAutorizante");
-const addUserBtn=document.getElementById("addUserBtn");
-const userMessage=document.getElementById("userMessage");
-const usersTableBody=document.querySelector("#usersTable tbody");
-
-addUserBtn.addEventListener("click", async ()=>{
-  if(!isUnlocked){ alert("Operación no permitida. Introduzca la contraseña de apertura."); return; }
-  const L = userL ? userL.value.trim() : "NN";
-  let nombre = (userNombre ? userNombre.value : "").trim();
-  const dni = (userDni ? userDni.value.trim() : "");
-  const tipo = userTipo ? userTipo.value : "NN";
-  const celular = (userCelular ? userCelular.value.trim() : "");
-  const autorizante = (userAutorizante ? userAutorizante.value.trim() : "");
-
-  if(!L || L==="NN" || !nombre || !tipo || tipo==="NN"){
-    if(userMessage){ userMessage.style.color="red"; userMessage.textContent="Debe cargar un nombre, un número de Lote y un Tipo para continuar"; setTimeout(()=>{ userMessage.textContent=""; userMessage.style.color=""; }, 3000); }
-    return;
-  }
-  if(dni && !/^\d{8}$/.test(dni)){ if(userMessage){ userMessage.style.color="red"; userMessage.textContent="Si ingresa DNI, debe tener 8 dígitos"; setTimeout(()=>{ userMessage.textContent=""; userMessage.style.color=""; }, 2500);} return; }
-  if(celular && !/^\d{10}$/.test(celular)){ if(userMessage){ userMessage.style.color="red"; userMessage.textContent="Celular debe tener 10 dígitos si se ingresa"; setTimeout(()=>{ userMessage.textContent=""; }, 2500);} return; }
-  if(autorizante && !/^[A-Za-zÁÉÍÓÚáéíóúÑñ ]{1,12}$/.test(autorizante)){ if(userMessage){ userMessage.style.color="red"; userMessage.textContent="Autorizante: solo letras (max 12)"; setTimeout(()=>{ userMessage.textContent=""; userMessage.style.color=""; }, 2500);} return; }
-
-  nombre = nombre.toUpperCase();
-  try{
-    if(dni){
-      const qDni = query(usuariosRef, where("dni","==",dni));
-      const existing = await getDocs(qDni);
-      if(!existing.empty){
-        if(userMessage){ userMessage.style.color="red"; userMessage.textContent="DNI ya registrado"; setTimeout(()=>{ userMessage.textContent=""; userMessage.style.color=""; }, 2500); }
-        return;
-      }
-    }
-    const fechaExpIso = isoNow();
-    await addDoc(usuariosRef,{
-      L, nombre, dni: dni || "", tipo, celular: celular || "", autorizante: autorizante || "", fechaExpedicion: fechaExpIso,
-      codigoIngreso: generarCodigo(), codigoSalida: generarCodigo()
-    });
-    if(userMessage){ userMessage.style.color="green"; userMessage.textContent="Usuario agregado"; setTimeout(()=>userMessage.textContent="",2500); }
-    if(userL) userL.value="NN";
-    if(userNombre) userNombre.value="";
-    if(userDni) userDni.value="";
-    if(userTipo) userTipo.value="NN";
-    if(userCelular) userCelular.value="";
-    if(userAutorizante) userAutorizante.value="";
-  }catch(err){
-    console.error(err);
-    if(userMessage){ userMessage.style.color="red"; userMessage.textContent="Error"; setTimeout(()=>userMessage.textContent="",2500); }
-  }
-});
-
-/* Render usuarios en tiempo real */
-onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
-  if(!usersTableBody) return;
-  usersTableBody.innerHTML="";
-  snapshot.docs.forEach(docSnap=>{
-    const u = docSnap.data();
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${u.L||""}</td>
-      <td>${(u.nombre||"").toUpperCase()}</td>
-      <td>${u.dni||""}</td>
-      <td>${u.celular||""}</td>
-      <td>${u.autorizante||""}</td>
-      <td>${u.fechaExpedicion ? fechaDDMMYYYY(u.fechaExpedicion) : ""}</td>
-      <td>${u.tipo||""}</td>
-      <td>
-        <button class="ficha-btn" data-id="${docSnap.id}">FICHA</button>
-        <button class="edit-btn" data-id="${docSnap.id}">Editar</button>
-        <button class="del-btn" data-id="${docSnap.id}">Eliminar</button>
-        <button class="print-btn" data-id="${docSnap.id}">Imprimir Tarjeta</button>
-      </td>`;
-    usersTableBody.appendChild(tr);
-
-    // FICHA, EDITAR, ELIMINAR e IMPRIMIR se mantienen iguales a tu código original
-    // ... (seguiría aquí la Parte 1 completa hasta antes de Expirados)
-  });
-});
-
-// app.js (PARTE 2) - Expirados, Novedades, Movimientos (con tooltips)
-/* ----------------------------- EXPIRADOS ----------------------------- */
-const expiredTableBody = document.querySelector("#expiredTable tbody");
-onSnapshot(query(expiredRef, orderBy("fecha","desc")), snapshot=>{
-  if(!expiredTableBody) return;
-  expiredTableBody.innerHTML="";
-  snapshot.docs.forEach(docSnap=>{
-    const e = docSnap.data();
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${e.codigo||""}</td>
-      <td>${e.motivo||""}</td>
-      <td>${e.fecha ? fechaDDMMYYYY(e.fecha) : ""}</td>
-      <td><button class="delExp" data-id="${docSnap.id}">Eliminar</button></td>`;
-    expiredTableBody.appendChild(tr);
-
-    tr.querySelector(".delExp")?.addEventListener("click", async ()=>{
-      if(!isUnlocked){ alert("Operación no permitida."); return; }
-      if(!confirm("Eliminar expirado permanentemente?")) return;
-      try{ await deleteDoc(doc(db,"expiredCodes",docSnap.id)); }catch(err){ console.error(err); alert("Error eliminando"); }
-    });
-  });
-});
-
-/* ----------------------------- NOVEDADES ----------------------------- */
-const novedadesTableBody = document.querySelector("#novedadesTable tbody");
-const guardarNovedadBtn = document.getElementById("guardarNovedadBtn");
-const novMensaje = document.getElementById("novMensaje");
-const novTexto = document.getElementById("novTexto");
-
-guardarNovedadBtn?.addEventListener("click", async ()=>{
-  if(!isUnlocked){ alert("Operación no permitida."); return; }
-  const text = (novTexto.value||"").trim();
-  if(!text) return;
-  try{
-    await addDoc(novedadesRef, { texto:text, fecha:serverTimestamp() });
-    novMensaje.style.color="green"; novMensaje.textContent="Novedad guardada"; setTimeout(()=>novMensaje.textContent="",2500);
-    novTexto.value="";
-  }catch(err){ console.error(err); novMensaje.style.color="red"; novMensaje.textContent="Error guardando"; setTimeout(()=>novMensaje.textContent="",2500);}
-});
-
-onSnapshot(query(novedadesRef, orderBy("fecha","desc")), snapshot=>{
-  if(!novedadesTableBody) return;
-  novedadesTableBody.innerHTML="";
-  snapshot.docs.forEach(docSnap=>{
-    const n = docSnap.data();
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${n.texto||""}</td>
-      <td>${n.fecha ? fechaDDMMYYYY(n.fecha) : ""}</td>
-      <td><button class="delNov" data-id="${docSnap.id}">Eliminar</button></td>`;
-    novedadesTableBody.appendChild(tr);
-
-    tr.querySelector(".delNov")?.addEventListener("click", async ()=>{
-      if(!isUnlocked){ alert("Operación no permitida."); return; }
-      if(!confirm("Eliminar novedad?")) return;
-      try{ await deleteDoc(doc(db,"novedades",docSnap.id)); }catch(err){ console.error(err); alert("Error eliminando"); }
-    });
-  });
-});
-
-/* ----------------------------- MOVIMIENTOS (con tooltip H. Entrada / H. Salida) ----------------------------- */
+// app.js (PARTE 2) - movimientos, impresión, escaneo, filtros
+/* ----------------------------- MOVIMIENTOS (pestañas por tipo y paginación) ----------------------------- */
 const movimientosTableBody=document.querySelector("#movimientosTable tbody");
 const paginationDiv=document.getElementById("pagination");
 const MOV_LIMIT=25;
 let movimientosCache=[], currentPage=1, activeTipo = "todos";
 
+// pestañas tipo
 document.querySelectorAll(".tab-btn").forEach(btn=>{
   btn.addEventListener("click", ()=>{
     document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
@@ -284,8 +144,9 @@ document.querySelectorAll(".tab-btn").forEach(btn=>{
   });
 });
 
+// imprimir pestaña activa
 const printActiveBtn = document.getElementById("printActiveBtn");
-printActiveBtn?.addEventListener("click", ()=>{ if(!isUnlocked){ alert("Operación no permitida."); return; } printMovimientosPorTipo(activeTipo); });
+if(printActiveBtn) printActiveBtn.addEventListener("click", ()=>{ if(!isUnlocked){ alert("Operación no permitida."); return; } printMovimientosPorTipo(activeTipo); });
 
 function renderPagination(totalItems){
   const totalPages=Math.max(1,Math.ceil(totalItems/MOV_LIMIT));
@@ -322,24 +183,35 @@ function renderMovsPage(){
 
   page.forEach(item=>{
     const tr=document.createElement("tr");
+    const autorizText = item.autorizante || "";
 
-    // Tooltip para H. Entrada y H. Salida
-    const entradaDate = parseToDate(item.hora || new Date());
-    const entradaStr = item.entrada ? item.entrada.split(" ")[0] : "";
-    const salidaStr = item.salida ? item.salida.split(" ")[0] : "";
+    // H. Entrada y H. Salida: solo hora en tabla, tooltip con fecha
+    let entradaDisplay = "", salidaDisplay = "";
+    if(item.entrada){
+      const dtE = item.entrada.match(/\d{2}:\d{2}/) ? item.entrada.match(/\d{2}:\d{2}/)[0] : item.entrada;
+      const dateE = item.entrada.replace(/\(\d{2}\/\d{2}\/\d{4}\)/,"").trim() || "";
+      entradaDisplay = `<span title="${item.entrada}">${dtE}</span>`;
+    }
+    if(item.salida){
+      const dtS = item.salida.match(/\d{2}:\d{2}/) ? item.salida.match(/\d{2}:\d{2}/)[0] : item.salida;
+      const dateS = item.salida.replace(/\(\d{2}\/\d{2}\/\d{4}\)/,"").trim() || "";
+      salidaDisplay = `<span title="${item.salida}">${dtS}</span>`;
+    }
+
     tr.innerHTML = `<td>${item.L||""}</td>
       <td>${(item.nombre||"").toUpperCase()}</td>
-      <td title="${item.entrada||''}">${entradaStr}</td>
-      <td title="${item.salida||''}">${salidaStr}</td>
+      <td>${item.dni||""}</td>
+      <td>${entradaDisplay}</td>
+      <td>${salidaDisplay}</td>
       <td>${item.tipo||""}</td>
-      <td class="autorizante-td">${item.autorizante||""}</td>
+      <td class="autorizante-td">${autorizText}</td>
       <td>
         <button class="ficha-btn" data-L="${item.L}">FICHA</button>
         <button class="delMov" data-id="${item.__id}">Eliminar</button>
       </td>`;
     movimientosTableBody.appendChild(tr);
 
-    // FICHA
+    // ficha desde panel
     tr.querySelector(".ficha-btn").addEventListener("click", async (e)=>{
       const L = e.currentTarget.dataset.L;
       try{
@@ -358,9 +230,9 @@ function renderMovsPage(){
       }catch(err){ console.error(err); alert("Error al buscar ficha"); }
     });
 
-    // ELIMINAR MOVIMIENTO
+    // eliminar movimiento
     tr.querySelector(".delMov").addEventListener("click", async e=>{
-      if(!isUnlocked){ alert("Operación no permitida."); return; }
+      if(!isUnlocked){ alert("Operación no permitida. Introduzca la contraseña de apertura."); return; }
       if(!confirm("Eliminar movimiento permanentemente?")) return;
       try{ await deleteDoc(doc(db,"movimientos",e.currentTarget.dataset.id)); } catch(err){ console.error(err); alert("Error eliminando movimiento"); }
     });
@@ -369,15 +241,40 @@ function renderMovsPage(){
   renderPagination(filtered.length);
 }
 
-/* Escuchar movimientos en tiempo real */
+/* ----------------------------- Escuchar movimientos (order by hora desc) ----------------------------- */
 onSnapshot(query(movimientosRef, orderBy("hora","desc")), snapshot=>{
   movimientosCache = snapshot.docs.map(d=>({__id:d.id,...d.data()}));
   const totalPages=Math.max(1,Math.ceil(movimientosCache.length/MOV_LIMIT));
   if(currentPage>totalPages) currentPage=totalPages;
   renderMovsPage();
+
+  // auto-imprimir propietarios cada múltiplo de 25
+  const propietariosCount = movimientosCache.filter(m=>m.tipo==="propietario").length;
+  if(propietariosCount>0 && propietariosCount % MOV_LIMIT === 0){
+    printMovimientosPorTipo("propietario", true);
+  }
 });
 
-// app.js (PARTE 3) - Escaneo, impresión y filtros de usuarios
+/* ----------------------------- IMPRIMIR movimientos (A4, font-size reducido) ----------------------------- */
+function printMovimientosPorTipo(tipo, auto=false){
+  if(!auto && !isUnlocked){ alert("Operación no permitida."); return; }
+  const filtered = tipo==="todos" ? movimientosCache : movimientosCache.filter(m=>m.tipo===tipo);
+  const toPrint = filtered.slice(0,25);
+  const w = window.open("","_blank","width=900,height=600");
+  const title = tipo==="todos" ? "Movimientos - Todos" : `Movimientos - ${tipo}`;
+  let html = `<html><head><title>${title}</title><style>
+    @page{size:A4;margin:6mm;} body{font-family:Arial,Helvetica,sans-serif;font-size:10px;color:#000;}
+    table{width:100%;border-collapse:collapse} th,td{border:1px solid #000;padding:2px;text-align:center;font-size:10px}
+    thead th{background:#fff;font-weight:700;color:#000}
+    img, svg { filter: grayscale(100%); }
+    </style></head><body><h3>${title}</h3><table><thead><tr><th>#L</th><th>Nombre</th><th>DNI</th><th>H. Entrada</th><th>H. Salida</th><th>Tipo</th></tr></thead><tbody>`;
+  toPrint.forEach(m=>{
+    html += `<tr><td>${m.L||""}</td><td>${(m.nombre||"").toUpperCase()}</td><td>${m.dni||""}</td><td>${m.entrada||""}</td><td>${m.salida||""}</td><td>${m.tipo||""}</td></tr>`;
+  });
+  html += `</tbody></table></body></html>`;
+  w.document.write(html);
+  w.print();
+}
 
 /* ----------------------------- ESCANEAR CÓDIGOS ----------------------------- */
 const scanBtn = document.getElementById("scanBtn");
@@ -388,29 +285,28 @@ const scanMessage = document.getElementById("scanMessage");
 const scanOk = document.getElementById("scanOk");
 let scanProcessing = false;
 
-scanBtn?.addEventListener("click", () => {
+scanBtn.addEventListener("click", () => {
   if(!isUnlocked){ alert("Operación no permitida. Introduzca la contraseña de apertura."); return; }
   scanModal.classList.add("active");
   scanInput.value = "";
   scanMessage.textContent = "";
   scanInput.focus();
 });
-
-cancelScanBtn?.addEventListener("click", () => {
+cancelScanBtn.addEventListener("click", () => {
   scanModal.classList.remove("active");
   scanMessage.textContent = "";
   scanInput.value = "";
 });
 
-scanInput?.addEventListener("input", async () => {
+scanInput.addEventListener("input", async () => {
   const raw = (scanInput.value || "").trim();
-  if(scanProcessing || raw.length < 8) return;
+  if (scanProcessing) return;
+  if (raw.length < 8) return;
   scanProcessing = true;
   const code = raw.substring(0,8).toUpperCase();
   try {
     let userDoc = null;
     let tipoAccion = "entrada";
-
     let snap = await getDocs(query(usuariosRef, where("codigoIngreso","==",code)));
     if(!snap.empty){ userDoc = snap.docs[0]; tipoAccion = "entrada"; }
     else { snap = await getDocs(query(usuariosRef, where("codigoSalida","==",code))); if(!snap.empty){ userDoc = snap.docs[0]; tipoAccion = "salida"; } }
@@ -421,7 +317,6 @@ scanInput?.addEventListener("input", async () => {
       setTimeout(()=>{ scanMessage.textContent = ""; }, 1800);
       scanProcessing = false; return;
     }
-
     const u = userDoc.data();
     if(tipoAccion === "entrada"){
       await addDoc(movimientosRef, { L: u.L, nombre: u.nombre, dni: u.dni || "", tipo: u.tipo, autorizante: u.autorizante || "", entrada: horaActualStr(), salida: "", hora: serverTimestamp() });
@@ -440,9 +335,8 @@ scanInput?.addEventListener("input", async () => {
         await addDoc(movimientosRef, { L: u.L, nombre: u.nombre, dni: u.dni || "", tipo: u.tipo, autorizante: u.autorizante || "", entrada: "", salida: horaActualStr(), hora: serverTimestamp() });
       }
     }
-
     scanOk.style.display = "inline-block";
-    setTimeout(()=>scanOk.style.display="none",900);
+    setTimeout(()=>scanOk.style.display = "none", 900);
     scanInput.value = "";
     scanMessage.textContent = "";
   } catch (err) {
@@ -453,27 +347,7 @@ scanInput?.addEventListener("input", async () => {
   } finally { scanProcessing = false; }
 });
 
-/* ----------------------------- IMPRIMIR MOVIMIENTOS (A4, font reducido) ----------------------------- */
-function printMovimientosPorTipo(tipo, auto=false){
-  if(!auto && !isUnlocked){ alert("Operación no permitida."); return; }
-  const filtered = tipo==="todos" ? movimientosCache : movimientosCache.filter(m=>m.tipo===tipo);
-  const toPrint = filtered.slice(0,25);
-  const w = window.open("","_blank","width=900,height=600");
-  const title = tipo==="todos" ? "Movimientos - Todos" : `Movimientos - ${tipo}`;
-  let html = `<html><head><title>${title}</title><style>
-    @page{size:A4;margin:6mm;} body{font-family:Arial,Helvetica,sans-serif;font-size:10px;color:#000;}
-    table{width:100%;border-collapse:collapse} th,td{border:1px solid #000;padding:2px;text-align:center;font-size:10px}
-    thead th{background:#fff;font-weight:700;color:#000} img, svg { filter: grayscale(100%); }
-    </style></head><body><h3>${title}</h3><table><thead><tr><th>#L</th><th>Nombre</th><th>DNI</th><th>H. Entrada</th><th>H. Salida</th><th>Tipo</th></tr></thead><tbody>`;
-  toPrint.forEach(m=>{
-    html += `<tr><td>${m.L||""}</td><td>${(m.nombre||"").toUpperCase()}</td><td>${m.dni||""}</td><td>${m.entrada||""}</td><td>${m.salida||""}</td><td>${m.tipo||""}</td></tr>`;
-  });
-  html += `</tbody></table></body></html>`;
-  w.document.write(html);
-  w.print();
-}
-
-/* ----------------------------- USUARIOS - filtros ----------------------------- */
+/* ----------------------------- USUARIOS - filtros (botones) ----------------------------- */
 let activeUserFilter = "todos";
 document.querySelectorAll(".user-filter-btn").forEach(btn=>{
   btn.addEventListener("click", ()=>{
@@ -483,7 +357,6 @@ document.querySelectorAll(".user-filter-btn").forEach(btn=>{
     filterUsersTable();
   });
 });
-
 function filterUsersTable(){
   document.querySelectorAll('#usersTable tbody tr').forEach(tr=>{
     const tipo = tr.children[6] ? tr.children[6].textContent.trim() : "";
@@ -491,24 +364,4 @@ function filterUsersTable(){
   });
 }
 
-/* ----------------------------- UTILS ----------------------------- */
-function horaActualStr(){
-  const d = new Date();
-  return d.toLocaleTimeString("es-AR",{hour12:false});
-}
-
-function fechaDDMMYYYY(date){
-  if(!date) return "";
-  if(date.toDate) date = date.toDate();
-  const d = ("0"+date.getDate()).slice(-2);
-  const m = ("0"+(date.getMonth()+1)).slice(-2);
-  const y = date.getFullYear();
-  return `${d}/${m}/${y}`;
-}
-
-function parseToDate(date){
-  if(!date) return new Date();
-  return date.toDate ? date.toDate() : new Date(date);
-}
-
-/* Nota: listeners de cierre de modales y cancelEdit permanecen en Parte 1 */
+/* Nota: demás listeners (closeFicha, cancelEdit, etc.) se mantienen tal cual desde Parte 1 */
