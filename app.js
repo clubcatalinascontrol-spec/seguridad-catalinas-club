@@ -453,10 +453,20 @@ function shouldShowAutorizanteColumn(tipo) {
 function renderMovsPage() {
   if (!movimientosTableBody) return;
   movimientosTableBody.innerHTML = "";
-  const filtered = activeTipo === "todos" ? movimientosCache : movimientosCache.filter(m => m.tipo === activeTipo);
+
+  // Filtrar por tipo
+  const filtered = activeTipo === "todos"
+    ? movimientosCache
+    : movimientosCache.filter(m => m.tipo === activeTipo);
+
+  // ORDENAR POR HORA DESC (más recientes arriba)
+  filtered.sort((a, b) => b.hora.toDate() - a.hora.toDate());
+
+  // paginación
   const start = (currentPage - 1) * MOV_LIMIT;
   const page = filtered.slice(start, start + MOV_LIMIT);
 
+  // mostrar/ocultar columna autorizante
   const table = document.getElementById("movimientosTable");
   const showAut = shouldShowAutorizanteColumn(activeTipo);
   if (showAut) {
@@ -466,6 +476,41 @@ function renderMovsPage() {
     table.classList.add('autorizante-hidden');
     document.querySelectorAll('.autorizante-th').forEach(th => th.style.display = 'none');
   }
+
+  // renderizar filas
+  page.forEach(item => {
+    const tr = document.createElement("tr");
+    const autorizText = item.autorizante || "";
+    tr.innerHTML = `<td>${item.L || ""}</td>
+      <td>${(item.nombre || "").toUpperCase()}</td>
+      <td>${item.entrada || ""}</td>
+      <td>${item.salida || ""}</td>
+      <td>${item.tipo || ""}</td>
+      <td class="autorizante-td">${autorizText}</td>
+      <td>
+        <button class="delMov" data-id="${item.__id}">Eliminar</button>
+      </td>`;
+    movimientosTableBody.appendChild(tr);
+
+    // eliminar movimiento
+    tr.querySelector(".delMov").addEventListener("click", async e => {
+      if (!isUnlocked) {
+        alert("Operación no permitida. Introduzca la contraseña de apertura.");
+        return;
+      }
+      if (!confirm("Eliminar movimiento permanentemente?")) return;
+      try {
+        await deleteDoc(doc(db, "movimientos", e.currentTarget.dataset.id));
+      } catch (err) {
+        console.error(err);
+        alert("Error eliminando movimiento");
+      }
+    });
+  });
+
+  // renderizar botones de paginación
+  renderPagination(filtered.length);
+}
 
   page.forEach(item => {
     const tr = document.createElement("tr");
@@ -617,4 +662,5 @@ function filterUsersTable(){
     tr.style.display = (activeUserFilter === "todos" || tipo === activeUserFilter) ? "" : "none";
   });
 }
+
 
