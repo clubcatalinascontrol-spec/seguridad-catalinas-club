@@ -428,7 +428,6 @@ if(novedadesTableBody){
 /* ----------------------------- Cierres/Helpers UI ----------------------------- */
 document.getElementById("closeFichaBtn").addEventListener("click", ()=>{ document.getElementById("fichaModal").classList.remove("active"); });
 document.getElementById("cancelEditBtn").addEventListener("click", ()=>{ document.getElementById("editUserModal").classList.remove("active"); });
-// app.js (PARTE 2) - movimientos, impresión, escaneo, filtros
 
 // app.js (PARTE 2) - movimientos, impresión, escaneo, filtros
 
