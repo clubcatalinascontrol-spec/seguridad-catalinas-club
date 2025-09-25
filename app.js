@@ -198,10 +198,10 @@ onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
       <td>${u.fechaExpedicion ? fechaDDMMYYYY(u.fechaExpedicion) : ""}</td>
       <td>${u.tipo||""}</td>
       <td>
-<button class="users-ficha-btn" data-dni="${u.dni || ''}">FICHA</button>
-<button class="edit-btn" data-id="${docSnap.id}">Editar</button>
-<button class="del-btn" data-id="${docSnap.id}">Eliminar</button>
-<button class="print-btn" data-id="${docSnap.id}">Imprimir Tarjeta</button>
+        <button class="ficha-btn" data-id="${docSnap.id}">FICHA</button>
+        <button class="edit-btn" data-id="${docSnap.id}">Editar</button>
+        <button class="del-btn" data-id="${docSnap.id}">Eliminar</button>
+        <button class="print-btn" data-id="${docSnap.id}">Imprimir Tarjeta</button>
       </td>`;
     usersTableBody.appendChild(tr);
 
@@ -291,32 +291,38 @@ onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
   });
 });
 
-/* ----------------------------- EXPIRADOS - render con paginación ----------------------------- */
+/* ----------------------------- EXPIRADOS - render con paginación y tooltip hora ----------------------------- */
 const expiredTableBody = document.querySelector("#expiredTable tbody");
 const expiredPaginationDiv = document.getElementById("expiredPagination");
 const EXP_LIMIT = 25;
 let expiredCache = [], expiredCurrentPage = 1;
 
-// función para hora hh:mm
+// función para obtener hora en 24h desde Date o Firestore Timestamp
 function horaHHMM(date){
-  if(!date) return "";
   const d = date.toDate ? date.toDate() : date;
-  return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+  const h = d.getHours().toString().padStart(2,'0');
+  const m = d.getMinutes().toString().padStart(2,'0');
+  return `${h}:${m}`;
 }
 
 if(expiredTableBody){
-  onSnapshot(query(expiredRef, orderBy("when","desc")), snapshot=>{
-    snapshot.docChanges().forEach(change=>{
+  // escuchar cambios en tiempo real
+  onSnapshot(query(expiredRef, orderBy("when","desc")), snapshot => {
+    snapshot.docChanges().forEach(change => {
       const data = { __id: change.doc.id, ...change.doc.data() };
-      if(change.type==="added") expiredCache.unshift(data);
-      if(change.type==="removed") expiredCache = expiredCache.filter(e=>e.__id!==data.__id);
-      if(change.type==="modified"){
-        const index = expiredCache.findIndex(e=>e.__id===data.__id);
-        if(index!==-1) expiredCache[index] = data;
+      if(change.type === "added"){
+        expiredCache.unshift(data); // agrego al inicio
+      }
+      if(change.type === "removed"){
+        expiredCache = expiredCache.filter(e => e.__id !== data.__id);
+      }
+      if(change.type === "modified"){
+        const index = expiredCache.findIndex(e => e.__id === data.__id);
+        if(index !== -1) expiredCache[index] = data;
       }
     });
 
-    expiredCache.sort((a,b)=>(b.when?.toDate ? b.when.toDate() : b.when) - (a.when?.toDate ? a.when.toDate() : a.when));
+    // siempre mostrar la primera página al haber nuevos registros
     expiredCurrentPage = 1;
     renderExpiredPage();
   });
@@ -324,11 +330,11 @@ if(expiredTableBody){
   function renderExpiredPagination(totalItems){
     const totalPages = Math.max(1, Math.ceil(totalItems / EXP_LIMIT));
     expiredPaginationDiv.innerHTML = "";
-    for(let p=1;p<=totalPages;p++){
+    for(let p=1; p<=totalPages; p++){
       const btn = document.createElement("button");
       btn.textContent = p;
-      if(p===expiredCurrentPage){ btn.style.background="#d8a800"; btn.style.color="#111"; }
-      btn.addEventListener("click", ()=>{ expiredCurrentPage=p; renderExpiredPage(); });
+      if(p === expiredCurrentPage){ btn.style.background="#d8a800"; btn.style.color="#111"; }
+      btn.addEventListener("click", ()=>{ expiredCurrentPage = p; renderExpiredPage(); });
       expiredPaginationDiv.appendChild(btn);
     }
   }
@@ -336,25 +342,25 @@ if(expiredTableBody){
   function renderExpiredPage(){
     if(!expiredTableBody) return;
     expiredTableBody.innerHTML = "";
-    const start = (expiredCurrentPage-1)*EXP_LIMIT;
-    const page = expiredCache.slice(start, start+EXP_LIMIT);
+    const start = (expiredCurrentPage - 1) * EXP_LIMIT;
+    const page = expiredCache.slice(start, start + EXP_LIMIT);
 
-    page.forEach(e=>{
+    page.forEach(e => {
       const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${e.L||""}</td>
+      tr.innerHTML = `<td>${e.L || ""}</td>
         <td>${(e.nombre||"").toUpperCase()}</td>
-        <td>${e.dni||""}</td>
-        <td>${e.codigoIngreso||""}</td>
-        <td>${e.codigoSalida||""}</td>
-        <td>${e.tipo||""}</td>
-        <td title="${horaHHMM(e.when)}">${e.when ? fechaDDMMYYYY(e.when) : ""}</td>`;
+        <td>${e.dni || ""}</td>
+        <td>${e.codigoIngreso || ""}</td>
+        <td>${e.codigoSalida || ""}</td>
+        <td>${e.tipo || ""}</td>
+        <td title="${e.when ? horaHHMM(e.when) : ''}">${e.when ? fechaDDMMYYYY(e.when) : ""}</td>`;
       expiredTableBody.appendChild(tr);
     });
 
     renderExpiredPagination(expiredCache.length);
   }
 }
+
 /* ----------------------------- NOVEDADES - agregar/editar/eliminar + render ----------------------------- */
 const novedadesTableBody = document.querySelector("#novedadesTable tbody");
 const novTxt = document.getElementById("novedadTexto");
@@ -422,6 +428,7 @@ if(novedadesTableBody){
 /* ----------------------------- Cierres/Helpers UI ----------------------------- */
 document.getElementById("closeFichaBtn").addEventListener("click", ()=>{ document.getElementById("fichaModal").classList.remove("active"); });
 document.getElementById("cancelEditBtn").addEventListener("click", ()=>{ document.getElementById("editUserModal").classList.remove("active"); });
+// app.js (PARTE 2) - movimientos, impresión, escaneo, filtros
 
 // app.js (PARTE 2) - movimientos, impresión, escaneo, filtros
 
@@ -482,46 +489,36 @@ function renderMovsPage() {
     document.querySelectorAll('.autorizante-th').forEach(th => th.style.display = 'none');
   }
 
- page.forEach(item => {
-  const tr = document.createElement("tr");
-  const autorizText = item.autorizante || "";
-  tr.innerHTML = `<td>${item.L || ""}</td><td>${(item.nombre || "").toUpperCase()}</td>
-    <td>${item.entrada || ""}</td><td>${item.salida || ""}</td><td>${item.tipo || ""}</td>
-    <td class="autorizante-td">${autorizText}</td>
-    <td>
-      <button class="ficha-btn" data-dni="${item.dni || ''}">FICHA</button>
-      <button class="delMov" data-id="${item.__id}">Eliminar</button>
-    </td>`;
-  movimientosTableBody.appendChild(tr);
-});
+  page.forEach(item => {
+    const tr = document.createElement("tr");
+    const autorizText = item.autorizante || "";
+    tr.innerHTML = `<td>${item.L || ""}</td><td>${(item.nombre || "").toUpperCase()}</td>
+      <td>${item.entrada || ""}</td><td>${item.salida || ""}</td><td>${item.tipo || ""}</td>
+      <td class="autorizante-td">${autorizText}</td>
+      <td>
+        <button class="ficha-btn" data-L="${item.L}">FICHA</button>
+        <button class="delMov" data-id="${item.__id}">Eliminar</button>
+      </td>`;
+    movimientosTableBody.appendChild(tr);
 
-// ficha desde panel - versión corregida
-tr.querySelector(".ficha-btn").addEventListener("click", async (e) => {
-  const dni = (e.currentTarget.dataset.dni || "").trim(); // usamos DNI en lugar de L
-  if (!dni) {
-    alert("Esta ficha no puede abrirse porque el usuario no tiene DNI cargado");
-    return;
-  }
-  try {
-    const snap = await getDocs(query(usuariosRef, where("dni", "==", dni), limit(1)));
-    if (!snap.empty) {
-      const u = snap.docs[0].data();
-      document.getElementById("fichaL").textContent = u.L || "";
-      document.getElementById("fichaNombre").textContent = (u.nombre || "").toUpperCase();
-      document.getElementById("fichaDni").textContent = u.dni || "";
-      document.getElementById("fichaCelular").textContent = u.celular || "";
-      document.getElementById("fichaAutorizante").textContent = u.autorizante || "";
-      document.getElementById("fichaFechaExp").textContent = u.fechaExpedicion ? fechaDDMMYYYY(u.fechaExpedicion) : "";
-      document.getElementById("fichaTipo").textContent = u.tipo || "";
-      document.getElementById("fichaModal").classList.add("active");
-    } else {
-      alert("No se encontró ficha para este usuario");
-    }
-  } catch (err) {
-    console.error(err);
-    alert("Error al buscar ficha");
-  }
-});
+    // ficha desde panel
+    tr.querySelector(".ficha-btn").addEventListener("click", async (e) => {
+      const L = e.currentTarget.dataset.L;
+      try {
+        const snap = await getDocs(query(usuariosRef, where("L", "==", L), limit(1)));
+        if (!snap.empty) {
+          const u = snap.docs[0].data();
+          document.getElementById("fichaL").textContent = u.L || "";
+          document.getElementById("fichaNombre").textContent = (u.nombre || "").toUpperCase();
+          document.getElementById("fichaDni").textContent = u.dni || "";
+          document.getElementById("fichaCelular").textContent = u.celular || "";
+          document.getElementById("fichaAutorizante").textContent = u.autorizante || "";
+          document.getElementById("fichaFechaExp").textContent = u.fechaExpedicion ? fechaDDMMYYYY(u.fechaExpedicion) : "";
+          document.getElementById("fichaTipo").textContent = u.tipo || "";
+          document.getElementById("fichaModal").classList.add("active");
+        } else { alert("No se encontró ficha para ese lote"); }
+      } catch (err) { console.error(err); alert("Error al buscar ficha"); }
+    });
 
     // eliminar movimiento
     tr.querySelector(".delMov").addEventListener("click", async e => {
@@ -656,43 +653,9 @@ document.querySelectorAll(".user-filter-btn").forEach(btn=>{
     filterUsersTable();
   });
 });
-
 function filterUsersTable(){
   document.querySelectorAll('#usersTable tbody tr').forEach(tr=>{
     const tipo = tr.children[6] ? tr.children[6].textContent.trim() : "";
     tr.style.display = (activeUserFilter === "todos" || tipo === activeUserFilter) ? "" : "none";
   });
 }
-
-// ficha desde USUARIOS - versión corregida con delegación de eventos
-const usersTable = document.getElementById("usersTable");
-usersTable.addEventListener("click", async (e) => {
-  if (!e.target.classList.contains("users-ficha-btn")) return;
-
-  const dni = (e.target.dataset.dni || "").trim();
-  if (!dni) {
-    alert("Esta ficha no puede abrirse porque el usuario no tiene DNI cargado");
-    return;
-  }
-
-  try {
-    const snap = await getDocs(query(usuariosRef, where("dni", "==", dni), limit(1)));
-    if (!snap.empty) {
-      const u = snap.docs[0].data();
-      document.getElementById("fichaL").textContent = u.L || "";
-      document.getElementById("fichaNombre").textContent = (u.nombre || "").toUpperCase();
-      document.getElementById("fichaDni").textContent = u.dni || "";
-      document.getElementById("fichaCelular").textContent = u.celular || "";
-      document.getElementById("fichaAutorizante").textContent = u.autorizante || "";
-      document.getElementById("fichaFechaExp").textContent = u.fechaExpedicion ? fechaDDMMYYYY(u.fechaExpedicion) : "";
-      document.getElementById("fichaTipo").textContent = u.tipo || "";
-      document.getElementById("fichaModal").classList.add("active");
-    } else {
-      alert("No se encontró ficha para este usuario");
-    }
-  } catch (err) {
-    console.error(err);
-    alert("Error al buscar ficha");
-  }
-});
-
