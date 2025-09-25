@@ -492,8 +492,16 @@ function renderMovsPage() {
   page.forEach(item => {
     const tr = document.createElement("tr");
     const autorizText = item.autorizante || "";
-    tr.innerHTML = `<td>${item.L || ""}</td><td>${(item.nombre || "").toUpperCase()}</td>
-      <td>${item.entrada || ""}</td><td>${item.salida || ""}</td><td>${item.tipo || ""}</td>
+
+    // Creamos tooltips para H. Entrada y H. Salida con hora en 24h
+    const entradaTooltip = item.horaEntrada ? `${("0"+item.horaEntrada.getHours()).slice(-2)}:${("0"+item.horaEntrada.getMinutes()).slice(-2)}` : "";
+    const salidaTooltip  = item.horaSalida  ? `${("0"+item.horaSalida.getHours()).slice(-2)}:${("0"+item.horaSalida.getMinutes()).slice(-2)}` : "";
+
+    tr.innerHTML = `<td>${item.L || ""}</td>
+      <td>${(item.nombre || "").toUpperCase()}</td>
+      <td title="${entradaTooltip}">${item.entrada || ""}</td>
+      <td title="${salidaTooltip}">${item.salida || ""}</td>
+      <td>${item.tipo || ""}</td>
       <td class="autorizante-td">${autorizText}</td>
       <td>
         <button class="ficha-btn" data-L="${item.L}">FICHA</button>
@@ -549,6 +557,7 @@ onSnapshot(query(movimientosRef, orderBy("hora", "desc")), snapshot => {
 
   if (nuevos) currentPage = 1;
   renderMovsPage();
+});
 
   // auto-imprimir propietarios cada múltiplo de 25
   const propietariosCount = movimientosCache.filter(m => m.tipo === "propietario").length;
@@ -659,4 +668,5 @@ function filterUsersTable(){
     tr.style.display = (activeUserFilter === "todos" || tipo === activeUserFilter) ? "" : "none";
   });
 }
+
 
