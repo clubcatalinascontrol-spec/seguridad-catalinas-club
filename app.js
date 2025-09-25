@@ -503,18 +503,17 @@ function renderMovsPage() {
       </td>`;
     movimientosTableBody.appendChild(tr);
 
-// ficha desde panel
+// ficha desde panel - versión corregida
 tr.querySelector(".ficha-btn").addEventListener("click", async (e) => {
-  const L = (e.currentTarget.dataset.L || "").trim(); // limpio espacios
-  if(!L){ alert("Lote inválido"); return; }
+  const dni = (e.currentTarget.dataset.dni || "").trim(); // usamos DNI en lugar de L
+  if (!dni) {
+    alert("Esta ficha no puede abrirse porque el usuario no tiene DNI cargado");
+    return;
+  }
   try {
-    const snap = await getDocs(query(usuariosRef, where("L", "==", L), limit(1)));
+    const snap = await getDocs(query(usuariosRef, where("dni", "==", dni), limit(1)));
     if (!snap.empty) {
       const u = snap.docs[0].data();
-      if(!u.dni || u.dni.trim() === ""){
-        alert("Esta ficha no puede abrirse porque el usuario no tiene DNI cargado");
-        return;
-      }
       document.getElementById("fichaL").textContent = u.L || "";
       document.getElementById("fichaNombre").textContent = (u.nombre || "").toUpperCase();
       document.getElementById("fichaDni").textContent = u.dni || "";
@@ -523,11 +522,11 @@ tr.querySelector(".ficha-btn").addEventListener("click", async (e) => {
       document.getElementById("fichaFechaExp").textContent = u.fechaExpedicion ? fechaDDMMYYYY(u.fechaExpedicion) : "";
       document.getElementById("fichaTipo").textContent = u.tipo || "";
       document.getElementById("fichaModal").classList.add("active");
-    } else { 
-      alert("No se encontró ficha para ese lote"); 
+    } else {
+      alert("No se encontró ficha para este usuario");
     }
   } catch (err) {
-    console.error(err); 
+    console.error(err);
     alert("Error al buscar ficha");
   }
 });
@@ -703,6 +702,7 @@ document.querySelectorAll(".users-ficha-btn").forEach(btn=>{
     }
   });
 });
+
 
 
 
