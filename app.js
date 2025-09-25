@@ -448,7 +448,7 @@ function renderMovsPage(){
     let entradaFecha = "";
     if(item.hora && item.hora.toDate){
       const d = item.hora.toDate();
-      if(item.entrada){ // solo si hay entrada
+      if(item.entrada){
         entradaHora = d.toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"});
         entradaFecha = d.toLocaleDateString("es-AR");
       }
@@ -459,7 +459,7 @@ function renderMovsPage(){
     let salidaFecha = "";
     if(item.hora && item.hora.toDate){
       const d = item.hora.toDate();
-      if(item.salida){ // solo si hay salida
+      if(item.salida){
         salidaHora = d.toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"});
         salidaFecha = d.toLocaleDateString("es-AR");
       }
@@ -538,7 +538,6 @@ onSnapshot(query(movimientosRef, orderBy("hora", "desc")), snapshot => {
     printMovimientosPorTipo("propietario", true);
   }
 });
-
 /* ----------------------------- IMPRIMIR movimientos (A4, font-size reducido) ----------------------------- */
 function printMovimientosPorTipo(tipo, auto=false){
   if(!auto && !isUnlocked){ alert("Operación no permitida."); return; }
@@ -652,4 +651,5 @@ function filterUsersTable(){
 }
 
 /* Nota: dejamos las demás listeners (closeFicha, cancelEdit) en Parte 1 para mantener continuidad */
+
 
