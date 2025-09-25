@@ -286,103 +286,163 @@ if(novedadesTableBody){
 document.getElementById("closeFichaBtn").addEventListener("click", ()=>{ document.getElementById("fichaModal").classList.remove("active"); });
 document.getElementById("cancelEditBtn").addEventListener("click", ()=>{ document.getElementById("editUserModal").classList.remove("active"); });
 
-/* ----------------------------- MOVIMIENTOS (PANEL) + paginación ----------------------------- */
-const movimientosTableBody=document.querySelector("#movimientosTable tbody");
-const paginationDiv=document.getElementById("pagination");
-const MOV_LIMIT=25;
-let movimientosCache=[], currentPage=1, activeTipo = "todos";
-
-document.querySelectorAll(".tab-btn").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-        document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
-        btn.classList.add("active");
-        activeTipo = btn.dataset.tipo;
-        currentPage = 1;
-        renderMovsPage();
-    });
-});
-
-const printActiveBtn = document.getElementById("printActiveBtn");
-if(printActiveBtn) printActiveBtn.addEventListener("click", ()=>{ if(!isUnlocked){ alert("Operación no permitida."); return; } printMovimientosPorTipo(activeTipo); });
-
-function renderPagination(totalItems){
-    const totalPages=Math.max(1,Math.ceil(totalItems/MOV_LIMIT));
-    paginationDiv.innerHTML="";
-    for(let p=1;p<=totalPages;p++){
-        const btn=document.createElement("button");
-        btn.textContent=p;
-        if(p===currentPage){ btn.style.background="#d8a800"; btn.style.color="#111"; }
-        btn.addEventListener("click", ()=>{ currentPage=p; renderMovsPage(); });
-        paginationDiv.appendChild(btn);
-    }
-}
-
-function shouldShowAutorizanteColumn(tipo){
-    return ["obrero","invitado","empleado","otro"].includes(tipo);
-}
-
-function renderMovsPage(){
-    if(!movimientosTableBody) return;
-    movimientosTableBody.innerHTML="";
-    const filtered = activeTipo === "todos" ? movimientosCache : movimientosCache.filter(m=>m.tipo===activeTipo);
-    const start=(currentPage-1)*MOV_LIMIT;
-    const page = filtered.slice(start, start+MOV_LIMIT);
-    const table = document.getElementById("movimientosTable");
-    const showAut = shouldShowAutorizanteColumn(activeTipo);
-    if(showAut){
-        table.classList.remove('autorizante-hidden');
-        document.querySelectorAll('.autorizante-th').forEach(th=>th.style.display='table-cell');
-    } else {
-        table.classList.add('autorizante-hidden');
-        document.querySelectorAll('.autorizante-th').forEach(th=>th.style.display='none');
-    }
-    page.forEach(item=>{
-        const tr=document.createElement("tr");
-        const autorizText = item.autorizante || "";
-        tr.innerHTML = `<td>${item.L||""}</td><td>${(item.nombre||"").toUpperCase()}</td>
-        <td>${item.entrada||""}</td><td>${item.salida||""}</td><td>${item.tipo||""}</td><td class="autorizante-td">${autorizText}</td>
-        <td>
-            <button class="ficha-btn" data-L="${item.L}">FICHA</button>
-            <button class="delMov" data-id="${item.__id}">Eliminar</button>
-        </td>`;
-        movimientosTableBody.appendChild(tr);
-
-        // ficha
-        tr.querySelector(".ficha-btn").addEventListener("click", async (e)=>{
-            const L = e.currentTarget.dataset.L;
-            try{
-                const snap = await getDocs(query(usuariosRef, where("L","==",L), limit(1)));
-                if(!snap.empty){
-                    const u = snap.docs[0].data();
-                    document.getElementById("fichaL").textContent = u.L||"";
-                    document.getElementById("fichaNombre").textContent = (u.nombre||"").toUpperCase();
-                    document.getElementById("fichaDni").textContent = u.dni||"";
-                    document.getElementById("fichaCelular").textContent = u.celular||"";
-                    document.getElementById("fichaAutorizante").textContent = u.autorizante||"";
-                    document.getElementById("fichaFechaExp").textContent = u.fechaExpedicion ? fechaDDMMYYYY(u.fechaExpedicion) : "";
-                    document.getElementById("fichaTipo").textContent = u.tipo||"";
-                    document.getElementById("fichaModal").classList.add("active");
                 } else { alert("No se encontró ficha para ese lote"); }
             }catch(err){ console.error(err); alert("Error al buscar ficha"); }
         });
 
-        // eliminar movimiento
-        tr.querySelector(".delMov").addEventListener("click", async e=>{
-            if(!isUnlocked){ alert("Operación no permitida. Introduzca la contraseña de apertura."); return; }
-            if(!confirm("Eliminar movimiento permanentemente?")) return;
-            try{ await deleteDoc(doc(db,"movimientos",e.currentTarget.dataset.id)); } catch(err){ console.error(err); alert("Error eliminando movimiento"); }
-        });
-    });
-    renderPagination(filtered.length);
-}
+/* MOVIMIENTOS (pestañas por tipo y paginación) ----------------------------- */
+const movimientosTableBody = document.querySelector("#movimientosTable tbody");
+const paginationDiv = document.getElementById("pagination");
+const MOV_LIMIT = 25;
+let movimientosCache = [], currentPage = 1, activeTipo = "todos";
 
-onSnapshot(query(movimientosRef, orderBy("hora","desc")), snapshot=>{
-    movimientosCache = snapshot.docs.map(d=>({__id:d.id,...d.data()}));
-    const totalPages=Math.max(1,Math.ceil(movimientosCache.length/MOV_LIMIT));
-    if(currentPage>totalPages) currentPage=totalPages;
+// pestañas tipo
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    activeTipo = btn.dataset.tipo;
+    currentPage = 1;
     renderMovsPage();
+  });
 });
 
+// imprimir pestaña activa
+const printActiveBtn = document.getElementById("printActiveBtn");
+if (printActiveBtn) printActiveBtn.addEventListener("click", () => {
+  if (!isUnlocked) {
+    alert("Operación no permitida.");
+    return;
+  }
+  printMovimientosPorTipo(activeTipo);
+});
+
+function renderPagination(totalItems) {
+  const totalPages = Math.max(1, Math.ceil(totalItems / MOV_LIMIT));
+  paginationDiv.innerHTML = "";
+  for (let p = 1; p <= totalPages; p++) {
+    const btn = document.createElement("button");
+    btn.textContent = p;
+    if (p === currentPage) {
+      btn.style.background = "#d8a800";
+      btn.style.color = "#111";
+    }
+    btn.addEventListener("click", () => {
+      currentPage = p;
+      renderMovsPage();
+    });
+    paginationDiv.appendChild(btn);
+  }
+}
+
+function shouldShowAutorizanteColumn(tipo) {
+  return ["obrero", "invitado", "empleado", "otro"].includes(tipo);
+}
+
+function renderMovsPage() {
+  if (!movimientosTableBody) return;
+  movimientosTableBody.innerHTML = "";
+
+  const filtered = activeTipo === "todos"
+    ? movimientosCache
+    : movimientosCache.filter(m => m.tipo === activeTipo);
+
+  const start = (currentPage - 1) * MOV_LIMIT;
+  const page = filtered.slice(start, start + MOV_LIMIT);
+  const table = document.getElementById("movimientosTable");
+  const showAut = shouldShowAutorizanteColumn(activeTipo);
+
+  if (showAut) {
+    table.classList.remove('autorizante-hidden');
+    document.querySelectorAll('.autorizante-th').forEach(th => th.style.display = 'table-cell');
+  } else {
+    table.classList.add('autorizante-hidden');
+    document.querySelectorAll('.autorizante-th').forEach(th => th.style.display = 'none');
+  }
+
+  page.forEach(item => {
+    const tr = document.createElement("tr");
+    const autorizText = item.autorizante || "";
+
+    // Hora visible, fecha como tooltip
+    const entradaHora = item.entrada ? new Date(item.entrada).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
+    const entradaFecha = item.entrada ? new Date(item.entrada).toLocaleDateString() : "";
+
+    const salidaHora = item.salida ? new Date(item.salida).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
+    const salidaFecha = item.salida ? new Date(item.salida).toLocaleDateString() : "";
+
+    tr.innerHTML = `
+      <td>${item.L || ""}</td>
+      <td>${(item.nombre || "").toUpperCase()}</td>
+      <td title="${entradaFecha}">${entradaHora}</td>
+      <td title="${salidaFecha}">${salidaHora}</td>
+      <td>${item.tipo || ""}</td>
+      <td class="autorizante-td">${autorizText}</td>
+      <td>
+        <button class="ficha-btn" data-L="${item.L}">FICHA</button>
+        <button class="delMov" data-id="${item.__id}">Eliminar</button>
+      </td>
+    `;
+
+    movimientosTableBody.appendChild(tr);
+
+    // ficha desde panel
+    tr.querySelector(".ficha-btn").addEventListener("click", async (e) => {
+      const L = e.currentTarget.dataset.L;
+      try {
+        const snap = await getDocs(query(usuariosRef, where("L", "==", L), limit(1)));
+        if (!snap.empty) {
+          const u = snap.docs[0].data();
+          document.getElementById("fichaL").textContent = u.L || "";
+          document.getElementById("fichaNombre").textContent = (u.nombre || "").toUpperCase();
+          document.getElementById("fichaDni").textContent = u.dni || "";
+          document.getElementById("fichaCelular").textContent = u.celular || "";
+          document.getElementById("fichaAutorizante").textContent = u.autorizante || "";
+          document.getElementById("fichaFechaExp").textContent = u.fechaExpedicion ? fechaDDMMYYYY(u.fechaExpedicion) : "";
+          document.getElementById("fichaTipo").textContent = u.tipo || "";
+          document.getElementById("fichaModal").classList.add("active");
+        } else {
+          alert("No se encontró ficha para ese lote");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Error al buscar ficha");
+      }
+    });
+
+    // eliminar movimiento
+    tr.querySelector(".delMov").addEventListener("click", async e => {
+      if (!isUnlocked) {
+        alert("Operación no permitida. Introduzca la contraseña de apertura.");
+        return;
+      }
+      if (!confirm("Eliminar movimiento permanentemente?")) return;
+      try {
+        await deleteDoc(doc(db, "movimientos", e.currentTarget.dataset.id));
+      } catch (err) {
+        console.error(err);
+        alert("Error eliminando movimiento");
+      }
+    });
+  });
+
+  renderPagination(filtered.length);
+}
+
+/* ----------------------------- Escuchar movimientos (order by hora desc) ----------------------------- */
+onSnapshot(query(movimientosRef, orderBy("hora", "desc")), snapshot => {
+  // cada snapshot es un documento nuevo, no sobrescribe filas previas
+  movimientosCache = snapshot.docs.map(d => ({ __id: d.id, ...d.data() }));
+  const totalPages = Math.max(1, Math.ceil(movimientosCache.length / MOV_LIMIT));
+  if (currentPage > totalPages) currentPage = totalPages;
+  renderMovsPage();
+
+  // auto-imprimir propietarios cada múltiplo de 25
+  const propietariosCount = movimientosCache.filter(m => m.tipo === "propietario").length;
+  if (propietariosCount > 0 && propietariosCount % MOV_LIMIT === 0) {
+    printMovimientosPorTipo("propietario", true);
+  }
+});
 /* ----------------------------- IMPRIMIR movimientos ----------------------------- */
 function printMovimientosPorTipo(tipo, auto=false){
     if(!auto && !isUnlocked){ alert("Operación no permitida."); return; }
@@ -401,7 +461,6 @@ function printMovimientosPorTipo(tipo, auto=false){
     html += `</tbody></table></body></html>`;
     w.document.write(html);
     w.print();
-}
 
 /* ----------------------------- ESCANEAR CÓDIGOS ----------------------------- */
 const scanBtn = document.getElementById("scanBtn");
@@ -466,3 +525,4 @@ function filterUsersTable(){
         tr.style.display = (activeUserFilter==="todos" || tipo===activeUserFilter) ? "" : "none";
     });
 }
+
