@@ -43,10 +43,7 @@ body {
 }
 
 /* NAV / TABS */
-.nav-center {
-  display: flex; gap: 12px; align-items: center;
-}
-
+.nav-center { display: flex; gap: 12px; align-items: center; }
 .nav-btn {
   background: var(--tab-inactive);
   color: var(--text);
@@ -57,13 +54,11 @@ body {
   cursor: pointer;
   transition: all 0.2s ease;
 }
-
 .nav-btn.active {
   background: var(--tab-active);
   color: #111;
   transform: translateY(-1px);
 }
-
 .nav-btn:hover {
   opacity: 0.9;
   transform: translateY(-2px);
@@ -77,6 +72,12 @@ body {
   box-shadow: 0 6px 18px rgba(0,0,0,0.12);
   border-bottom: 4px solid rgba(0,0,0,0.06);
   padding: 12px 8px;
+}
+.password-inner {
+  max-width: 1100px;
+  width: 100%;
+  display: flex; gap: 12px; align-items: center; justify-content: center;
+  flex-direction: column; padding: 6px 12px;
 }
 
 /* PAGES */
@@ -168,7 +169,6 @@ button:not(.main-action):hover {
 }
 
 .sheet tr:hover { background: rgba(212,160,23,0.1); }
-
 .sheet tr.recent { background: rgba(0,200,255,0.12); transition: background 4s ease; }
 
 .sheet td button { padding: 6px 8px; border-radius: 6px; cursor: pointer; border: none; }
@@ -190,6 +190,7 @@ button:not(.main-action):hover {
 .scanner-box p { margin: 6px 0; color: var(--text); }
 .scanner-box strong { color: #111; }
 
+/* TOOLTIP */
 .tooltip { position: relative; cursor: help; }
 .tooltip:hover::after {
   content: attr(title);
@@ -206,9 +207,7 @@ button:not(.main-action):hover {
   .form-row input, .form-row select { min-width: 120px; }
   .scanner-box input, .scanner-box select { width: 200px; }
 }
-@media print {
-  body { font-size: 12px; }
-}
+@media print { body { font-size: 12px; } }
 
 /* AUTORIZANTE TOGGLE */
 .autorizante-hidden .autorizante-th, .autorizante-hidden td.autorizante-td { display: none; }
