@@ -672,18 +672,17 @@ function filterUsersTable(){
   });
 }
 
-// ficha desde USUARIOS
-document.querySelectorAll(".users-ficha-btn").forEach(btn=>{
+// ficha desde USUARIOS - versión corregida
+document.querySelectorAll(".users-ficha-btn").forEach(btn => {
   btn.addEventListener("click", async e => {
-    const L = (e.currentTarget.dataset.L || "").trim();
     const dni = (e.currentTarget.dataset.dni || "").trim();
-    if(!L || !dni){ 
-      alert("Esta ficha no puede abrirse porque el usuario no tiene DNI cargado"); 
-      return; 
+    if (!dni) {
+      alert("Esta ficha no puede abrirse porque el usuario no tiene DNI cargado");
+      return;
     }
     try {
-      const snap = await getDocs(query(usuariosRef, where("L", "==", L), where("dni","==", dni), limit(1)));
-      if(!snap.empty){
+      const snap = await getDocs(query(usuariosRef, where("dni", "==", dni), limit(1)));
+      if (!snap.empty) {
         const u = snap.docs[0].data();
         document.getElementById("fichaL").textContent = u.L || "";
         document.getElementById("fichaNombre").textContent = (u.nombre || "").toUpperCase();
@@ -693,18 +692,12 @@ document.querySelectorAll(".users-ficha-btn").forEach(btn=>{
         document.getElementById("fichaFechaExp").textContent = u.fechaExpedicion ? fechaDDMMYYYY(u.fechaExpedicion) : "";
         document.getElementById("fichaTipo").textContent = u.tipo || "";
         document.getElementById("fichaModal").classList.add("active");
-      } else { 
-        alert("No se encontró ficha para ese usuario"); 
+      } else {
+        alert("No se encontró ficha para este usuario");
       }
-    } catch(err){ 
-      console.error(err); 
-      alert("Error al buscar ficha"); 
+    } catch (err) {
+      console.error(err);
+      alert("Error al buscar ficha");
     }
   });
 });
-
-
-
-
-
-
