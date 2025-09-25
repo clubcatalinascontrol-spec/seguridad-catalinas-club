@@ -495,7 +495,7 @@ onSnapshot(query(movimientosRef, orderBy("hora", "desc")), snapshot => {
     }
   });
 
-  // renderizamos página actual solo una vez, con cache actualizada
+  if (nuevos) currentPage = 1;
   renderMovsPage();
 
   // auto-imprimir propietarios cada múltiplo de 25
@@ -505,13 +505,14 @@ onSnapshot(query(movimientosRef, orderBy("hora", "desc")), snapshot => {
   }
 });
 
-/* ----------------------------- ESCANEAR CÓDIGOS (movimientos independientes) ----------------------------- */
+/* ----------------------------- ESCANEAR CÓDIGOS (movimientos totalmente independientes) ----------------------------- */
 scanInput.addEventListener("input", async () => {
   const raw = (scanInput.value || "").trim();
   if (scanProcessing) return;
   if (raw.length < 8) return;
   scanProcessing = true;
   const code = raw.substring(0,8).toUpperCase();
+
   try {
     let userDoc = null;
     let tipoAccion = "entrada";
@@ -528,7 +529,7 @@ scanInput.addEventListener("input", async () => {
     }
 
     const u = userDoc.data();
-    // SIEMPRE crear un registro nuevo
+    // Siempre crear registro totalmente nuevo
     const newMov = tipoAccion === "entrada"
       ? { L: u.L, nombre: u.nombre, dni: u.dni||"", tipo: u.tipo, autorizante: u.autorizante||"", entrada: horaActualStr(), salida: "", hora: serverTimestamp() }
       : { L: u.L, nombre: u.nombre, dni: u.dni||"", tipo: u.tipo, autorizante: u.autorizante||"", entrada: "", salida: horaActualStr(), hora: serverTimestamp() };
@@ -539,6 +540,7 @@ scanInput.addEventListener("input", async () => {
     setTimeout(()=>scanOk.style.display = "none", 900);
     scanInput.value = "";
     scanMessage.textContent = "";
+
   } catch (err) {
     console.error(err);
     scanMessage.style.color = "red";
@@ -546,121 +548,3 @@ scanInput.addEventListener("input", async () => {
     setTimeout(()=>{ scanMessage.textContent=""; },1800);
   } finally { scanProcessing = false; }
 });
-
-/* ----------------------------- IMPRIMIR movimientos (A4, font-size reducido) ----------------------------- */
-function printMovimientosPorTipo(tipo, auto=false){
-  if(!auto && !isUnlocked){ alert("Operación no permitida."); return; }
-  const filtered = tipo==="todos" ? movimientosCache : movimientosCache.filter(m=>m.tipo===tipo);
-  const toPrint = filtered.slice(0,25);
-  const w = window.open("","_blank","width=900,height=600");
-  const title = tipo==="todos" ? "Movimientos - Todos" : `Movimientos - ${tipo}`;
-  let html = `<html><head><title>${title}</title><style>
-    @page{size:A4;margin:6mm;} body{font-family:Arial,Helvetica,sans-serif;font-size:10px;color:#000;}
-    table{width:100%;border-collapse:collapse} th,td{border:1px solid #000;padding:2px;text-align:center;font-size:10px}
-    thead th{background:#fff;font-weight:700;color:#000}
-    /* imprimir en B/N */ img, svg { filter: grayscale(100%); }
-    </style></head><body><h3>${title}</h3><table><thead><tr><th>#L</th><th>Nombre</th><th>DNI</th><th>H. Entrada</th><th>H. Salida</th><th>Tipo</th></tr></thead><tbody>`;
-  toPrint.forEach(m=>{
-    html += `<tr><td>${m.L||""}</td><td>${(m.nombre||"").toUpperCase()}</td><td>${m.dni||""}</td><td>${m.entrada||""}</td><td>${m.salida||""}</td><td>${m.tipo||""}</td></tr>`;
-  });
-  html += `</tbody></table></body></html>`;
-  w.document.write(html);
-  w.print();
-}
-
-/* ----------------------------- ESCANEAR CÓDIGOS: ahora NO cierra el modal hasta cancelar (permite múltiples códigos) ----------------------------- */
-const scanBtn = document.getElementById("scanBtn");
-const scanModal = document.getElementById("scanModal");
-const scanInput = document.getElementById("scanInput");
-const cancelScanBtn = document.getElementById("cancelScanBtn");
-const scanMessage = document.getElementById("scanMessage");
-const scanOk = document.getElementById("scanOk");
-let scanProcessing = false;
-
-scanBtn.addEventListener("click", () => {
-  if(!isUnlocked){ alert("Operación no permitida. Introduzca la contraseña de apertura."); return; }
-  scanModal.classList.add("active");
-  scanInput.value = "";
-  scanMessage.textContent = "";
-  scanInput.focus();
-});
-cancelScanBtn.addEventListener("click", () => {
-  // cerrar el modal (usuario decide cuándo salir)
-  scanModal.classList.remove("active");
-  scanMessage.textContent = "";
-  scanInput.value = "";
-});
-
-scanInput.addEventListener("input", async () => {
-  const raw = (scanInput.value || "").trim();
-  if (scanProcessing) return;
-  if (raw.length < 8) return;
-  scanProcessing = true;
-  const code = raw.substring(0,8).toUpperCase();
-  try {
-    let userDoc = null;
-    let tipoAccion = "entrada";
-    let snap = await getDocs(query(usuariosRef, where("codigoIngreso","==",code)));
-    if(!snap.empty){ userDoc = snap.docs[0]; tipoAccion = "entrada"; }
-    else { snap = await getDocs(query(usuariosRef, where("codigoSalida","==",code))); if(!snap.empty){ userDoc = snap.docs[0]; tipoAccion = "salida"; } }
-
-    if(!userDoc){
-      scanMessage.style.color = "red";
-      scanMessage.textContent = "Código no válido";
-      setTimeout(()=>{ scanMessage.textContent = ""; }, 1800);
-      scanProcessing = false; return;
-    }
-    const u = userDoc.data();
-    if(tipoAccion === "entrada"){
-      await addDoc(movimientosRef, { L: u.L, nombre: u.nombre, dni: u.dni || "", tipo: u.tipo, autorizante: u.autorizante || "", entrada: horaActualStr(), salida: "", hora: serverTimestamp() });
-    } else {
-      const movQ = query(movimientosRef, where("L","==",u.L), where("salida","==",""));
-      const movSnap = await getDocs(movQ);
-      if(!movSnap.empty){
-        let chosen = movSnap.docs[0];
-        let chosenTime = chosen.data().hora && chosen.data().hora.toDate ? chosen.data().hora.toDate() : new Date(0);
-        movSnap.docs.forEach(d=>{
-          const t = d.data().hora && d.data().hora.toDate ? d.data().hora.toDate() : new Date(0);
-          if(t > chosenTime){ chosen = d; chosenTime = t; }
-        });
-        await updateDoc(doc(db,"movimientos",chosen.id), { salida: horaActualStr() });
-      } else {
-        await addDoc(movimientosRef, { L: u.L, nombre: u.nombre, dni: u.dni || "", tipo: u.tipo, autorizante: u.autorizante || "", entrada: "", salida: horaActualStr(), hora: serverTimestamp() });
-      }
-    }
-    // mostrar OK brevemente pero mantener modal abierto (para más escaneos)
-    scanOk.style.display = "inline-block";
-    setTimeout(()=>scanOk.style.display = "none", 900);
-    // limpio input para permitir pegar/cargar otro código sin cerrar
-    scanInput.value = "";
-    scanMessage.textContent = "";
-  } catch (err) {
-    console.error(err);
-    scanMessage.style.color = "red";
-    scanMessage.textContent = "Error al registrar";
-    setTimeout(()=>{ scanMessage.textContent=""; },1800);
-  } finally { scanProcessing = false; }
-});
-
-/* ----------------------------- USUARIOS - filtros (botones) ----------------------------- */
-let activeUserFilter = "todos";
-document.querySelectorAll(".user-filter-btn").forEach(btn=>{
-  btn.addEventListener("click", ()=>{
-    document.querySelectorAll(".user-filter-btn").forEach(b=>b.classList.remove("active"));
-    btn.classList.add("active");
-    activeUserFilter = btn.dataset.tipo;
-    filterUsersTable();
-  });
-});
-function filterUsersTable(){
-  document.querySelectorAll('#usersTable tbody tr').forEach(tr=>{
-    const tipo = tr.children[6] ? tr.children[6].textContent.trim() : "";
-    tr.style.display = (activeUserFilter === "todos" || tipo === activeUserFilter) ? "" : "none";
-  });
-}
-
-/* Nota: dejamos las demás listeners (closeFicha, cancelEdit) en Parte 1 para mantener continuidad */
-
-
-
-
