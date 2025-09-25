@@ -198,30 +198,11 @@ onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
       <td>${u.fechaExpedicion ? fechaDDMMYYYY(u.fechaExpedicion) : ""}</td>
       <td>${u.tipo||""}</td>
       <td>
-        <button class="ficha-btn" data-id="${docSnap.id}">FICHA</button>
         <button class="edit-btn" data-id="${docSnap.id}">Editar</button>
         <button class="del-btn" data-id="${docSnap.id}">Eliminar</button>
         <button class="print-btn" data-id="${docSnap.id}">Imprimir Tarjeta</button>
       </td>`;
     usersTableBody.appendChild(tr);
-
-    // FICHA
-    tr.querySelector(".ficha-btn").addEventListener("click", async ()=>{
-      try{
-        const snap = await getDocs(query(usuariosRef, where("__name__","==",docSnap.id), limit(1)));
-        if(!snap.empty){
-          const u2 = snap.docs[0].data();
-          document.getElementById("fichaL").textContent = u2.L||"";
-          document.getElementById("fichaNombre").textContent = (u2.nombre||"").toUpperCase();
-          document.getElementById("fichaDni").textContent = u2.dni||"";
-          document.getElementById("fichaCelular").textContent = u2.celular||"";
-          document.getElementById("fichaAutorizante").textContent = u2.autorizante||"";
-          document.getElementById("fichaFechaExp").textContent = u2.fechaExpedicion ? fechaDDMMYYYY(u2.fechaExpedicion) : "";
-          document.getElementById("fichaTipo").textContent = u2.tipo||"";
-          document.getElementById("fichaModal").classList.add("active");
-        } else alert("No se encontró ficha");
-      }catch(err){ console.error(err); alert("Error al buscar ficha"); }
-    });
 
     // EDITAR
     tr.querySelector(".edit-btn").addEventListener("click", ()=>{
@@ -426,11 +407,7 @@ if(novedadesTableBody){
 }
 
 /* ----------------------------- Cierres/Helpers UI ----------------------------- */
-document.getElementById("closeFichaBtn").addEventListener("click", ()=>{ document.getElementById("fichaModal").classList.remove("active"); });
 document.getElementById("cancelEditBtn").addEventListener("click", ()=>{ document.getElementById("editUserModal").classList.remove("active"); });
-// app.js (PARTE 2) - movimientos, impresión, escaneo, filtros
-
-// app.js (PARTE 2) - movimientos, impresión, escaneo, filtros
 
 /* ----------------------------- MOVIMIENTOS (pestañas por tipo y paginación) ----------------------------- */
 const movimientosTableBody = document.querySelector("#movimientosTable tbody");
@@ -496,29 +473,9 @@ function renderMovsPage() {
       <td>${item.entrada || ""}</td><td>${item.salida || ""}</td><td>${item.tipo || ""}</td>
       <td class="autorizante-td">${autorizText}</td>
       <td>
-        <button class="ficha-btn" data-L="${item.L}">FICHA</button>
         <button class="delMov" data-id="${item.__id}">Eliminar</button>
       </td>`;
     movimientosTableBody.appendChild(tr);
-
-    // ficha desde panel
-    tr.querySelector(".ficha-btn").addEventListener("click", async (e) => {
-      const L = e.currentTarget.dataset.L;
-      try {
-        const snap = await getDocs(query(usuariosRef, where("L", "==", L), limit(1)));
-        if (!snap.empty) {
-          const u = snap.docs[0].data();
-          document.getElementById("fichaL").textContent = u.L || "";
-          document.getElementById("fichaNombre").textContent = (u.nombre || "").toUpperCase();
-          document.getElementById("fichaDni").textContent = u.dni || "";
-          document.getElementById("fichaCelular").textContent = u.celular || "";
-          document.getElementById("fichaAutorizante").textContent = u.autorizante || "";
-          document.getElementById("fichaFechaExp").textContent = u.fechaExpedicion ? fechaDDMMYYYY(u.fechaExpedicion) : "";
-          document.getElementById("fichaTipo").textContent = u.tipo || "";
-          document.getElementById("fichaModal").classList.add("active");
-        } else { alert("No se encontró ficha para ese lote"); }
-      } catch (err) { console.error(err); alert("Error al buscar ficha"); }
-    });
 
     // eliminar movimiento
     tr.querySelector(".delMov").addEventListener("click", async e => {
@@ -659,3 +616,4 @@ function filterUsersTable(){
     tr.style.display = (activeUserFilter === "todos" || tipo === activeUserFilter) ? "" : "none";
   });
 }
+
