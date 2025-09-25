@@ -1,4 +1,4 @@
-// app.js (PARTE 1) - Firebase 9.22 (INICIO)
+// app.js (módulo) - Firebase 9.22 (PARTE 1)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, doc, onSnapshot, updateDoc, deleteDoc, query, where, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
@@ -17,7 +17,7 @@ const db = getFirestore(app);
 /* ----------------------------- Colecciones ----------------------------- */
 const usuariosRef = collection(db, "usuarios");
 const movimientosRef = collection(db, "movimientos");
-const expiredRef = collection(db, "expiredCodes");
+const expiredRef = collection(db, "expiredCodes"); // como en la versión original
 const novedadesRef = collection(db, "novedades");
 
 /* ----------------------------- Helpers ----------------------------- */
@@ -31,6 +31,7 @@ const horaActualStr = ()=> {
   const yyyy=d.getFullYear();
   return `${hh}:${mm} (${dd}/${mo}/${yyyy})`;
 };
+// parsea ISO string o Firestore Timestamp u objetos Date
 function parseToDate(d){
   if(!d) return null;
   if(typeof d === "string") return new Date(d);
@@ -55,6 +56,7 @@ const initPassInput = document.getElementById("initPassInput");
 const initPassBtn = document.getElementById("initPassBtn");
 const initPassMsg = document.getElementById("initPassMsg");
 
+/* inicial: desbloqueo simple (mantengo tu flujo original de contraseña) */
 const INITIAL_PASS = "1409";
 let isUnlocked = localStorage.getItem("unlocked") === "true";
 function toggleActionsDisabled(disabled){
@@ -110,7 +112,7 @@ navBtns.forEach(btn=>btn.addEventListener("click", ()=>{
   btn.classList.add("active");
 }));
 
-/* ----------------------------- Select #L desplegable ----------------------------- */
+/* ----------------------------- Select #L desplegable (aseguro que exista y funcione) ----------------------------- */
 const userL = document.getElementById("userL");
 const editUserL = document.getElementById("editUserL");
 function llenarLSelect(){
@@ -125,6 +127,253 @@ function llenarLSelect(){
   }
 }
 llenarLSelect();
+
+/* ----------------------------- USUARIOS (AGREGAR + render real-time + editar/eliminar/print/ficha) ----------------------------- */
+const userNombre=document.getElementById("userNombre");
+const userDni=document.getElementById("userDni");
+const userTipo=document.getElementById("userTipo");
+const userCelular=document.getElementById("userCelular");
+const userAutorizante=document.getElementById("userAutorizante");
+const addUserBtn=document.getElementById("addUserBtn");
+const userMessage=document.getElementById("userMessage");
+const usersTableBody=document.querySelector("#usersTable tbody");
+
+addUserBtn.addEventListener("click", async ()=>{
+  if(!isUnlocked){ alert("Operación no permitida. Introduzca la contraseña de apertura."); return; }
+  const L = userL ? userL.value.trim() : "NN";
+  let nombre = (userNombre ? userNombre.value : "").trim();
+  const dni = (userDni ? userDni.value.trim() : "");
+  const tipo = userTipo ? userTipo.value : "NN";
+  const celular = (userCelular ? userCelular.value.trim() : "");
+  const autorizante = (userAutorizante ? userAutorizante.value.trim() : "");
+
+  if(!L || L==="NN" || !nombre || !tipo || tipo==="NN"){
+    if(userMessage){ userMessage.style.color="red"; userMessage.textContent="Debe cargar un nombre, un número de Lote y un Tipo para continuar"; setTimeout(()=>{ userMessage.textContent=""; userMessage.style.color=""; }, 3000); }
+    return;
+  }
+  if(dni && !/^\d{8}$/.test(dni)){ if(userMessage){ userMessage.style.color="red"; userMessage.textContent="Si ingresa DNI, debe tener 8 dígitos"; setTimeout(()=>{ userMessage.textContent=""; userMessage.style.color=""; }, 2500);} return; }
+  if(celular && !/^\d{10}$/.test(celular)){ if(userMessage){ userMessage.style.color="red"; userMessage.textContent="Celular debe tener 10 dígitos si se ingresa"; setTimeout(()=>{ userMessage.textContent=""; }, 2500);} return; }
+  if(autorizante && !/^[A-Za-zÁÉÍÓÚáéíóúÑñ ]{1,12}$/.test(autorizante)){ if(userMessage){ userMessage.style.color="red"; userMessage.textContent="Autorizante: solo letras (max 12)"; setTimeout(()=>{ userMessage.textContent=""; userMessage.style.color=""; }, 2500);} return; }
+
+  nombre = nombre.toUpperCase();
+  try{
+    if(dni){
+      const qDni = query(usuariosRef, where("dni","==",dni));
+      const existing = await getDocs(qDni);
+      if(!existing.empty){
+        if(userMessage){ userMessage.style.color="red"; userMessage.textContent="DNI ya registrado"; setTimeout(()=>{ userMessage.textContent=""; userMessage.style.color=""; }, 2500); }
+        return;
+      }
+    }
+    const fechaExpIso = isoNow();
+    await addDoc(usuariosRef,{
+      L, nombre, dni: dni || "", tipo, celular: celular || "", autorizante: autorizante || "", fechaExpedicion: fechaExpIso,
+      codigoIngreso: generarCodigo(), codigoSalida: generarCodigo()
+    });
+    if(userMessage){ userMessage.style.color="green"; userMessage.textContent="Usuario agregado"; setTimeout(()=>userMessage.textContent="",2500); }
+    if(userL) userL.value="NN";
+    if(userNombre) userNombre.value="";
+    if(userDni) userDni.value="";
+    if(userTipo) userTipo.value="NN";
+    if(userCelular) userCelular.value="";
+    if(userAutorizante) userAutorizante.value="";
+  }catch(err){
+    console.error(err);
+    if(userMessage){ userMessage.style.color="red"; userMessage.textContent="Error"; setTimeout(()=>userMessage.textContent="",2500); }
+  }
+});
+
+/* Render usuarios en tiempo real (orden por L) */
+onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
+  if(!usersTableBody) return;
+  usersTableBody.innerHTML="";
+  snapshot.docs.forEach(docSnap=>{
+    const u = docSnap.data();
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${u.L||""}</td>
+      <td>${(u.nombre||"").toUpperCase()}</td>
+      <td>${u.dni||""}</td>
+      <td>${u.celular||""}</td>
+      <td>${u.autorizante||""}</td>
+      <td>${u.fechaExpedicion ? fechaDDMMYYYY(u.fechaExpedicion) : ""}</td>
+      <td>${u.tipo||""}</td>
+      <td>
+        <button class="ficha-btn" data-id="${docSnap.id}">FICHA</button>
+        <button class="edit-btn" data-id="${docSnap.id}">Editar</button>
+        <button class="del-btn" data-id="${docSnap.id}">Eliminar</button>
+        <button class="print-btn" data-id="${docSnap.id}">Imprimir Tarjeta</button>
+      </td>`;
+    usersTableBody.appendChild(tr);
+
+    // FICHA
+    tr.querySelector(".ficha-btn").addEventListener("click", async ()=>{
+      try{
+        const snap = await getDocs(query(usuariosRef, where("__name__","==",docSnap.id), limit(1)));
+        if(!snap.empty){
+          const u2 = snap.docs[0].data();
+          document.getElementById("fichaL").textContent = u2.L||"";
+          document.getElementById("fichaNombre").textContent = (u2.nombre||"").toUpperCase();
+          document.getElementById("fichaDni").textContent = u2.dni||"";
+          document.getElementById("fichaCelular").textContent = u2.celular||"";
+          document.getElementById("fichaAutorizante").textContent = u2.autorizante||"";
+          document.getElementById("fichaFechaExp").textContent = u2.fechaExpedicion ? fechaDDMMYYYY(u2.fechaExpedicion) : "";
+          document.getElementById("fichaTipo").textContent = u2.tipo||"";
+          document.getElementById("fichaModal").classList.add("active");
+        } else alert("No se encontró ficha");
+      }catch(err){ console.error(err); alert("Error al buscar ficha"); }
+    });
+
+    // EDITAR
+    tr.querySelector(".edit-btn").addEventListener("click", ()=>{
+      if(!isUnlocked){ alert("Operación no permitida. Introduzca la contraseña de apertura."); return; }
+      const udata = u;
+      document.getElementById("editUserModal").classList.add("active");
+      editUserL.value = udata.L||"NN";
+      document.getElementById("editUserNombre").value = udata.nombre||"";
+      document.getElementById("editUserDni").value = udata.dni||"";
+      document.getElementById("editUserCelular").value = udata.celular||"";
+      document.getElementById("editUserAutorizante").value = udata.autorizante||"";
+      document.getElementById("editUserTipo").value = udata.tipo||"NN";
+
+      const finalizeBtn=document.getElementById("finalizeEditBtn");
+      const cancelBtn=document.getElementById("cancelEditBtn");
+      const msgSpan=document.getElementById("editUserMsg");
+
+      finalizeBtn.onclick = async ()=>{
+        const newL = editUserL.value.trim();
+        let newNombre = document.getElementById("editUserNombre").value.trim();
+        const newDni = document.getElementById("editUserDni").value.trim();
+        const newCel = document.getElementById("editUserCelular").value.trim();
+        const newAut = document.getElementById("editUserAutorizante").value.trim();
+        const newTipo = document.getElementById("editUserTipo").value;
+        if(!newL || newL==="NN" || !newNombre || !newTipo || newTipo==="NN"){ msgSpan.style.color="red"; msgSpan.textContent="Debe cargar #L, Nombre y Tipo (no NN)"; return; }
+        if(newDni && !/^\d{8}$/.test(newDni)){ msgSpan.style.color="red"; msgSpan.textContent="DNI debe tener 8 dígitos"; return; }
+        if(newCel && !/^\d{10}$/.test(newCel)){ msgSpan.style.color="red"; msgSpan.textContent="Celular debe tener 10 dígitos"; return; }
+        if(newAut && !/^[A-Za-zÁÉÍÓÚáéíóúÑñ ]{1,12}$/.test(newAut)){ msgSpan.style.color="red"; msgSpan.textContent="Autorizante inválido"; return; }
+        // Verificar DNI único
+        if(newDni){
+          const qDni=query(usuariosRef, where("dni","==",newDni));
+          const snapDni=await getDocs(qDni);
+          if(!snapDni.empty && snapDni.docs[0].id!==docSnap.id){
+            msgSpan.style.color="red"; msgSpan.textContent="DNI ya registrado en otro usuario"; return;
+          }
+        }
+        newNombre = newNombre.toUpperCase();
+        try{
+          await updateDoc(doc(db,"usuarios",docSnap.id),{ L:newL, nombre:newNombre, dni:newDni||"", tipo:newTipo, celular:newCel||"", autorizante:newAut||"" });
+          msgSpan.style.color="green"; msgSpan.textContent="Usuario editado con éxito";
+          setTimeout(()=>{ document.getElementById("editUserModal").classList.remove("active"); msgSpan.textContent=""; msgSpan.style.color="#0a0"; },1500);
+        }catch(err){ console.error(err); msgSpan.style.color="red"; msgSpan.textContent="Error editando"; }
+      };
+      cancelBtn.onclick=()=>{ document.getElementById("editUserModal").classList.remove("active"); msgSpan.textContent=""; };
+    });
+
+    // ELIMINAR USUARIO
+    tr.querySelector(".del-btn").addEventListener("click", async ()=>{
+      if(!isUnlocked){ alert("Operación no permitida. Introduzca la contraseña de apertura."); return; }
+      if(!confirm("Eliminar usuario permanentemente? (esto invalidará sus códigos)")) return;
+      try{
+        await addDoc(expiredRef,{ L: u.L||"", nombre: u.nombre||"", dni: u.dni||"", codigoIngreso: u.codigoIngreso||"", codigoSalida: u.codigoSalida||"", tipo: u.tipo||"", when: isoNow(), celular: u.celular||"", autorizante: u.autorizante||"", fechaExpedicion: u.fechaExpedicion||"" });
+        await deleteDoc(doc(db,"usuarios",docSnap.id));
+        alert("Usuario eliminado y códigos invalidados.");
+      }catch(err){ console.error(err); alert("Error eliminando usuario"); }
+    });
+
+    // IMPRIMIR TARJETA
+    tr.querySelector(".print-btn").addEventListener("click", async ()=>{
+      if(!isUnlocked){ alert("Operación no permitida. Introduzca la contraseña de apertura."); return; }
+      const udata = u;
+      const borderColor={"propietario":"violet","administracion":"orange","empleado":"green","obrero":"yellow","invitado":"cyan","guardia":"red"}[udata.tipo]||"gray";
+      const w=window.open("","_blank","width=600,height=380");
+      w.document.write(`<html><head><title>Tarjeta ${udata.L}</title><style>body{font-family:Arial;text-align:center}.card{width:15cm;height:6cm;border:12px solid ${borderColor};box-sizing:border-box;padding:8px}</style><script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script></head><body> <div class="card"> <svg id="codeIn" style="display:block;margin:6px auto"></svg> <div style="font-size:16px;font-weight:700;margin:6px 0">${udata.L} — ${(udata.nombre||"").toUpperCase()}<br>DNI: ${udata.dni||''}<br>${udata.tipo}</div> <svg id="codeOut" style="display:block;margin:6px auto"></svg> </div> <script> JsBarcode(document.getElementById('codeIn'),"${udata.codigoIngreso||''}",{format:'CODE128',width:2,height:40}); JsBarcode(document.getElementById('codeOut'),"${udata.codigoSalida||''}",{format:'CODE128',width:2,height:40}); window.print(); setTimeout(()=>window.close(),700); <\/script> </body></html>`);
+    });
+
+  });
+});
+
+/* ----------------------------- EXPIRADOS - render en tiempo real ----------------------------- */
+const expiredTableBody = document.querySelector("#expiredTable tbody");
+if(expiredTableBody){
+  onSnapshot(query(expiredRef, orderBy("when","desc")), snapshot=>{
+    expiredTableBody.innerHTML = "";
+    snapshot.docs.forEach(d=>{
+      const e = d.data();
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${e.L || ""}</td>
+        <td>${(e.nombre||"").toUpperCase()}</td>
+        <td>${e.dni || ""}</td>
+        <td>${e.codigoIngreso || ""}</td>
+        <td>${e.codigoSalida || ""}</td>
+        <td>${e.tipo || ""}</td>
+        <td>${e.when ? fechaDDMMYYYY(e.when) : ""}</td>`;
+      expiredTableBody.appendChild(tr);
+    });
+  });
+}
+
+/* ----------------------------- NOVEDADES - agregar/editar/eliminar + render ----------------------------- */
+const novedadesTableBody = document.querySelector("#novedadesTable tbody");
+const novTxt = document.getElementById("novedadTexto");
+const guardarNovedadBtn = document.getElementById("guardarNovedadBtn");
+const novMsg = document.getElementById("novedadMsg");
+let editingNovedadId = null;
+
+if(guardarNovedadBtn){
+  guardarNovedadBtn.addEventListener("click", async ()=>{
+    if(!isUnlocked){ alert("Operación no permitida. Introduzca la contraseña de apertura."); return; }
+    const texto = novTxt.value.trim();
+    if(!texto){ novMsg.style.color="red"; novMsg.textContent="Ingrese texto"; setTimeout(()=>novMsg.textContent="",2000); return; }
+    try{
+      if(editingNovedadId){
+        await updateDoc(doc(db,"novedades",editingNovedadId), { texto, when: isoNow() });
+        editingNovedadId = null; novMsg.style.color="green"; novMsg.textContent="Novedad editada";
+      } else {
+        await addDoc(novedadesRef, { texto, when: isoNow() });
+        novMsg.style.color="green"; novMsg.textContent="Novedad guardada";
+      }
+      novTxt.value=""; setTimeout(()=>novMsg.textContent="",2000);
+    }catch(err){ console.error(err); novMsg.style.color="red"; novMsg.textContent="Error"; setTimeout(()=>novMsg.textContent="",2000); }
+  });
+}
+
+// render novedades (listener)
+if(novedadesTableBody){
+  onSnapshot(query(novedadesRef, orderBy("when","desc")), snapshot=>{
+    novedadesTableBody.innerHTML = "";
+    snapshot.docs.forEach(d=>{
+      const n = d.data();
+      const tr = document.createElement("tr");
+      let horaFecha = "";
+      if (n.when) {
+        const date = parseToDate(n.when);
+        if(date){
+          const hora = date.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+          const fecha = date.toLocaleDateString("es-AR");
+          horaFecha = `${hora}<br><small>${fecha}</small>`;
+        }
+      }
+      tr.innerHTML = `<td style="white-space:nowrap">${horaFecha}</td>
+        <td style="text-align:left; padding-left:8px;">${n.texto || ""}</td>
+        <td>
+          <button class="edit-nov" data-id="${d.id}">Editar</button>
+          <button class="del-nov" data-id="${d.id}">Eliminar</button>
+        </td>`;
+      novedadesTableBody.appendChild(tr);
+
+      tr.querySelector(".edit-nov").addEventListener("click", ()=>{
+        document.getElementById("novedadTexto").value = n.texto || "";
+        editingNovedadId = d.id;
+        document.querySelector('#novedades').scrollIntoView({behavior:'smooth'});
+      });
+
+      tr.querySelector(".del-nov").addEventListener("click", async ()=>{
+        if(!isUnlocked){ alert("Operación no permitida. Introduzca la contraseña de apertura."); return; }
+        if(!confirm("Eliminar novedad?")) return;
+        try{ await deleteDoc(doc(db,"novedades",d.id)); } catch(err){ console.error(err); alert("Error eliminando novedad"); }
+      });
+    });
+  });
+}
 
 // app.js (PARTE 2) - movimientos, impresión, escaneo, filtros
 /* ----------------------------- MOVIMIENTOS (pestañas por tipo y paginación) ----------------------------- */
@@ -184,26 +433,8 @@ function renderMovsPage(){
   page.forEach(item=>{
     const tr=document.createElement("tr");
     const autorizText = item.autorizante || "";
-
-    // H. Entrada y H. Salida: solo hora en tabla, tooltip con fecha
-    let entradaDisplay = "", salidaDisplay = "";
-    if(item.entrada){
-      const dtE = item.entrada.match(/\d{2}:\d{2}/) ? item.entrada.match(/\d{2}:\d{2}/)[0] : item.entrada;
-      const dateE = item.entrada.replace(/\(\d{2}\/\d{2}\/\d{4}\)/,"").trim() || "";
-      entradaDisplay = `<span title="${item.entrada}">${dtE}</span>`;
-    }
-    if(item.salida){
-      const dtS = item.salida.match(/\d{2}:\d{2}/) ? item.salida.match(/\d{2}:\d{2}/)[0] : item.salida;
-      const dateS = item.salida.replace(/\(\d{2}\/\d{2}\/\d{4}\)/,"").trim() || "";
-      salidaDisplay = `<span title="${item.salida}">${dtS}</span>`;
-    }
-
-    tr.innerHTML = `<td>${item.L||""}</td>
-      <td>${(item.nombre||"").toUpperCase()}</td>
-      <td>${item.dni||""}</td>
-      <td>${entradaDisplay}</td>
-      <td>${salidaDisplay}</td>
-      <td>${item.tipo||""}</td>
+    tr.innerHTML = `<td>${item.L||""}</td><td>${(item.nombre||"").toUpperCase()}</td>
+      <td>${item.entrada||""}</td><td>${item.salida||""}</td><td>${item.tipo||""}</td>
       <td class="autorizante-td">${autorizText}</td>
       <td>
         <button class="ficha-btn" data-L="${item.L}">FICHA</button>
@@ -266,7 +497,7 @@ function printMovimientosPorTipo(tipo, auto=false){
     @page{size:A4;margin:6mm;} body{font-family:Arial,Helvetica,sans-serif;font-size:10px;color:#000;}
     table{width:100%;border-collapse:collapse} th,td{border:1px solid #000;padding:2px;text-align:center;font-size:10px}
     thead th{background:#fff;font-weight:700;color:#000}
-    img, svg { filter: grayscale(100%); }
+    /* imprimir en B/N */ img, svg { filter: grayscale(100%); }
     </style></head><body><h3>${title}</h3><table><thead><tr><th>#L</th><th>Nombre</th><th>DNI</th><th>H. Entrada</th><th>H. Salida</th><th>Tipo</th></tr></thead><tbody>`;
   toPrint.forEach(m=>{
     html += `<tr><td>${m.L||""}</td><td>${(m.nombre||"").toUpperCase()}</td><td>${m.dni||""}</td><td>${m.entrada||""}</td><td>${m.salida||""}</td><td>${m.tipo||""}</td></tr>`;
@@ -276,7 +507,7 @@ function printMovimientosPorTipo(tipo, auto=false){
   w.print();
 }
 
-/* ----------------------------- ESCANEAR CÓDIGOS ----------------------------- */
+/* ----------------------------- ESCANEAR CÓDIGOS: ahora NO cierra el modal hasta cancelar (permite múltiples códigos) ----------------------------- */
 const scanBtn = document.getElementById("scanBtn");
 const scanModal = document.getElementById("scanModal");
 const scanInput = document.getElementById("scanInput");
@@ -293,6 +524,7 @@ scanBtn.addEventListener("click", () => {
   scanInput.focus();
 });
 cancelScanBtn.addEventListener("click", () => {
+  // cerrar el modal (usuario decide cuándo salir)
   scanModal.classList.remove("active");
   scanMessage.textContent = "";
   scanInput.value = "";
@@ -335,8 +567,10 @@ scanInput.addEventListener("input", async () => {
         await addDoc(movimientosRef, { L: u.L, nombre: u.nombre, dni: u.dni || "", tipo: u.tipo, autorizante: u.autorizante || "", entrada: "", salida: horaActualStr(), hora: serverTimestamp() });
       }
     }
+    // mostrar OK brevemente pero mantener modal abierto (para más escaneos)
     scanOk.style.display = "inline-block";
     setTimeout(()=>scanOk.style.display = "none", 900);
+    // limpio input para permitir pegar/cargar otro código sin cerrar
     scanInput.value = "";
     scanMessage.textContent = "";
   } catch (err) {
@@ -364,4 +598,4 @@ function filterUsersTable(){
   });
 }
 
-/* Nota: demás listeners (closeFicha, cancelEdit, etc.) se mantienen tal cual desde Parte 1 */
+/* Nota: dejamos las demás listeners (closeFicha, cancelEdit) en Parte 1 para mantener continuidad */
