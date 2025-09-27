@@ -405,13 +405,3 @@ try{ await deleteDoc(doc(db,"novedades",d.id)); } catch(err){ console.error(err)
 });
 });
 }
-
-/* ----------------------------- Cierres/Helpers UI ----------------------------- */
-document.getElementById("cancelEditBtn").addEventListener("click", ()=>{ document.getElementById("editUserModal").classList.remove("active"); });
-
-/* ----------------------------- MOVIMIENTOS (pestañas por tipo y paginación) ----------------------------- */
-const movimientosTableBody = document.querySelector("#movimientosTable tbody");
-const paginationDiv = document.getElementById("pagination");
-const MOV_LIMIT = 25;
-let movimientosCache = [], currentPage = 1, activeTip
-
