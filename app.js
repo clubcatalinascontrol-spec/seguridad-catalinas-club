@@ -95,61 +95,109 @@ initPassBtn.addEventListener('click', ()=>{
     isUnlocked = true;
     localStorage.setItem("unlocked", "true");
     initPassMsg.style.color = 'green'; initPassMsg.textContent = 'Desbloqueado';
-    setTimeout(()=>{ initPassMsg.textContent = ''; initPassInput.value = ''; }, 900);
-    toggleActionsDisabled(false);
-  } else {
-    initPassMsg.style.color = 'red'; initPassMsg.textContent = 'Contraseña incorrecta';
-    setTimeout(()=>{ initPassMsg.textContent = ''; initPassInput.value = ''; }, 1200);
-  }
-});
+    setTimeout(()=>{ initPassMsg.textContent = ''; initPassInput.value = ''; }, 900);tr.q// IMPRIMIR TARJETA    
+"obrero":"yellow",    
+"invitado":"cyan",    
+"guardia":"red"  
+}[udata.tipo]||"gray";
+  const w=window.open("","_blank","width=600,height=380");  
+w.document.write(`
+    <html>
+      <head>
+        <title>Tarjeta ${udata.L}</title>
+        <style>
+          body{font-family:Arial;text-align:center;margin:0;padding:0}
+          .card{
+            width:15cm;
+            height:6cm;
+            border:12px solid ${borderColor};
+            box-sizing:border-box;
+            padding:8px;
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
+            align-items:center;
+          }
+          .info{font-size:16px;font-weight:700;margin:6px 0}
+          svg{display:block;margin:6px auto}
+        </style>
+        <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3Puedes pagar en cualquier OXXO, 👏🏻 Te mando los datos y me mandas foto del ticket
 
-/* ----------------------------- Navegación SPA ----------------------------- */
-navBtns.forEach(btn=>btn.addEventListener("click", ()=>{
-  const target=btn.dataset.section;
-  pages.forEach(p=>p.classList.remove("active"));
-  const el = document.getElementById(target);
-  if(el) el.classList.add("active");
-  navBtns.forEach(b=>b.classList.remove("active"));
-  btn.classList.add("active");
-}));
+Tarjeta de OXXO
+Número: *4217 4700 7519 0195*
+Nombre: Alejandra Hernandez Lopez
+Monto $200, si puedes un poco más 🙏🏻te lo recompensaré 🥰
 
-/* ----------------------------- Select #L desplegable (aseguro que exista y funcione) ----------------------------- */
-const userL = document.getElementById("userL");
-const editUserL = document.getElementById("editUserL");
-function llenarLSelect(){
-  if(!userL || !editUserL) return;
-  userL.innerHTML = ""; editUserL.innerHTML = "";
-  const optNN = document.createElement("option"); optNN.value="NN"; optNN.textContent="NN"; userL.appendChild(optNN);
-  const optNN2 = document.createElement("option"); optNN2.value="NN"; optNN2.textContent="NN"; editUserL.appendChild(optNN2);
-  for(let i=0;i<1000;i++){
-    const val = i.toString().padStart(3,"0");
-    const opt = document.createElement("option"); opt.value=val; opt.textContent=val; userL.appendChild(opt);
-    const opt2 = document.createElement("option"); opt2.value=val; opt2.textContent=val; editUserL.appendChild(opt2);
-  }
+o para transferencia usa mi clabe👇🏻.5/dist/JsBarcode.all.min.js"><\/script>
+      </head>
+      <body>
+        <div class="card">
+          <svg id="codeIn"></svg>
+          <div class="info">            
+${udata.L} — ${(udata.nombre||"").toUpperCase()}<br>
+            DNI: ${udata.dni||""}<br>            
+${udata.tipo}
+          </div>
+          <svg id="codeOut"></svg>
+        </div>
+ "#codeIn","${udata.codigoIngreso||""}",{format:"CODE128",width:2,height:40});
+          JsBarcode("#codeOut","${udata.codigoSalida||""}",{format:"CODE128",width:2,height:40});
+          window.print();
+          setTimeout(()=>window. para transferencia usa mi clabe👇🏻.5/dist/JsBarcode.all.min.js"><\/script>
+      </head>
+      <body>
+        <div class="card">
+          <svg id="codeIn"></svg>
+          <div class="info">            
+${udata.L} — ${(udata.nombre||"").toUpperCase()}<br>
+            DNI: ${udata.dni||""}<br>            
+${udata.tipo}
+          </div>
+          = document.getElementById("expiredPagination");
+const EXP_LIMIT = 25;
+let expiredCache = [], expiredCurrentPage = 1;
+// función para obtener hora en 24h desde Date o Firestore Timestamp
+function horaHHMM(date){  
+const d = date.toDate ? date.toDate() : date;  
+const h = d.getHours().toString().padStart(2,'0');  
+const m = d.getMinutes().toString().padStart(2,'0');  
+return `${h}:${m}`;
 }
-llenarLSelect();
-
-/* ----------------------------- USUARIOS (AGREGAR + render real-time + editar/eliminar/print/ficha) ----------------------------- */
-const userNombre=document.getElementById("userNombre");
-const userDni=document.getElementById("userDni");
-const userTipo=document.getElementById("userTipo");
-const userCelular=document.getElementById("userCelular");
-const userAutorizante=document.getElementById("userAutorizante");
-const addUserBtn=document.getElementById("addUserBtn");
-const userMessage=document.getElementById("userMessage");
-const usersTableBody=document.querySelector("#usersTable tbody");
-
-addUserBtn.addEventListener("click", async ()=>{
-  if(!isUnlocked){ alert("Operación no permitida. Introduzca la contraseña de apertura."); return; }
-  const L = userL ? userL.value.trim() : "NN";
-  let nombre = (userNombre ? userNombre.value : "").trim();
-  const dni = (userDni ? userDni.value.trim() : "");
-  const tipo = userTipo ? userTipo.value : "NN";
-  const celular = (userCelular ? userCelular.value.trim() : "");
-  const autorizante = (userAutorizante ? userAutorizante.value.trim() : "");
-
-  if(!L || L==="NN" || !nombre || !tipo || tipo==="NN"){
-    if(userMessage){ userMessage.style.color="red"; userMessage.textContent="Debe cargar un nombre, un número de Lote y un Tipo para continuar"; setTimeout(()=>{ userMessage.textContent=""; userMessage.style.color=""; }, 3000); }
+if(expiredTableBody){  
+// escuchar cambios en tiempo real  
+onSnapshot(query(expiredRef, orderBy("when","desc")), snapshot => {    
+snapshot.docChanges().forEach(change => {      
+const data = { __id: change.doc.id, ...change.doc.data() };      
+if(change.type === "added"){        
+expiredCache.unshift(data); // agrego al inicio      
+}      
+if(change.type === "removed"){        
+expiredCache = expiredCache.filter(e => e.__id !== data.__id);      
+}      
+if(change.type === "modified"){        
+const index = expiredCache.findIndex(e => e.__id === data.__id);        
+if(index !== -1) expiredCache[index] = data;      
+}    
+});
+    // siempre mostrar la primera página al haber nuevos registros    
+expiredCurrentPage = 1;    
+renderExpiredPage();  
+});
+  function renderExpiredPagination(totalItems){    
+const totalPages = Math.max(1, Math.ceil(totalItems / EXP_LIMIT));    
+expiredPaginationDiv.innerHTML = "";    
+for(let p=1; p<=totalPages; p++){      
+const btn = document.createElement("button");      
+btn.textContent = p;      
+if(p === expiredCurrentPage){ btn.style.background="#d8a800"; btn.style.color="#111"; }      
+btn.addEventListener("click", ()=>{ expiredCurrentPage = p; renderExpiredPage(); });      
+expiredPaginationDiv.appendChild(btn);    
+}  
+}
+  function renderExpiredPage(){    
+if(!expiredTableBody) return;    
+expiredTableBody.innerHTML = "";    
+const start = (expiredCurrentPage - 1) * EXP_LIMsetTimeout(()=>{ userMessage.textContent=""; userMessage.style.color=""; }, 3000); }
     return;
   }
   if(dni && !/^\d{8}$/.test(dni)){ if(userMessage){ userMessage.style.color="red"; userMessage.textContent="Si ingresa DNI, debe tener 8 dígitos"; setTimeout(()=>{ userMessage.textContent=""; userMessage.style.color=""; }, 2500);} return; }
@@ -262,15 +310,63 @@ onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
     });
 
     // IMPRIMIR TARJETA
-    tr.querySelector(".print-btn").addEventListener("click", async ()=>{
-      if(!isUnlocked){ alert("Operación no permitida. Introduzca la contraseña de apertura."); return; }
-      const udata = u;
-      const borderColor={"propietario":"violet","administracion":"orange","empleado":"green","obrero":"yellow","invitado":"cyan","guardia":"red"}[udata.tipo]||"gray";
-      const w=window.open("","_blank","width=600,height=380");
-      w.document.write(`<html><head><title>Tarjeta ${udata.L}</title><style>body{font-family:Arial;text-align:center}.card{width:15cm;height:6cm;border:12px solid ${borderColor};box-sizing:border-box;padding:8px}</style><script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script></head><body> <div class="card"> <svg id="codeIn" style="display:block;margin:6px auto"></svg> <div style="font-size:16px;font-weight:700;margin:6px 0">${udata.L} — ${(udata.nombre||"").toUpperCase()}<br>DNI: ${udata.dni||''}<br>${udata.tipo}</div> <svg id="codeOut" style="display:block;margin:6px auto"></svg> </div> <script> JsBarcode(document.getElementById('codeIn'),"${udata.codigoIngreso||''}",{format:'CODE128',width:2,height:40}); JsBarcode(document.getElementById('codeOut'),"${udata.codigoSalida||''}",{format:'CODE128',width:2,height:40}); window.print(); setTimeout(()=>window.close(),700); <\/script> </body></html>`);
-    });
+tr.querySelector(".print-btn").addEventListener("click", async ()=>{
+  if(!isUnlocked){ 
+    alert("Operación no permitida. Introduzca la contraseña de apertura."); 
+    return; 
+  }
+  const udata = u;
+  const borderColor={
+    "propietario":"violet",
+    "administracion":"orange",
+    "empleado":"green",
+    "obrero":"yellow",
+    "invitado":"cyan",
+    "guardia":"red"
+  }[udata.tipo]||"gray";
 
-  });
+  const w=window.open("","_blank","width=600,height=380");
+  w.document.write(`
+    <html>
+      <head>
+        <title>Tarjeta ${udata.L}</title>
+        <style>
+          body{font-family:Arial;text-align:center;margin:0;padding:0}
+          .card{
+            width:15cm;
+            height:6cm;
+            border:12px solid ${borderColor};
+            box-sizing:border-box;
+            padding:8px;
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
+            align-items:center;
+          }
+          .info{font-size:16px;font-weight:700;margin:6px 0}
+          svg{display:block;margin:6px auto}
+        </style>
+        <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
+      </head>
+      <body>
+        <div class="card">
+          <svg id="codeIn"></svg>
+          <div class="info">
+            ${udata.L} — ${(udata.nombre||"").toUpperCase()}<br>
+            DNI: ${udata.dni||""}<br>
+            ${udata.tipo}
+          </div>
+          <svg id="codeOut"></svg>
+        </div>
+        <script>
+          JsBarcode("#codeIn","${udata.codigoIngreso||""}",{format:"CODE128",width:2,height:40});
+          JsBarcode("#codeOut","${udata.codigoSalida||""}",{format:"CODE128",width:2,height:40});
+          window.print();
+          setTimeout(()=>window.close(),700);
+        <\/script>
+      </body>
+    </html>
+  `);
 });
 
 /* ----------------------------- EXPIRADOS - render con paginación y tooltip hora ----------------------------- */
@@ -654,6 +750,7 @@ function filterUsersTable(){
     tr.style.display = (activeUserFilter === "todos" || tipo === activeUserFilter) ? "" : "none";
   });
 }
+
 
 
 
