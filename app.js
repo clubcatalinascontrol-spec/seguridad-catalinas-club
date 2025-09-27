@@ -267,7 +267,7 @@ onSnapshot(query(usuariosRef, orderBy("L")), snapshot=>{
       const udata = u;
       const borderColor={"propietario":"violet","administracion":"orange","empleado":"green","obrero":"yellow","invitado":"cyan","guardia":"red"}[udata.tipo]||"gray";
       const w=window.open("","_blank","width=600,height=380");
-      w.document.write(`<html><head><title>Tarjeta ${udata.L}</title><style>body{font-family:Arial;text-align:center}.card{width:15cm;height:6cm;border:12px solid ${borderColor};box-sizing:border-box;padding:8px}</style><script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script></head><body> <div class="card"> <svg id="codeIn" style="display:block;margin:6px auto"></svg> <div style="font-size:16px;font-weight:700;margin:6px 0">${udata.L} — ${(udata.nombre||"").toUpperCase()}<br>DNI: ${udata.dni||''}<br>${udata.tipo}</div> <svg id="codeOut" style="display:block;margin:6px auto"></svg> </div> <script> JsBarcode(document.getElementById('codeIn'),"${udata.codigoIngreso||''}",{format:'CODE128',width:2,height:40}); JsBarcode(document.getElementById('codeOut'),"${udata.codigoSalida||''}",{format:'CODE128',width:2,height:40}); window.print(); setTimeout(()=>window.close(),700); <\/script> </body></html>`);
+      w.document.write(`<html><head><title>Tarjeta ${udata.L}</title><style>body{font-family:Arial;text-align:center}.card{width:15cm;height:6cm;border:12px solid ${borderColor};box-sizing:border-box;padding:8px}</style><script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script></head><body> <div class="card"> <svg id="codeIn" style="display:block;margin:6px auto"></svg> <div style="font-size:16px;font-weight:700;margin:6px 0">${udata.L} — ${(udata.nombre||"").toUpperCase()}<br>DNI: ${udata.dni||''}<br>${udata.tipo}</div> <svg id="codeOut" style="display:block;margin:6px auto"></svg> </div> <script> JsBarcode(document.getElementById('codeIn'),"${udata.codigoIngreso||''}",{format:'CODE128',width:2,height:40}); JsBarcode(document.getElementById('codeOut'),"${udata.codigoSalida||''}",{format:'CODE128',width:2,height:40}); window.print(); setTimeout(()=>window.close(),15000); <\/script> </body></html>`);
     });
 
   });
@@ -653,3 +653,4 @@ function filterUsersTable(){
     tr.style.display = (activeUserFilter === "todos" || tipo === activeUserFilter) ? "" : "none";
   });
 }
+
