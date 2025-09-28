@@ -624,8 +624,8 @@ function printMovimientosPorTipo(tipo, auto=false){
   const w = window.open("","_blank","width=900,height=600");
   const title = tipo==="todos" ? "Movimientos - Todos" : `Movimientos - ${tipo}`;
   let html = `<html><head><title>${title}</title><style>
-    @page{size:A4;margin:6mm;} body{font-family:Arial,Helvetica,sans-serif;font-size:10px;color:#000;}
-    table{width:100%;border-collapse:collapse} th,td{border:1px solid #000;padding:2px;text-align:center;font-size:10px}
+    @page{size:A4;margin:6mm;} body{font-family:Arial,Helvetica,sans-serif;font-size:16px;color:#000;}
+    table{width:100%;border-collapse:collapse} th,td{border:1px solid #000;padding:4px;text-align:center;font-size:16px}
     thead th{background:#fff;font-weight:700;color:#000}
     img, svg { filter: grayscale(100%); }
     </style></head><body><h3>${title}</h3><table><thead><tr><th>#L</th><th>Nombre</th><th>H. Entrada</th><th>H. Salida</th><th>Tipo</th></tr></thead><tbody>`;
@@ -653,4 +653,5 @@ function filterUsersTable(){
     tr.style.display = (activeUserFilter === "todos" || tipo === activeUserFilter) ? "" : "none";
   });
 }
+
 
